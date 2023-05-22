@@ -15,7 +15,7 @@ def get_radiant():
 
 
 def get_timestamp():
-    return datetime.datetime.now().isoformat()
+    return datetime.datetime.now().isoformat(timespec='seconds')
 
 
 def run(test_class):

@@ -11,7 +11,8 @@ class FailingTest(radiant_test.Test):
 
     def run(self):
         super(FailingTest, self).run()
-        self._test_fail()
+
+        self.add_measurement("empty", [], False)
 
 
 if __name__ == "__main__":

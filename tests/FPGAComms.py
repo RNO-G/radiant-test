@@ -12,30 +12,30 @@ class FPGAComms(radiant_test.Test):
 
     def run(self):
         super(FPGAComms, self).run()
-        data = dict()
-        test_passed = True
 
-        data["fpga_id"] = stationrc.radiant.register_to_string(
+        fpga_id = stationrc.radiant.register_to_string(
             self.device.radiant_read_register("FPGA_ID")
         )
-        if data["fpga_id"] != self.conf["expected_values"]["fpga_id"]:
-            test_passed = False
+        self.add_measurement(
+            "fpga_id",
+            fpga_id,
+            fpga_id == self.conf["expected_values"]["fpga_id"],
+        )
 
         fpga_date_version = stationrc.radiant.DateVersion(
             self.device.radiant_read_register("FPGA_DATEVERSION")
         ).toDict()
-        data["fpga_date"] = fpga_date_version["date"]
-        if data["fpga_date"] != self.conf["expected_values"]["fpga_date"]:
-            test_passed = False
-        data["fpga_version"] = fpga_date_version["version"]
-        if data["fpga_version"] != self.conf["expected_values"]["fpga_version"]:
-            test_passed = False
-
-        self.result_dict["run"]["measurement"]["data"] = data
-        if test_passed:
-            self._test_pass()
-        else:
-            self._test_fail()
+        self.add_measurement(
+            "fpga_date",
+            fpga_date_version["date"],
+            fpga_date_version["date"] == self.conf["expected_values"]["fpga_date"],
+        )
+        self.add_measurement(
+            "fpga_version",
+            fpga_date_version["version"],
+            fpga_date_version["version"]
+            == self.conf["expected_values"]["fpga_version"],
+        )
 
 
 if __name__ == "__main__":

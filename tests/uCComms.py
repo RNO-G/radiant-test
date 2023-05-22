@@ -12,36 +12,31 @@ class uCComms(radiant_test.Test):
 
     def run(self):
         super(uCComms, self).run()
-        data = dict()
-        test_passed = True
 
-        data["board_manager_id"] = stationrc.radiant.register_to_string(
+        board_manager_id = stationrc.radiant.register_to_string(
             self.device.radiant_read_register("BM_ID")
         )
-        if data["board_manager_id"] != self.conf["expected_values"]["board_manager_id"]:
-            test_passed = False
+        self.add_measurement(
+            "board_manager_id",
+            board_manager_id,
+            board_manager_id == self.conf["expected_values"]["board_manager_id"],
+        )
 
         board_manager_date_version = stationrc.radiant.DateVersion(
             self.device.radiant_read_register("BM_DATEVERSION")
         ).toDict()
-        data["board_manager_date"] = board_manager_date_version["date"]
-        if (
-            data["board_manager_date"]
-            != self.conf["expected_values"]["board_manager_date"]
-        ):
-            test_passed = False
-        data["board_manager_version"] = board_manager_date_version["version"]
-        if (
-            data["board_manager_version"]
-            != self.conf["expected_values"]["board_manager_version"]
-        ):
-            test_passed = False
-
-        self.result_dict["run"]["measurement"]["data"] = data
-        if test_passed:
-            self._test_pass()
-        else:
-            self._test_fail()
+        self.add_measurement(
+            "board_manager_date",
+            board_manager_date_version["date"],
+            board_manager_date_version["date"]
+            == self.conf["expected_values"]["board_manager_date"],
+        )
+        self.add_measurement(
+            "board_manager_version",
+            board_manager_date_version["version"],
+            board_manager_date_version["version"]
+            == self.conf["expected_values"]["board_manager_version"],
+        )
 
 
 if __name__ == "__main__":

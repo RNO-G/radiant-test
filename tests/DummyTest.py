@@ -13,9 +13,9 @@ class DummyTest(radiant_test.Test):
 
     def run(self):
         super(DummyTest, self).run()
-        data = list()
-        test_passed = False
 
+        data = list()
+        passed = False
         for i in range(self.conf["args"]["trials"]):
             data.append(random.randrange(0, 10))
         for i in data:
@@ -23,14 +23,9 @@ class DummyTest(radiant_test.Test):
                 i >= self.conf["expected_values"]["num_min"]
                 and i < self.conf["expected_values"]["num_max"]
             ):
-                test_passed = True
+                passed = True
                 break
-
-        self.result_dict["run"]["measurement"]["data"] = data
-        if test_passed:
-            self._test_pass()
-        else:
-            self._test_fail()
+        self.add_measurement("data", data, passed)
 
 
 if __name__ == "__main__":

@@ -25,6 +25,12 @@ class Test(object):
             self.conf = json.load(f)
         self.logger.debug(f"Config for test {self.name}: {self.conf}")
 
+    def add_measurement(self, name, value, passed):
+        self.result_dict["run"]["measurements"][name] = {
+            "measured_value": value,
+            "result": TestResult.PASS if passed else TestResult.FAIL,
+        }
+
     def initialize(self):
         self.result_dict["initialize"] = dict()
         self.result_dict["initialize"]["timestamp"] = get_timestamp()
@@ -32,23 +38,20 @@ class Test(object):
     def run(self):
         self.result_dict["run"] = dict()
         self.result_dict["run"]["timestamp"] = get_timestamp()
-        self.result_dict["run"]["measurement"] = dict()
+        self.result_dict["run"]["measurements"] = dict()
 
     def finalize(self, result_dir="results"):
         self.result_dict["finalize"] = dict()
         self.result_dict["finalize"]["timestamp"] = get_timestamp()
 
+        self.result = TestResult.PASS
+        for meas in self.result_dict["run"]["measurements"].values():
+            if meas["result"] != TestResult.PASS:
+                self.result = TestResult.FAIL
+                break
         self.result_dict["result"] = self.result.name
-
-        dir = pathlib.Path.cwd() / result_dir
-        if not dir.exists():
-            dir.mkdir(parents=True)
-        with open(
-            dir
-            / f'{self.result_dict["dut_uid"]}_{self.name}_{self.result_dict["initialize"]["timestamp"]}.json',
-            "w",
-        ) as f:
-            json.dump(self.result_dict, f, indent=4)
+        self._log_result()
+        self._save_result(result_dir)
 
     def _log_result(self):
         color = ""
@@ -68,10 +71,16 @@ class Test(object):
         else:
             print(res)
 
-    def _test_fail(self):
-        self.result = TestResult.FAIL
-        self._log_result()
+    def _save_result(self, result_dir):
+        for meas in self.result_dict["run"]["measurements"].values():
+            meas["result"] = meas["result"].name
 
-    def _test_pass(self):
-        self.result = TestResult.PASS
-        self._log_result()
+        dir = pathlib.Path.cwd() / result_dir
+        if not dir.exists():
+            dir.mkdir(parents=True)
+        with open(
+            dir
+            / f'{self.result_dict["dut_uid"]}_{self.name}_{self.result_dict["initialize"]["timestamp"]}.json',
+            "w",
+        ) as f:
+            json.dump(self.result_dict, f, indent=4)
