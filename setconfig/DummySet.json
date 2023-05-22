@@ -1,0 +1,7 @@
+{
+	"name": "DummySet",
+	"tests": {
+		"DummyTest": {},
+		"FailingTest": {}
+	}
+}
