@@ -1,0 +1,13 @@
+{
+    "expected_values": {
+        "amplitude_min": 90,
+        "amplitude_max": 1000,
+        "frequency_deviation": 0.002,
+        "offset_max": 50,
+        "avg_residual_max": 500
+    },
+        "args": {
+            "band": 0,
+            "frequency": 90
+    }
+}

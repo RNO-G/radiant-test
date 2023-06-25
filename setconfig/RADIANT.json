@@ -1,7 +1,8 @@
 {
-	"name": "RADIANT",
-	"tests": {
+    "name": "RADIANT",
+    "tests": {
         "uCComms": {},
-        "FPGAComms": {}
-	}
+        "FPGAComms": {},
+        "SigGenSine": {}
+    }
 }
