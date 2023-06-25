@@ -13,10 +13,16 @@ class TestSet(object):
         self.result_dir = pathlib.Path("results") / f"{self.name}_{get_timestamp()}"
         self.tests = list()
         module = __import__("tests")
-        for test in self.conf["tests"].keys():
-            self.add_test(getattr(module, test)())
+        for key in self.conf["tests"].keys():
+            if not "base" in self.conf["tests"][key]:
+                self.add_test(getattr(module, key)(), self.conf["tests"][key])
+            else:
+                self.add_test(getattr(module, self.conf["tests"][key]["base"])(), self.conf["tests"][key])
+                self.tests[-1].name = key
 
-    def add_test(self, test):
+    def add_test(self, test, alt_conf):
+        if alt_conf:
+            test.update_conf(alt_conf)
         self.tests.append(test)
 
     def run(self):

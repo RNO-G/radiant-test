@@ -31,6 +31,19 @@ class Test(object):
             "result": TestResult.PASS if passed else TestResult.FAIL,
         }
 
+    def update_conf(self, alt_conf):
+        def update_test_conf(section, alt_conf):
+            if section in alt_conf:
+                if not section in self.conf:
+                    self.conf[section] = dict()
+                for key in alt_conf[section].keys():
+                    self.conf[section][key] = alt_conf[section][key]
+
+        update_test_conf("args", alt_conf)
+        update_test_conf("expected_values", alt_conf)
+        self.logger.debug(f"Config updated for test {self.name}: {self.conf}")
+
+
     def initialize(self):
         self.result_dict["initialize"] = dict()
         self.result_dict["initialize"]["timestamp"] = get_timestamp()
