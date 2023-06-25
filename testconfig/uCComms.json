@@ -1,7 +1,7 @@
 {
-	"expected_values": {
-		"board_manager_id": "RDBM",
+    "expected_values": {
+        "board_manager_id": "RDBM",
         "board_manager_date": "2022-03-30",
-		"board_manager_version": "0.2.10"
-	}
+        "board_manager_version": "0.2.10"
+    }
 }

@@ -1,9 +1,9 @@
 {
-	"expected_values": {
-		"num_min": 1,
-		"num_max": 5
-	},
-	"args": {
-		"trials": 10
-	}
+    "expected_values": {
+        "num_min": 1,
+        "num_max": 5
+    },
+    "args": {
+        "trials": 10
+    }
 }

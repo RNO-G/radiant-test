@@ -1,7 +1,7 @@
 {
-	"expected_values": {
-		"fpga_id": "RDNT",
+    "expected_values": {
+        "fpga_id": "RDNT",
         "fpga_date": "2021-09-06",
-		"fpga_version": "0.3.3"
-	}
+        "fpga_version": "0.3.3"
+    }
 }
