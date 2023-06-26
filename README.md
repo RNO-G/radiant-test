@@ -22,7 +22,7 @@ class FPGAComms(radiant_test.Test):
 
     def initialize(self):
         super(FPGAComms, self).initialize()
-        self.result_dict["dut_uid"] = self.device.get_radiant_board_dna()
+        [...]
 ```
 
 Currently, `initialize` is used in all tests to determine and store the electronic if of the device under test (DUT). For the RADIANT board, we use the FPGA DNA as UID. (Q: is there a better electronic id to use?):
