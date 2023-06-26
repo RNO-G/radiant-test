@@ -72,7 +72,7 @@ def plot_single(data, ch):
 
 def print_results(data):
     for ch in range(radiant_test.RADIANT_NUM_CHANNELS):
-        print(get_fit_results_str(data, ch))
+        print(f"ch. {ch:2d} - {get_fit_results_str(data, ch)}")
 
 
 if __name__ == "__main__":
