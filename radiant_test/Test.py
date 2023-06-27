@@ -43,7 +43,6 @@ class Test(object):
         update_test_conf("expected_values", alt_conf)
         self.logger.debug(f"Config updated for test {self.name}: {self.conf}")
 
-
     def initialize(self):
         self.result_dict["initialize"] = dict()
         self.result_dict["initialize"]["timestamp"] = get_timestamp()
@@ -62,32 +61,49 @@ class Test(object):
             if meas["result"] != TestResult.PASS:
                 self.result = TestResult.FAIL
                 break
+        for meas in self.result_dict["run"]["measurements"].values():
+            meas["result"] = meas["result"].name
         self.result_dict["result"] = self.result.name
         self._log_result()
         self._save_result(result_dir)
 
-    def _log_result(self):
+    @staticmethod
+    def print_result(
+        name, result_dict, failed_only=False, verbose=False, print_func=print
+    ):
+        if not failed_only or result_dict["result"] == TestResult.FAIL.name:
+            print_func(f"{Test._get_colored_result(result_dict['result'])} - {name}")
+        if verbose:
+            for key in result_dict["run"]["measurements"].keys():
+                if (
+                    not failed_only
+                    or result_dict["run"]["measurements"][key]["result"]
+                    == TestResult.FAIL.name
+                ):
+                    print_func(
+                        f"   {Test._get_colored_result(result_dict['run']['measurements'][key]['result'])} - {key}"
+                    )
+
+    @staticmethod
+    def _get_colored_result(result):
         color = ""
-        if self.result == TestResult.FAIL:
+        if result == TestResult.FAIL.name:
             color = colorama.Fore.RED
-        elif self.result == TestResult.PASS:
+        elif result == TestResult.PASS.name:
             color = colorama.Fore.GREEN
-        res = (
-            f"   ===== {self.name}: "
-            + color
-            + f"{self.result.name}"
-            + colorama.Style.RESET_ALL
-            + " ====="
-        )
+        return color + result + colorama.Style.RESET_ALL
+
+    def _log_result(self):
         if self.logger.getEffectiveLevel() <= logging.INFO:
-            self.logger.info(res)
+            print_func = self.logger.info
         else:
-            print(res)
+            print_func = print
+        if self.result == TestResult.FAIL:
+            self.print_result(self.name, self.result_dict, failed_only=True, verbose=True, print_func=print_func)
+        else:
+            self.print_result(self.name, self.result_dict, failed_only=False, verbose=False, print_func=print_func)
 
     def _save_result(self, result_dir):
-        for meas in self.result_dict["run"]["measurements"].values():
-            meas["result"] = meas["result"].name
-
         dir = pathlib.Path.cwd() / result_dir
         if not dir.exists():
             dir.mkdir(parents=True)

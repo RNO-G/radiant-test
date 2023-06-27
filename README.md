@@ -100,3 +100,37 @@ It performs three measurements, reading the `BM_ID` and `BM_DATEVERSION` registe
 ```
 
 For a more complex example, see e.g. `tests/SigGenSine.py`. This test uses the RADIANT on-board sine generator with a configurable frequency to record signals on all 24 channels, perform a fit, and evaluate the fit results against the goal posts defined in `testconfig/SigGenSine.json`. (The goalposts are still preliminary, since I only have a single board for testing and don't know the full expected variation.) This test also stores the full waveforms in the results JSON file and the script `scripts/SigGenSine_plot.py` can be used to plot the data and fit for further analysis.
+
+## Inspecting results
+
+The script `scripts/results_summary.py` can be used to inspect results after testing. It accepts either directories or result JSON files as inputs.
+
+```
+usage: results_summary.py [-h] [-f] [-v] input [input ...]
+
+positional arguments:
+  input              input files or directories
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -f, --failed-only  only list failed tests
+  -v, --verbose      print result of each measurement in test
+```
+
+Usage example:
+```
+python3 scripts/results_summary.py results/RADIANT_2023-06-27T13:06:33
+FAIL - results/RADIANT_2023-06-27T13:06:33/23798969654364244_SigGenSine_90MHz_2023-06-27T13:06:34.json
+PASS - results/RADIANT_2023-06-27T13:06:33/23798969654364244_uCComms_2023-06-27T13:06:34.json
+PASS - results/RADIANT_2023-06-27T13:06:33/23798969654364244_FPGAComms_2023-06-27T13:06:34.json
+FAIL - results/RADIANT_2023-06-27T13:06:33/23798969654364244_SigGenSine_510MHz_2023-06-27T13:06:45.json
+```
+
+or
+```
+python3 scripts/results_summary.py --failed-only --verbose results/RADIANT_2023-06-27T13:06:33
+FAIL - results/RADIANT_2023-06-27T13:06:33/23798969654364244_SigGenSine_90MHz_2023-06-27T13:06:34.json
+   FAIL - 19
+FAIL - results/RADIANT_2023-06-27T13:06:33/23798969654364244_SigGenSine_510MHz_2023-06-27T13:06:45.json
+   FAIL - 19
+```
