@@ -12,6 +12,7 @@ class WindowStability(radiant_test.Test):
         self.upsampling = 0
         self.plot = False
 
+
     def initialize(self):
         super(WindowStability, self).initialize()
         self.result_dict["dut_uid"] = self.device.get_radiant_board_dna()
@@ -57,8 +58,8 @@ class WindowStability(radiant_test.Test):
         # loop over events
         for waveform, starting_window in zip(waveforms, starting_windows):
             
-            if self.upsampling:
-                waveform = scipy.signal.resample(waveform, self.upsampling * 2048)
+            if self.conf["args"]["upsampling"]:
+                waveform = scipy.signal.resample(waveform, self.conf["args"]["upsampling"] * 2048)
 
             waveform_windows = np.split(waveform, 16)
             rms_per_window = np.std(waveform_windows, axis=1)
@@ -70,9 +71,8 @@ class WindowStability(radiant_test.Test):
             
             for idx, rms in zip(idx_windows, rms_per_window):
                 rms_per_window_per_event[idx].append(rms)
-                
-        
-        if self.plot:
+
+        if self.conf["args"]["plot"]:
             
             rms_variation_per_window = np.zeros(32)
             rms_mean_per_window = np.zeros(32)
@@ -93,8 +93,10 @@ class WindowStability(radiant_test.Test):
             ax.legend()
             
             fig.savefig(f"test_{ch}.png")
+            plt.close()
             
         return rms_per_window_per_event
+
 
     def _check_data(self, rms_per_window_per_event):
         
@@ -106,7 +108,7 @@ class WindowStability(radiant_test.Test):
             
         mean_variation = np.mean(rms_variation_per_window)
         
-        passed = mean_variation < 1
+        passed = mean_variation < self.conf["expected_values"]["variation_tolerance"]
         
         return passed
     

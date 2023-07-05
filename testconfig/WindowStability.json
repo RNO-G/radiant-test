@@ -1,0 +1,11 @@
+{
+    "expected_values": {
+        "variation_tolerance": 1
+    },
+    "args": {
+        "band": 0,
+        "frequency": 90,
+        "plot": 0,
+        "upsampling": 0
+    }
+}
