@@ -5,7 +5,8 @@
     "args": {
         "band": 0,
         "frequency": 90,
-        "plot": 0,
-        "upsampling": 0
+        "upsampling": 0,
+        "num_events": 20,
+        "use_uart": 1
     }
 }
