@@ -12,6 +12,11 @@ The baseline usage is the execution of TestSets (`TestSet.py`), which are a coll
 
 A test is a class derived from `Test.py`. It typically performs a measurement, compares the result to some goalposts, and generates a PASS or FAIL outcome. Test results are stored automatically in JSON format in the `results` directory. All tests live in the `tests` directory with corresponding JSON configuration files for goalposts etc. in the `testconfig` directory. All tests can be run stand-alone outside a TestSet as `python3 tests/<name>.py`.
 
+There are three base classes for tests which are derived of each other:
+- `Test`: very abstract base class meant for developing and testing the framework logging, result storage, etc. This class doesn'r require a RADIANT board to run.
+- `RADIANTTest`: base class for tests of the RADIANT board. It will automatically fill the device-under-test field of it's results file with the RADIANT's FPGA DNA.
+- `RADIANTChannelTest`: base class derived from `RADIANTTest`. It adds an defualt `["args"]["channels"]` list to the test configuration if none is specified by the user. Tests derived from this class should limit themselves to only run on channels specified in this list. It defaults to all channels.
+
 ## The Test class
 
 Tests are run in three phases: `initialize`, `run`, and `finalize`. The idea is to use `run` for the actual test and `initialize` and `finalize` to configure / shut down the board if needed and perform tasks not considered part of the test.  All tests that implement one or more of these functions must always call explicitly the corresponding function in the parent class, e.g.

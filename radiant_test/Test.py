@@ -99,9 +99,21 @@ class Test(object):
         else:
             print_func = print
         if self.result == TestResult.FAIL:
-            self.print_result(self.name, self.result_dict, failed_only=True, verbose=True, print_func=print_func)
+            self.print_result(
+                self.name,
+                self.result_dict,
+                failed_only=True,
+                verbose=True,
+                print_func=print_func,
+            )
         else:
-            self.print_result(self.name, self.result_dict, failed_only=False, verbose=False, print_func=print_func)
+            self.print_result(
+                self.name,
+                self.result_dict,
+                failed_only=False,
+                verbose=False,
+                print_func=print_func,
+            )
 
     def _save_result(self, result_dir):
         dir = pathlib.Path.cwd() / result_dir

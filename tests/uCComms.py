@@ -2,13 +2,9 @@ import radiant_test
 import stationrc.radiant
 
 
-class uCComms(radiant_test.Test):
+class uCComms(radiant_test.RADIANTTest):
     def __init__(self):
         super(uCComms, self).__init__()
-
-    def initialize(self):
-        super(uCComms, self).initialize()
-        self.result_dict["dut_uid"] = self.device.get_radiant_board_dna()
 
     def run(self):
         super(uCComms, self).run()

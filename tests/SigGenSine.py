@@ -4,13 +4,9 @@ import scipy.optimize
 import radiant_test
 
 
-class SigGenSine(radiant_test.Test):
+class SigGenSine(radiant_test.RADIANTChannelTest):
     def __init__(self):
         super(SigGenSine, self).__init__()
-
-    def initialize(self):
-        super(SigGenSine, self).initialize()
-        self.result_dict["dut_uid"] = self.device.get_radiant_board_dna()
 
     def run(self):
         super(SigGenSine, self).run()
@@ -74,6 +70,14 @@ class SigGenSine(radiant_test.Test):
         return data
 
     def _run_quad(self, quad):
+        # Check if we need to run on any channel in this quad
+        run_quad = False
+        for ch in self.conf["args"]["channels"]:
+            if ch in radiant_test.get_channels_for_quad(quad):
+                run_quad = True
+        if not run_quad:
+            return
+
         self.device.radiant_sig_gen_off()
         self.device.radiant_sig_gen_configure(
             pulse=False, band=self.conf["args"]["band"]
@@ -87,8 +91,9 @@ class SigGenSine(radiant_test.Test):
         data = self.device.daq_record_data(num_events=1, force_trigger=True)
         event = data["data"]["WAVEFORM"][0]
         for ch in radiant_test.get_channels_for_quad(quad):
-            data = self._fit_waveform(event["radiant_waveforms"][ch])
-            self.add_measurement(f"{ch}", data, passed=self._check_fit(data))
+            if ch in self.conf["args"]["channels"]:
+                data = self._fit_waveform(event["radiant_waveforms"][ch])
+                self.add_measurement(f"{ch}", data, passed=self._check_fit(data))
         self.device.radiant_sig_gen_off()
 
 
