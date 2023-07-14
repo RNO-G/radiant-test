@@ -1,4 +1,5 @@
 import colorama
+import datetime
 import enum
 import json
 import logging
@@ -121,7 +122,7 @@ class Test(object):
             dir.mkdir(parents=True)
         with open(
             dir
-            / f'{self.result_dict["dut_uid"]}_{self.name}_{self.result_dict["initialize"]["timestamp"]}.json',
+            / f'{self.result_dict["dut_uid"]}_{self.name}_{datetime.datetime.fromtimestamp(self.result_dict["initialize"]["timestamp"]).strftime("%Y%m%dT%H%M%S")}.json',
             "w",
         ) as f:
             json.dump(self.result_dict, f, indent=4)
