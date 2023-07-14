@@ -15,7 +15,7 @@ A test is a class derived from `Test.py`. It typically performs a measurement, c
 There are three base classes for tests which are derived of each other:
 - `Test`: very abstract base class meant for developing and testing the framework logging, result storage, etc. This class doesn'r require a RADIANT board to run.
 - `RADIANTTest`: base class for tests of the RADIANT board. It will automatically fill the device-under-test field of it's results file with the RADIANT's FPGA DNA.
-- `RADIANTChannelTest`: base class derived from `RADIANTTest`. It adds an defualt `["args"]["channels"]` list to the test configuration if none is specified by the user. Tests derived from this class should limit themselves to only run on channels specified in this list. It defaults to all channels.
+- `RADIANTChannelTest`: base class derived from `RADIANTTest`. It adds an default `["args"]["channels"]` list to the test configuration if none is specified by the user. Tests derived from this class should limit themselves to only run on channels specified in this list. It defaults to all channels.
 
 ## The Test class
 
