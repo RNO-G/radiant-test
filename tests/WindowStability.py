@@ -1,13 +1,10 @@
 import radiant_test
 import numpy as np
 import scipy
-import logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-class WindowStability(radiant_test.Test):
+class WindowStability(radiant_test.RADIANTChannelTest):
     def __init__(self):
         super(WindowStability, self).__init__()
-        # self.logger.setLevel(logging.DEBUG)
         
 
     def initialize(self):

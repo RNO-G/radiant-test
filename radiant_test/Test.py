@@ -3,6 +3,8 @@ import datetime
 import enum
 import json
 import logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+
 import pathlib
 
 from .util import get_timestamp
