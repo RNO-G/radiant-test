@@ -1,5 +1,5 @@
 from .RADIANTTest import RADIANTTest
-from .radiant_helper import RADIANT_NUM_CHANNELS
+from .radiant_helper import RADIANT_NUM_CHANNELS, RADIANT_NUM_QUADS, quad_for_channel
 
 
 class RADIANTChannelTest(RADIANTTest):
@@ -17,3 +17,14 @@ class RADIANTChannelTest(RADIANTTest):
 
     def finalize(self, result_dir="results"):
         super(RADIANTChannelTest, self).finalize(result_dir)
+        
+        
+    def get_quads(self):
+        channel_ids = self.conf["args"]["channels"]
+        already_had = []
+        for channel_id in channel_ids:
+            quad =  quad_for_channel(channel_id)
+            if not quad in already_had:
+                already_had.append(quad)
+                yield quad
+        

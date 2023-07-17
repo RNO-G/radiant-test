@@ -16,6 +16,7 @@
                 "band": 2,
                 "frequency": 510
             }
-        }
+        },
+        "WindowStability": {}
     }
 }

@@ -1,0 +1,14 @@
+{
+    "expected_values": {
+        "variation_tolerance": 2,
+        "min_power": 70,
+        "max_power": 140
+    },
+    "args": {
+        "band": 0,
+        "frequency": 90,
+        "upsampling": 0,
+        "num_events": 20,
+        "use_uart": false
+    }
+}

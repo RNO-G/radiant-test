@@ -8,6 +8,7 @@
     },
     "args": {
         "band": 0,
-        "frequency": 90
+        "frequency": 90,
+        "use_uart": false
     }
 }
