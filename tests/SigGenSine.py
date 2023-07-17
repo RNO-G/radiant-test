@@ -88,7 +88,7 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
         )
         self.device.radiant_calselect(quad=quad)
 
-        data = self.device.daq_record_data(num_events=1, force_trigger=True)
+        data = self.device.daq_record_data(num_events=1, force_trigger=True, use_uart=self.conf["args"]["use_uart"])
         event = data["data"]["WAVEFORM"][0]
         for ch in radiant_test.get_channels_for_quad(quad):
             if ch in self.conf["args"]["channels"]:
