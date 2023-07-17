@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 import radiant_test
 
 
+def get_channels(data):
+    return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
+
+
 def get_fit_results_str(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
@@ -20,7 +24,7 @@ def get_fit_results_str(data, ch):
 def plot_all(data):
     # Plot to PDF
     with PdfPages("SigGenSine_plot.pdf") as pdf:
-        for ch in range(radiant_test.RADIANT_NUM_CHANNELS):
+        for ch in get_channels(data):
             fig = plt.figure()
             ax = fig.subplots()
             plot_channel(ax, data, ch, print_fit=True)
@@ -32,7 +36,7 @@ def plot_all(data):
     # Plot to screen
     fig = plt.figure()
     axs = fig.subplots(nrows=4, ncols=6)
-    for ch in range(radiant_test.RADIANT_NUM_CHANNELS):
+    for ch in get_channels(data):
         ax = axs[ch // 6][ch % 6]
         plot_channel(ax, data, ch)
     fig.tight_layout()
@@ -71,7 +75,7 @@ def plot_single(data, ch):
 
 
 def print_results(data):
-    for ch in range(radiant_test.RADIANT_NUM_CHANNELS):
+    for ch in get_channels(data):
         print(f"ch. {ch:2d} - {get_fit_results_str(data, ch)}")
 
 

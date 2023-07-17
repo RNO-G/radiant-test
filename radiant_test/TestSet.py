@@ -17,7 +17,10 @@ class TestSet(object):
             if not "base" in self.conf["tests"][key]:
                 self.add_test(getattr(module, key)(), self.conf["tests"][key])
             else:
-                self.add_test(getattr(module, self.conf["tests"][key]["base"])(), self.conf["tests"][key])
+                self.add_test(
+                    getattr(module, self.conf["tests"][key]["base"])(),
+                    self.conf["tests"][key],
+                )
                 self.tests[-1].name = key
 
     def add_test(self, test, alt_conf):

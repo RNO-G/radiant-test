@@ -2,13 +2,9 @@ import radiant_test
 import stationrc.radiant
 
 
-class FPGAComms(radiant_test.Test):
+class FPGAComms(radiant_test.RADIANTTest):
     def __init__(self):
         super(FPGAComms, self).__init__()
-
-    def initialize(self):
-        super(FPGAComms, self).initialize()
-        self.result_dict["dut_uid"] = self.device.get_radiant_board_dna()
 
     def run(self):
         super(FPGAComms, self).run()

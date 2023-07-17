@@ -1,4 +1,5 @@
 import colorama
+import datetime
 import enum
 import json
 import logging
@@ -99,9 +100,21 @@ class Test(object):
         else:
             print_func = print
         if self.result == TestResult.FAIL:
-            self.print_result(self.name, self.result_dict, failed_only=True, verbose=True, print_func=print_func)
+            self.print_result(
+                self.name,
+                self.result_dict,
+                failed_only=True,
+                verbose=True,
+                print_func=print_func,
+            )
         else:
-            self.print_result(self.name, self.result_dict, failed_only=False, verbose=False, print_func=print_func)
+            self.print_result(
+                self.name,
+                self.result_dict,
+                failed_only=False,
+                verbose=False,
+                print_func=print_func,
+            )
 
     def _save_result(self, result_dir):
         dir = pathlib.Path.cwd() / result_dir
@@ -109,7 +122,7 @@ class Test(object):
             dir.mkdir(parents=True)
         with open(
             dir
-            / f'{self.result_dict["dut_uid"]}_{self.name}_{self.result_dict["initialize"]["timestamp"]}.json',
+            / f'{self.result_dict["dut_uid"]}_{self.name}_{datetime.datetime.fromtimestamp(self.result_dict["initialize"]["timestamp"]).strftime("%Y%m%dT%H%M%S")}.json',
             "w",
         ) as f:
             json.dump(self.result_dict, f, indent=4)
