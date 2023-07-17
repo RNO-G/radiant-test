@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+  "radiant_test",
+]
+
+[project]
+name = "radiant-test"
+version = "0.0.1"
+authors = [
+  { name="Timo Karg", email="timo.karg@desy.de" },
+]
+description = "Test framework for RADIANT board production"
+requires-python = ">=3.7"
+dependencies = [
+  "colorama",
+  "matplotlib",
+  "numpy",
+  "scipy",
+  "stationrc",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
