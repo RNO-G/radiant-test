@@ -26,7 +26,7 @@ class WindowStability(radiant_test.RADIANTChannelTest):
             frequency=self.conf["args"]["frequency"]
         )
         
-        for quad in range(radiant_test.RADIANT_NUM_QUADS):
+        for quad in self.get_quads():
             self.device.radiant_calselect(quad=quad)
             self._run_quad(quad)
 
@@ -44,6 +44,9 @@ class WindowStability(radiant_test.RADIANTChannelTest):
         self.logger.info(f"... finished")
 
         for ch in radiant_test.get_channels_for_quad(quad):
+            if ch not in self.conf["args"]["channels"]:
+                continue
+            
             waveforms = np.array([ele['radiant_waveforms'][ch] for ele in data["data"]['WAVEFORM']])
             starting_windows = np.array([ele['radiant_start_windows'][ch] for ele in data["data"]['HEADER']])[:, 0]  # second number is irrelevant            
 
@@ -92,11 +95,33 @@ class WindowStability(radiant_test.RADIANTChannelTest):
             rms_variation_per_window[int(i)] = np.std(ele)
             
         mean_variation = np.mean(rms_variation_per_window)
+        min_power = np.amin(rms_mean_per_window)
+        max_power = np.amax(rms_mean_per_window)
         
-        passed = mean_variation < self.conf["expected_values"]["variation_tolerance"]
+        passed = ((mean_variation < self.conf["expected_values"]["variation_tolerance"]) and
+                  (min_power > self.conf["expected_values"]["min_power"]) and
+                  (max_power < self.conf["expected_values"]["max_power"]))
         
         return passed
     
 
 if __name__ == "__main__":
-    radiant_test.run(WindowStability)
+    
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--channels", type=int, nargs="*", default=range(radiant_test.RADIANT_NUM_CHANNELS), help="set channels")
+    parser.add_argument("-n", "--num_events", type=int, default=None, help="Set number of events to record")
+    args = parser.parse_args()
+
+    test = WindowStability()
+    if issubclass(WindowStability, radiant_test.RADIANTTest):
+        test.device = radiant_test.get_radiant()
+    test.initialize()
+
+    test.update_conf({"args": {"channels": args.channels}})
+
+    if args.num_events is not None:
+        test.update_conf({"args": {"num_events": args.num_events}})
+
+    test.run()
+    test.finalize()

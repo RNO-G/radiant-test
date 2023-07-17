@@ -18,6 +18,17 @@ def get_channels_for_quad(quad):
     return None
 
 
+def quad_for_channel(channel_id):
+    if channel_id in [0, 1, 2, 3, 12, 13, 14, 15]:
+        return 0
+    elif channel_id in [4, 5, 6, 7, 16, 17, 18, 19]:
+        return 1
+    elif channel_id in [8, 9, 10, 11, 20, 21, 22, 23]:
+        return 2
+    else:
+        raise ValueError("Invalid channel id!")
+    
+
 def get_radiant():
     global RADIANT
 

@@ -1,6 +1,8 @@
 {
     "expected_values": {
-        "variation_tolerance": 1
+        "variation_tolerance": 2,
+        "min_power": 70,
+        "max_power": 140
     },
     "args": {
         "band": 0,

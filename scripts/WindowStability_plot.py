@@ -10,11 +10,11 @@ def plot_data(data, args):
 
     # This assumes that for each channel and window the same amount of data were taken 
     # (should be half of what is configured in the test)
-    n_events = len(measurements["0"]["measured_value"]["0"])
+    first_channel = list(measurements.keys())[0]
+    n_events = len(measurements[first_channel]["measured_value"]["0"])
 
     rms_per_window_per_event = np.zeros((24, 32, n_events))
 
-    
     for ch, ch_ele in measurements.items():
         for window, window_ele in ch_ele["measured_value"].items():
             rms_per_window_per_event[int(ch), int(window)] = np.array(window_ele)
