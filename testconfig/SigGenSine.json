@@ -9,6 +9,6 @@
     "args": {
         "band": 0,
         "frequency": 90,
-        "use_uart": 0
+        "use_uart": false
     }
 }

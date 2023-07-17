@@ -7,11 +7,6 @@ class WindowStability(radiant_test.RADIANTChannelTest):
         super(WindowStability, self).__init__()
         
 
-    def initialize(self):
-        super(WindowStability, self).initialize()
-        self.result_dict["dut_uid"] = self.device.get_radiant_board_dna()
-
-
     def run(self):
         super(WindowStability, self).run()
         

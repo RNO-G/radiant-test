@@ -9,6 +9,6 @@
         "frequency": 90,
         "upsampling": 0,
         "num_events": 20,
-        "use_uart": 1
+        "use_uart": false
     }
 }
