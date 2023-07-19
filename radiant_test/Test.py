@@ -65,6 +65,10 @@ class Test(object):
         for meas in self.result_dict["run"]["measurements"].values():
             meas["result"] = meas["result"].name
         self.result_dict["result"] = self.result.name
+
+        # store config
+        self.result_dict["config"] = self.conf
+
         self._log_result()
         self._save_result(result_dir)
 

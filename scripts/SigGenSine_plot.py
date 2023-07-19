@@ -21,6 +21,16 @@ def get_fit_results_str(data, ch):
     )
 
 
+def get_rows_cols(n):
+    if n <= 9:
+        nrows = int(np.ceil(n / 3))
+        ncols = n if n < 3 else 3
+    else:
+        nrows = int(np.ceil(n / 6))
+        ncols = 6
+
+    return nrows, ncols
+
 def plot_all(data):
     # Plot to PDF
     with PdfPages("SigGenSine_plot.pdf") as pdf:
@@ -33,11 +43,16 @@ def plot_all(data):
             pdf.savefig()
             plt.close()
 
+    nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
+
     fig = plt.figure()
-    axs = fig.subplots(nrows=4, ncols=6)
+    axs = fig.subplots(nrows=nrows, ncols=ncols)
     for ch in get_channels(data):
-        ax = axs[ch // 6][ch % 6]
+        if nrows == 1:
+            ax = axs[ch % ncols]
+        else:
+            ax = axs[ch // ncols][ch % ncols]
         plot_channel(ax, data, ch)
     fig.tight_layout()
 

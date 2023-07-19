@@ -104,7 +104,7 @@ if __name__ == "__main__":
     
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--channels", type=int, nargs="*", default=range(radiant_test.RADIANT_NUM_CHANNELS), help="set channels")
+    parser.add_argument("-c", "--channels", type=int, nargs="*", default=list(range(radiant_test.RADIANT_NUM_CHANNELS)), help="set channels")
     parser.add_argument("-n", "--num_events", type=int, default=None, help="Set number of events to record")
     args = parser.parse_args()
 
