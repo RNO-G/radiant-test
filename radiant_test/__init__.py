@@ -1,3 +1,4 @@
+from .Keysight81160A import Keysight81160A
 from .RADIANTChannelTest import RADIANTChannelTest
 from .RADIANTTest import RADIANTTest
 from .Test import Test
