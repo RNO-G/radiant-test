@@ -1,0 +1,13 @@
+{
+    "expected_values": {
+        "max_weighted_differnece": 10
+    },
+    "args": {
+        "events_per_block": 1,
+        "number_of_used_events": 100,
+        "force_trigger_interval": 0.1,
+        "band": 0,
+        "frequency": 93,
+        "use_uart": false
+    }
+}

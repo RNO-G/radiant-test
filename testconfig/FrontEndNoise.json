@@ -1,0 +1,13 @@
+{
+    "expected_values": {
+        "slope_min": -1.3799866574854136,
+        "slope_max": -0.5690210026738806,
+        "offset_max": 30.750158513599605,
+        "offset_min": 25.62842497358,
+        "average_residual_max": 1.648662253080753
+    },
+    "args": {
+        "number_of_used_events": 300,
+        "force_trigger_interval": 0.1
+    }
+}
