@@ -25,6 +25,7 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
             self._run_quad(quad)
             
         self.device.radiant_sig_gen_off()
+        self.device.radiant_calselect(quad=None)
 
 
     def _check_fit(self, data):
