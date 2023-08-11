@@ -1,0 +1,13 @@
+{
+    "expected_values": {
+        "seam_sample_min": 290,
+        "seam_sample_max": 350,
+        "slow_sample_min": 0,
+        "slow_sample_max": 290,
+        "rms_max": 100
+    },
+    "args": {
+        "band": 2,
+        "frequency": 510
+    }
+}
