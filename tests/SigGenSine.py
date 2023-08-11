@@ -10,7 +10,7 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
 
     def run(self):
         super(SigGenSine, self).run()
-        
+
         self.device.radiant_sig_gen_off()
         self.device.radiant_sig_gen_configure(
             pulse=False, band=self.conf["args"]["band"]
@@ -19,13 +19,13 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
         self.device.radiant_sig_gen_set_frequency(
             frequency=self.conf["args"]["frequency"]
         )
-        
+
         for quad in self.get_quads():
             self.device.radiant_calselect(quad=quad)
             self._run_quad(quad)
-            
-        self.device.radiant_sig_gen_off()
 
+        self.device.radiant_sig_gen_off()
+        self.device.radiant_calselect(quad=None)
 
     def _check_fit(self, data):
         if (
@@ -84,14 +84,14 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
         return data
 
     def _run_quad(self, quad):
-
-        data = self.device.daq_record_data(num_events=1, force_trigger=True, use_uart=self.conf["args"]["use_uart"])
+        data = self.device.daq_record_data(
+            num_events=1, force_trigger=True, use_uart=self.conf["args"]["use_uart"]
+        )
         event = data["data"]["WAVEFORM"][0]
         for ch in radiant_test.get_channels_for_quad(quad):
-            
             if ch not in self.conf["args"]["channels"]:
                 continue
-            
+
             if ch in self.conf["args"]["channels"]:
                 data = self._fit_waveform(event["radiant_waveforms"][ch])
                 self.add_measurement(f"{ch}", data, passed=self._check_fit(data))

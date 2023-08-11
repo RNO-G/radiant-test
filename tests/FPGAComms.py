@@ -10,7 +10,7 @@ class FPGAComms(radiant_test.RADIANTTest):
         super(FPGAComms, self).run()
 
         fpga_id = stationrc.radiant.register_to_string(
-            self.device.radiant_read_register("FPGA_ID")
+            self.device.radiant_low_level_interface.read_register("FPGA_ID")
         )
         self.add_measurement(
             "fpga_id",
@@ -19,7 +19,7 @@ class FPGAComms(radiant_test.RADIANTTest):
         )
 
         fpga_date_version = stationrc.radiant.DateVersion(
-            self.device.radiant_read_register("FPGA_DATEVERSION")
+            self.device.radiant_low_level_interface.read_register("FPGA_DATEVERSION")
         ).toDict()
         self.add_measurement(
             "fpga_date",

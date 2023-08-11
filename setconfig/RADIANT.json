@@ -3,6 +3,9 @@
     "tests": {
         "uCComms": {},
         "FPGAComms": {},
+        "LAB4DTune": {},
+        "LAB4DGlitch": {},
+        "FrontEndNoise": {},
         "SigGenSine_90MHz": {
             "base": "SigGenSine",
             "args": {

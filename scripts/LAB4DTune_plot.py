@@ -9,14 +9,13 @@ def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
 
-def get_fit_results_str(data, ch):
+def get_result_str(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
     return (
-        f"amp: {data_ch['fit_amplitude']:6.1f} - "
-        + f"freq: {data_ch['fit_frequency']:6.2f} MHz - "
-        + f"offset: {data_ch['fit_offset']:6.2f} - "
-        + f"avg. residual: {data_ch['fit_avg_residual']:6.2f} - "
+        f"seam sample: {data_ch['seam_sample']:6.1f} ps - "
+        + f"slow sample: {data_ch['slow_sample']:6.1f} ps - "
+        + f"rms: {data_ch['rms']:6.2f} ps - "
         + f"result: {result}"
     )
 
@@ -34,11 +33,11 @@ def get_rows_cols(n):
 
 def plot_all(data):
     # Plot to PDF
-    with PdfPages("SigGenSine_plot.pdf") as pdf:
+    with PdfPages("LAB4DTune_plot.pdf") as pdf:
         for ch in get_channels(data):
             fig = plt.figure()
             ax = fig.subplots()
-            plot_channel(ax, data, ch, print_fit=True)
+            plot_channel(ax, data, ch, print_data=True)
             ax.set_xlabel("Time (ns)")
             ax.set_ylabel("Voltage (ADC counts)")
             pdf.savefig()
@@ -58,40 +57,38 @@ def plot_all(data):
     fig.tight_layout()
 
 
-def plot_channel(ax, data, ch, print_fit=False):
+def plot_channel(ax, data, ch, print_data=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
-    y = np.asarray(data_ch["waveform"])
-    x = np.arange(len(y)) / radiant_test.RADIANT_SAMPLING_RATE
-    ax.plot(x, y, label=f"ch {ch}")
-    ax.plot(
-        x,
-        data_ch["fit_amplitude"]
-        * np.sin(
-            2 * np.pi * data_ch["fit_frequency"] * 1e-3 * x + data_ch["fit_phase"]
-        )  # convert frequency to GHz
-        + data_ch["fit_offset"],
-        "--",
+    ax.plot(data_ch["times"], ".", label=f"ch {ch}")
+    ax.hlines(
+        1e3 / radiant_test.RADIANT_SAMPLING_RATE,
+        0,
+        len(data_ch["times"]),
+        colors="red",
+        linestyles="dashed",
     )
     ax.legend(loc="upper right")
-    if print_fit:
+    if print_data:
         ax.text(
             0.05,
             0.98,
-            get_fit_results_str(data, ch),
+            get_result_str(data, ch),
             transform=ax.transAxes,
             verticalalignment="top",
         )
+    ax.set_xlabel("Seam")
+    ax.set_ylabel("dt (ps)")
 
 
 def plot_single(data, ch):
     fig = plt.figure()
     ax = fig.subplots()
-    plot_channel(ax, data, ch, print_fit=True)
+    plot_channel(ax, data, ch, print_data=True)
 
 
 def print_results(data):
     for ch in get_channels(data):
-        print(f"ch. {ch:2d} - {get_fit_results_str(data, ch)}")
+        print(f"ch. {ch:2d} - {get_result_str(data, ch)}")
 
 
 if __name__ == "__main__":

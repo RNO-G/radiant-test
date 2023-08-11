@@ -10,7 +10,7 @@ class uCComms(radiant_test.RADIANTTest):
         super(uCComms, self).run()
 
         board_manager_id = stationrc.radiant.register_to_string(
-            self.device.radiant_read_register("BM_ID")
+            self.device.radiant_low_level_interface.read_register("BM_ID")
         )
         self.add_measurement(
             "board_manager_id",
@@ -19,7 +19,7 @@ class uCComms(radiant_test.RADIANTTest):
         )
 
         board_manager_date_version = stationrc.radiant.DateVersion(
-            self.device.radiant_read_register("BM_DATEVERSION")
+            self.device.radiant_low_level_interface.read_register("BM_DATEVERSION")
         ).toDict()
         self.add_measurement(
             "board_manager_date",
