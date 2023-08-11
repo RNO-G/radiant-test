@@ -31,6 +31,7 @@ def get_rows_cols(n):
 
     return nrows, ncols
 
+
 def plot_all(data):
     # Plot to PDF
     with PdfPages("SigGenSine_plot.pdf") as pdf:
@@ -73,7 +74,6 @@ def plot_channel(ax, data, ch, print_fit=False):
     )
     ax.legend(loc="upper right")
     if print_fit:
-        result = data["run"]["measurements"][f"{ch}"]["result"]
         ax.text(
             0.05,
             0.98,
