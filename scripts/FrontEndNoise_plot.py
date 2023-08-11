@@ -27,14 +27,14 @@ def print_result(data, channel=None):
     if channel is None:
         for ch in get_channels(data):
             print(f'---- channel: {ch} ----')
-            print(f"slope: {data['run']['measurements']['0']['measured_value']['fit_slope']}")
-            print(f"offset: {data['run']['measurements']['0']['measured_value']['fit_offset']}")
-            print(f"average residual: {data['run']['measurements']['0']['measured_value']['fit_average_residual']}")
+            print(f"slope: {data['run']['measurements'][str(ch)]['measured_value']['fit_slope']}")
+            print(f"offset: {data['run']['measurements'][str(ch)]['measured_value']['fit_offset']}")
+            print(f"average residual: {data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual']}")
     else:
         print(f'---- channel: {channel} ----')
-        print(f"slope: {data['run']['measurements']['0']['measured_value']['fit_slope']}")
-        print(f"offset: {data['run']['measurements']['0']['measured_value']['fit_offset']}")
-        print(f"average residual: {data['run']['measurements']['0']['measured_value']['fit_average_residual']}")
+        print(f"slope: {data['run']['measurements'][str(channel)]['measured_value']['fit_slope']}")
+        print(f"offset: {data['run']['measurements'][str(channel)]['measured_value']['fit_offset']}")
+        print(f"average residual: {data['run']['measurements'][str(channel)]['measured_value']['fit_average_residual']}")
 
 
 def plot_all(data):

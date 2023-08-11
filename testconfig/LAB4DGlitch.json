@@ -1,6 +1,7 @@
 {
     "expected_values": {
-        "max_weighted_differnece": 10
+        "min_points_above_threshold": 5,
+        "min_difference": 20
     },
     "args": {
         "events_per_block": 1,

@@ -21,8 +21,13 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
 
         for quad in self.get_quads():
             print(quad)
+            # select the quad for calibration (connect to the signal generator)
             self.device.radiant_calselect(quad=quad)
+            # run the test for the selected quad
             self._run_quad(quad)
+
+        # disconnect the quads from the signal generator
+        self.device.radiant_calselect(quad=None)
         
         # self._run_channels()
 
@@ -63,28 +68,24 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
                     distribution_widths[i_connection, i_channel, i_block] = np.sqrt(np.nanmean((connection_jumps[i_connection, i_channel, i_block] - np.nanmean(connection_jumps[i_connection, i_channel, i_block]))**2))
 
         save_data['voltage_differences_control'] = list(distribution_widths[0][0])
-        save_data['voltage_differneces_glitch'] = list(distribution_widths[1][0])
-
-        # calculate mean and std
-        save_data['v_diff_control_mean'] = np.mean( distribution_widths[0][0])
-        save_data['v_diff_control_std'] = np.std( distribution_widths[0][0])
-        save_data['v_diff_glitch_mean'] = np.mean( distribution_widths[1][0])
-        save_data['v_diff_glitch_std'] = np.std( distribution_widths[1][0])
+        save_data['voltage_differences_glitch'] = list(distribution_widths[1][0])
         
-        # calculate the weighted difference
-        if save_data['v_diff_control_std'] == 0 or save_data['v_diff_glitch_std'] == 0:
-            save_data['weighted_differneces'] = np.nan
-        else:
-            save_data['weighted_differneces'] = (save_data['v_diff_glitch_mean'] - save_data['v_diff_control_mean'])/(np.sqrt(save_data['v_diff_control_std']**2+save_data['v_diff_glitch_std']**2))
+        # calculate the difference
+        save_data['differences'] = list(np.asarray(save_data['voltage_differences_glitch']) - np.asarray(save_data['voltage_differences_control']))
 
-        save_data['waveform'] = wfs
+        values_above_threshold = [d for d in save_data['differences'] if d > self.conf['expected_values']['min_difference']]
+
+        save_data['points_above_threshold'] = len(values_above_threshold)
+
+        # save_data['waveform'] = wfs
 
         return save_data
 
 
     def _compare_voltage_differences(self, data):
-        if data['weighted_differneces'] > self.conf['expected_values']['max_weighted_differnece'] or data['weighted_differneces'] is np.nan:
+        if data['points_above_threshold'] > self.conf['expected_values']['min_points_above_threshold']:
             return False
+        
         return True
 
 
