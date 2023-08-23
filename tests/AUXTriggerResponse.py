@@ -12,19 +12,14 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
     def __init__(self):
         super(AUXTriggerResponse, self).__init__()
         self.awg = radiant_test.AWG4022(self.conf['args']['ip_address'])
-        
-    def initialize_signal_gen(self, channel, waveform, amplitude):
-        self.awg.output_off(channel)
-        self.awg.set_mode(channel, radiant_test.AWG4022.Mode.USER)
-        self.awg.set_waveform(channel, waveform, amplitude)
-        self.awg.set_trigger_source(channel, radiant_test.Keysight81160A.TriggerSource.CONTINUOUS)
-        self.awg.output_on(channel)
 
     def initialize_config(self, channel_test, channel_clock, threshold, run_length):
         run = stationrc.remote_control.Run(self.device)
         for ch in range(24):
             run.run_conf.radiant_threshold_initial(ch, threshold)
-
+        
+        for ch in channel_clock:
+            run.run_conf.radiant_threshold_initial(ch, 0.95)
 
         run.run_conf.radiant_load_thresholds_from_file(False)
         run.run_conf.radiant_servo_enable(False)
@@ -45,7 +40,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         self.data_dir = run.start(delete_src=True, rootify=True)
 
     def calc_trigger(self, root_file, ch_test, ch_clock):
-
         n_total = 60
         f = uproot.open(root_file)
         data = f["combined"]
@@ -60,6 +54,9 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         rf0_true = mask_radiant_trigger & mask_rf0
         rf1_true = mask_radiant_trigger & mask_rf1
         
+        read_time = np.array(data['header/readout_time'].arrays())
+        read_time = read_time['readout_time']
+        read_time_clock = read_time[rf0_true]
 
 
         index_max_amp_clock = np.argmax(np.abs(waveforms[:, ch_clock, :]), axis=1)
@@ -100,10 +97,12 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
     def run(self):
         super(AUXTriggerResponse, self).run()
-        self.initialize_signal_gen(self.conf['args']['ch_sg'], self.conf['args']['waveform'], self.conf['args']['amplitude']) #set test channel
-        self.initialize_signal_gen(self.conf['args']['ch_sg_clock'], self.conf['args']['waveform'], self.conf['args']['clock_amplitude']) #set clock channel
-        self.awg.set_burst_mode_delay(100)
-        self.awg.run_instrument()
+        self.awg.setup_aux_trigger_response_test(self.conf['args']['waveform'], 
+                                                 self.conf['args']['ch_sg'], 
+                                                 self.conf['args']['ch_sg_clock'], 
+                                                 self.conf['args']['amplitude'], 
+                                                 self.conf['args']['clock_amplitude'], 
+                                                 500)
         self.initialize_config(self.conf['args']['ch_radiant'], self.conf['args']['ch_radiant_clock'], self.conf['args']['threshold'], self.conf['args']['run_length'])
         self.calc_trigger(self.data_dir/"combined.root", self.conf['args']['ch_radiant'], self.conf['args']['ch_radiant_clock'])
         self.eval_results(self.dic)

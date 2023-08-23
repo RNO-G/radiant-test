@@ -12,17 +12,14 @@ class AbstractSignalGenerator(abc.ABC):
         EXTERNAL = enum.auto()
         INTERNAL = enum.auto()
 
-    @abc.abstractmethod
     def get_id(self):
-        pass
+        self.instrument.ask("*IDN?")
 
-    @abc.abstractmethod
     def output_off(self, channel):
-        pass
+        self.instrument.write(f"OUTP{channel} OFF")
 
-    @abc.abstractmethod
     def output_on(self, channel):
-        pass
+        self.instrument.write(f"OUTP{channel} OFF")
 
     @abc.abstractmethod
     def set_amplitude_mVpp(self, channel, amplitude):
@@ -45,5 +42,13 @@ class AbstractSignalGenerator(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def set_waveform(self, channel, waveform):
+    def set_waveform(self, channel, waveform_dic):
+        pass
+
+    @abc.abstractmethod
+    def set_delay(self, channel, delay):
+        pass
+
+    @abc.abstractmethod
+    def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock, delay):
         pass
