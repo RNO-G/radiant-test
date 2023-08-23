@@ -1,0 +1,24 @@
+{
+    "expected_values": {
+        "0.95": {
+            "num_min": 0.1,
+            "num_max": 0.8}
+        },
+        "1.00": {
+            "num_min": 0.3,
+            "num_max": 1
+        },
+        "1.05": {
+            "num_min": 0.5,
+            "num_max": 1
+        },
+    "args": {
+        "run_length": 100,
+        "waveform": "examples/template2_wo_hardwareResponse.json",
+        "amplitude": 800,
+        "threshold": 1.05,
+        "ch_sg": 1,
+        "root_filename": "front_end_response_test.root",
+        "ip_address": "192.168.0.11"
+    }
+} 
