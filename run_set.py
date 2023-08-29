@@ -10,5 +10,5 @@ args = parser.parse_args()
 
 logging.basicConfig(level=logging.DEBUG)
 
-test_set = radiant_test.TestSet(args.test_set)
+test_set = radiant_test.TestSet(args.test_set, device=radiant_test.get_radiant())
 test_set.run()
