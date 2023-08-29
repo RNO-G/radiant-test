@@ -9,11 +9,20 @@ class TestSet(object):
         self.device = device
         with open(filename, "r") as f:
             self.conf = json.load(f)
+
+        default_args = None
+        if "default_args" in self.conf:
+            default_args = self.conf["default_args"]
+
         self.name = self.conf["name"]
         self.result_dir = pathlib.Path("results") / f"{self.name}_{get_timestamp()}"
         self.tests = list()
+
         module = __import__("tests")
         for key in self.conf["tests"].keys():
+            if default_args is not None:
+                self.conf["tests"][key].update(default_args)
+ 
             if not "base" in self.conf["tests"][key]:
                 self.add_test(getattr(module, key)(), self.conf["tests"][key])
             else:
