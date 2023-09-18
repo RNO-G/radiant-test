@@ -1,0 +1,27 @@
+{
+    "name": "RADIANT",
+
+    "default_args": {
+        "args": {
+            "use_uart": true,
+            "channels": [0]
+        }
+    },
+
+    "tests": {
+        "SigGenSine_90MHz": {
+            "base": "SigGenSine",
+            "args": {
+                "band": 0,
+                "frequency": 90
+            }
+        },
+        "SigGenSine_510MHz": {
+            "base": "SigGenSine",
+            "args": {
+                "band": 2,
+                "frequency": 510
+            }
+        }
+    }
+}
