@@ -7,7 +7,7 @@ class RADIANTTest(Test):
 
     def initialize(self):
         super(RADIANTTest, self).initialize()
-        self.result_dict["dut_uid"] = f"{self.device.get_radiant_board_dna():016x}"
+        self.result_dict["dut_uid"] = f"{self.device.get_radiant_board_mcu_uid():032x}"
 
     def run(self):
         super(RADIANTTest, self).run()
