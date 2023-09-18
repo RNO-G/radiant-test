@@ -1,7 +1,6 @@
+import datetime
 import json
 import pathlib
-
-from .util import get_timestamp
 
 
 class TestSet(object):
@@ -15,14 +14,17 @@ class TestSet(object):
             default_args = self.conf["default_args"]
 
         self.name = self.conf["name"]
-        self.result_dir = pathlib.Path("results") / f"{self.name}_{get_timestamp()}"
+        self.result_dir = (
+            pathlib.Path("results")
+            / f"{self.name}_{datetime.datetime.now().strftime('%Y%m%dT%H%M%S')}"
+        )
         self.tests = list()
 
         module = __import__("tests")
         for key in self.conf["tests"].keys():
             if default_args is not None:
                 self.conf["tests"][key].update(default_args)
- 
+
             if not "base" in self.conf["tests"][key]:
                 self.add_test(getattr(module, key)(), self.conf["tests"][key])
             else:
