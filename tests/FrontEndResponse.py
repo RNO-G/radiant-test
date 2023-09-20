@@ -52,7 +52,7 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
             run.run_conf.radiant_threshold_initial(ch, threshold)
 
         run.run_conf.radiant_trigger_rf0_enable(True)
-        run.run_conf.radiant_trigger_rf0_mask(channel)
+        run.run_conf.radiant_trigger_rf0_mask([channel])
         run.run_conf.radiant_trigger_rf0_num_coincidences(1)
         run.run_conf.radiant_trigger_rf1_enable(False)
         run.run_conf.radiant_trigger_soft_enable(False)  # no forced trigger
@@ -86,7 +86,7 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
         self.awg.set_waveform(self.conf['args']['ch_sg'], self.conf['args']['waveform'])
         self.awg.set_amplitude_mVpp(self.conf['args']['ch_sg'], 800)
         self.awg.output_on(self.conf['args']['ch_sg'])
-        self.initialize_config(channel=8, threshold=self.conf['args']['threshold'])
+        self.initialize_config(channel=8, threshold=self.conf['args']['threshold'], run_length=20)
         self.eval_results(self.dic)
 
 if __name__ == "__main__":
