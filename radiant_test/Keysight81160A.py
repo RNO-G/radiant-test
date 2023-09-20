@@ -28,6 +28,17 @@ class Keysight81160A(AbstractSignalGenerator):
         self.instrument = vxi11.Instrument(ip_address)
         logging.debug(f"Connected to {self.get_id()} at address {ip_address}.")
 
+    def get_id(self):
+        self.instrument.ask("*IDN?")
+
+    @validate_channel
+    def output_off(self, channel):
+        self.instrument.write(f"OUTP{channel} OFF")
+
+    @validate_channel
+    def output_on(self, channel):
+        self.instrument.write(f"OUTP{channel} ON")
+
     @validate_channel
     def set_amplitude_mVpp(self, channel, amplitude):
         AMPLITUDE_MIN = 50
@@ -68,42 +79,43 @@ class Keysight81160A(AbstractSignalGenerator):
             raise ValueError(f"Unsupported trigger source: {source}.")
 
     @validate_channel
-    #def set_waveform(self, channel, waveform):
-    #    WAVEFORM_AMP_MIN = -1
-    #    WAVEFORM_AMP_MAX = 1
-    #    WAVEFORM_LENGTH_MAX = 131072
-
-     #   if np.min(waveform) < WAVEFORM_AMP_MIN or np.max(waveform) > WAVEFORM_AMP_MAX:
-     #       raise ValueError(
-     #           f"Only accepting waveforms with {WAVEFORM_AMP_MIN} <= amplitude <= {WAVEFORM_AMP_MAX}."
-     #       )
-     #   if len(waveform) > WAVEFORM_LENGTH_MAX:
-     #       raise ValueError(
-     #           f"Maximum waveform length is {WAVEFORM_LENGTH_MAX} samples."
-     #       )
-     #   waveform_str = [str(x) for x in waveform]
-     #   self.instrument.write(f"DATA{channel} VOLATILE {','.join(waveform_str)}")
-
     def set_waveform(self, channel, waveform_dic):
+        WAVEFORM_AMP_MIN = -1
+        WAVEFORM_AMP_MAX = 1
+        WAVEFORM_LENGTH_MAX = 131072
 
         with open(waveform_dic, "r") as f:
             dic = json.load(f)
         waveform = dic["wf"]
         freq = dic["freq_wf"]
-    
+        
+        if np.min(waveform) < WAVEFORM_AMP_MIN or np.max(waveform) > WAVEFORM_AMP_MAX:
+            raise ValueError(
+                f"Only accepting waveforms with {WAVEFORM_AMP_MIN} <= amplitude <= {WAVEFORM_AMP_MAX}."
+            )
+        if len(waveform) > WAVEFORM_LENGTH_MAX:
+            raise ValueError(
+                f"Maximum waveform length is {WAVEFORM_LENGTH_MAX} samples."
+            )
+        
         bit_range = 1
         voltage_max = np.max(np.abs(waveform))
         # works only for template 2 and 5
         scale = voltage_max/bit_range
         voltage_bit = (waveform / scale)
-        index = np.argmax(voltage_bit)
+
+        index = np.argmax(np.abs(waveform))
 
         out = ''
-        for i in voltage_bit[-200+index:index+300]:
+        for i in voltage_bit:
             out += str(i.round(4)) + ','
-        print(out)
+
         self.instrument.write(f"DATA{channel} VOLATILE, {out[:-1]}")
+
+       # waveform_str = [str(x) for x in voltage_bit[-200+index:index+300]]
+        #self.instrument.write(f"DATA{channel} VOLATILE {','.join(waveform_str)}")
         self.set_frequency_MHz(channel, freq) 
+
 
 
     def set_delay(self, channel, delay):

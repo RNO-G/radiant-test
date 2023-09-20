@@ -11,7 +11,12 @@ parser = argparse.ArgumentParser()
 class AUXTriggerResponse(radiant_test.RADIANTTest):
     def __init__(self):
         super(AUXTriggerResponse, self).__init__()
-        self.awg = radiant_test.AWG4022(self.conf['args']['ip_address'])
+        if self.site_conf['test_site'] == 'ecap':
+            self.awg = radiant_test.AWG4022(self.site_conf['signal_gen_ip_address'])
+        elif self.site_conf['test_site'] == 'desy':
+            self.awg = radiant_test.Keysight81160A(self.site_conf['signal_gen_ip_address'])
+        else:
+            raise ValueError("Invalid test_site, use desy or ecap")
 
     def initialize_config(self, channel_test, channel_clock, threshold, run_length):
         run = stationrc.remote_control.Run(self.device)
@@ -40,7 +45,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         self.data_dir = run.start(delete_src=True, rootify=True)
 
     def calc_trigger(self, root_file, ch_test, ch_clock):
-        n_total = 60
         f = uproot.open(root_file)
         data = f["combined"]
 

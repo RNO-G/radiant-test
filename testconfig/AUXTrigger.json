@@ -13,11 +13,11 @@
             "num_max": 1
         },
     "args": {
-        "run_length": 100,
-        "waveform": "examples/template2_wo_hardwareResponse.json",
-        "amplitude": 800,
-        "threshold": 0.95,
+        "run_length": 10,
+        "amplitude": 600,
+        "threshold": 1.00,
         "ch_sg": 1,
-        "root_filename": "front_end_response_test.root"
-        }
+        "root_filename": "auxtrigger_test.root",
+        "ip_address": "192.168.2.20"
+    }
 } 

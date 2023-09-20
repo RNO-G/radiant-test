@@ -12,14 +12,17 @@ class AbstractSignalGenerator(abc.ABC):
         EXTERNAL = enum.auto()
         INTERNAL = enum.auto()
 
+    @abc.abstractmethod
     def get_id(self):
-        self.instrument.ask("*IDN?")
+        pass
 
+    @abc.abstractmethod
     def output_off(self, channel):
-        self.instrument.write(f"OUTP{channel} OFF")
+        pass
 
+    @abc.abstractmethod
     def output_on(self, channel):
-        self.instrument.write(f"OUTP{channel} OFF")
+        pass
 
     @abc.abstractmethod
     def set_amplitude_mVpp(self, channel, amplitude):

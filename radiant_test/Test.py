@@ -26,6 +26,10 @@ class Test(object):
             self.conf = json.load(f)
         self.logger.debug(f"Config for test {self.name}: {self.conf}")
 
+        with open(pathlib.Path.cwd() / "setconfig" / f"SiteSet.json", "r") as f:
+            self.site_conf = json.load(f)
+        self.logger.debug(f"Test site from: {self.site_conf}")
+
     def add_measurement(self, name, value, passed):
         self.result_dict["run"]["measurements"][name] = {
             "measured_value": value,
