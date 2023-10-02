@@ -1,0 +1,11 @@
+{
+    "expected_values": {
+        "max_harmonic": 10.5,
+        "max_total": 2 
+    },
+    "args": {
+        "band": 0,
+        "frequency": 90,
+        "use_uart": false
+    }
+}
