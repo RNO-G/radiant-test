@@ -12,7 +12,7 @@ def get_figure(channels, args):
         fig, ax = plt.subplots()
         return fig, [ax]
     else:
-        fig, axs = plt.subplots(4, 6, figsize=(18, 10), sharex=True, sharey=True)
+        fig, axs = plt.subplots(4, 6, figsize=(18, 10), sharex=True, sharey=False)
         return fig, axs.flatten()
     
     
@@ -58,7 +58,7 @@ def plot_data(data, args):
         ax.fill_between(np.arange(32), mean - std, mean + std, alpha=0.3,
                             label=rf"STD: $\mu$ = {mean_variation:.2f}, $\sigma$ = {np.std(std):.2f}")
         ax.grid()
-        ax.legend(title=f"Ch {ch}", title_fontsize=10, fontsize=10)
+        ax.legend(title=f"Ch {ch}", title_fontsize=10, fontsize="small")
         
         # Create string for terminal output
         
@@ -91,7 +91,7 @@ def plot_data(data, args):
         result_str += f"{max_power:^20.2f}" + colorama.Style.RESET_ALL
         result_str += "\n"
         
-    fig.supxlabel("windows")
+    fig.supxlabel(r"$windows$")
     fig.supylabel(r"$\langle ADC \rangle \pm \sigma(ADC)$")
 
     fig.tight_layout()
@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="input JSON file")
-    parser.add_argument("-c", "--channel", type=int, help="only plot single channel")
+    parser.add_argument("-c", "--channel", type=int, nargs="*", help="only plot single channel")
     args = parser.parse_args()
     
     if re.search("WindowStability", args.input) is None:
