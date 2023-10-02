@@ -14,7 +14,8 @@ def plot_channel(ax, frequencies, measurement, ch):
     spectrum = measurement['measured_value']["spectrum"]
     thd = measurement['measured_value']["harmonic_distortion"]
     thd2 = measurement['measured_value']["harmonic_distortion2"]
-    label = f"THD(harmonics) = {thd:.3f}, THD(all) = {thd2:.3f}"
+    
+    label = f"THD(harmonics) = {thd:.3f}\nTHD(all) = {thd2:.3f}"
     ax.plot(frequencies / 1e6, spectrum, lw=1, label=label)
     ax.set_xlabel("frequenies / MHz")
     ax.set_ylabel("abs. amplitudes")
@@ -76,15 +77,16 @@ def print_result(data):
     
 def plot_data(data, args):
     
-    measurements = OrderedDict(sorted(data["run"]["measurements"].items()))
+    channels = np.sort([int(ch) for ch in data["run"]["measurements"].keys()])
+    measurements = {ch:  data["run"]["measurements"][str(ch)] for ch in channels}
     config = data["config"]
-    channels = config["args"]["channels"]
 
     frequencies = np.fft.rfftfreq(2048, 1 / 3.2e9)
     
-    file_name = os.path.basename(args.input)
+    file_name = os.path.basename(args.input).replace(".json", "")
+    file_name += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}'
     
-    with PdfPages(file_name.replace(".json", "_spectra.pdf")) as pdf:
+    with PdfPages(file_name + "_spectra.pdf") as pdf:
         for ch in measurements.keys():
             fig, ax = plt.subplots()
             if int(ch) in args.not_channel:
@@ -126,7 +128,7 @@ def plot_data(data, args):
         ax.grid()
 
     fig.tight_layout()
-    plt.savefig(file_name.replace(".json", "_thd.png"))
+    plt.savefig(file_name + "_thd.png")
     
     
 if __name__ == "__main__":
