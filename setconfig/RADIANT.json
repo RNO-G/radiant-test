@@ -13,6 +13,15 @@
                 "frequency": 90
             }
         },
+
+        "SigGenSine_300MHz": {
+            "base": "SigGenSine",
+            "args": {
+                "band": 1,
+                "frequency": 300
+            }
+        },
+
         "SigGenSine_510MHz": {
             "base": "SigGenSine",
             "args": {
@@ -20,6 +29,47 @@
                 "frequency": 510
             }
         },
-        "WindowStability": {}
+        "WindowStability_90MHz": {
+            "base": "WindowStability",
+            "args": {
+                "band": 0,
+                "frequency": 90
+            }
+        },        
+        "WindowStability_300MHz": {
+            "base": "WindowStability",
+            "args": {
+                "band": 1,
+                "frequency": 300
+            }
+        },
+        "WindowStability_510MHz": {
+            "base": "WindowStability",
+            "args": {
+                "band": 2,
+                "frequency": 510
+            }
+        },
+        "HarmonicDistortion_90MHz": {
+            "base": "HarmonicDistortion",
+            "args": {
+                "band": 0,
+                "frequency": 90
+            }
+        },        
+        "HarmonicDistortion_300MHz": {
+            "base": "HarmonicDistortion",
+            "args": {
+                "band": 1,
+                "frequency": 300
+            }
+        },
+        "HarmonicDistortion_510MHz": {
+            "base": "HarmonicDistortion",
+            "args": {
+                "band": 2,
+                "frequency": 510
+            }
+        }
     }
 }

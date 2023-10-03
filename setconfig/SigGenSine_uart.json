@@ -1,10 +1,9 @@
 {
-    "name": "RADIANT",
+    "name": "SigGenSine",
 
     "default_args": {
         "args": {
-            "use_uart": true,
-            "channels": [0]
+            "use_uart": true
         }
     },
 
@@ -18,6 +17,20 @@
         },
         "SigGenSine_510MHz": {
             "base": "SigGenSine",
+            "args": {
+                "band": 2,
+                "frequency": 510
+            }
+        },
+        "WindowStability_90MHz": {
+            "base": "WindowStability",
+            "args": {
+                "band": 0,
+                "frequency": 90
+            }
+        },
+        "WindowStability_510MHz": {
+            "base": "WindowStability",
             "args": {
                 "band": 2,
                 "frequency": 510
