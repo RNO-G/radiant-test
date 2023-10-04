@@ -46,15 +46,25 @@ def plot_all(data):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
-    fig = plt.figure()
-    axs = fig.subplots(nrows=nrows, ncols=ncols)
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(4 * ncols, 3 * nrows), sharex=True)
     for ch in get_channels(data):
         if nrows == 1:
             ax = axs[ch % ncols]
         else:
             ax = axs[ch // ncols][ch % ncols]
         plot_channel(ax, data, ch)
+        ax.set_xlabel("") # remove xlabel again
+        ax.set_ylabel("") # remove ylabel again
+        
+    for ax in axs:
+        ax[0].set_ylabel("dt (ps)")
+
+    for ax in axs.T:
+        ax[-1].set_xlabel("Seam")
+
+        
     fig.tight_layout()
+    plt.savefig("LAB4DTune_plot_all.png")
 
 
 def plot_channel(ax, data, ch, print_data=False):
@@ -107,4 +117,4 @@ if __name__ == "__main__":
         plot_all(data)
     else:
         plot_single(data, args.channel)
-    plt.show()
+    # plt.show()
