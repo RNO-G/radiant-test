@@ -3,6 +3,7 @@ from .FailingTest import FailingTest
 from .FrontEndNoise import FrontEndNoise
 from .FPGAComms import FPGAComms
 from .SigGenSine import SigGenSine
+from .HarmonicDistortion import HarmonicDistortion
 from .LAB4DGlitch import LAB4DGlitch
 from .LAB4DTune import LAB4DTune
 from .uCComms import uCComms
