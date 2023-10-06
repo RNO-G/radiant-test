@@ -9,6 +9,17 @@ import colorama
 def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
+def get_result_str_plot(data, ch):
+    data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
+    result = data["run"]["measurements"][f"{ch}"]["result"]
+    return (
+       f"seam sample: {data_ch['seam_sample']:6.1f} ps - "
+        + f"slow sample: {data_ch['slow_sample']:6.1f} ps - "
+        + f"rms: {data_ch['rms']:6.2f} ps - "
+        + f"result: {result}"
+    )
+
+
 def get_color(passed):
     if passed:
         return colorama.Fore.GREEN 
@@ -106,7 +117,7 @@ def plot_channel(ax, data, ch, print_data=False):
         ax.text(
             0.03,
             0.98,
-            get_result_str(data, ch),
+            get_result_str_plot(data, ch),
             transform=ax.transAxes,
             verticalalignment="top",
             fontsize="small"
