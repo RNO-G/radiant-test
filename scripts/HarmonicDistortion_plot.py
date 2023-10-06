@@ -83,7 +83,8 @@ def plot_data(data, args):
 
     frequencies = np.fft.rfftfreq(2048, 1 / 3.2e9)
     
-    file_name = os.path.basename(args.input).replace(".json", "")
+    # file_name = os.path.basename(args.input).replace(".json", "")
+    file_name = args.input.replace(".json", "")
     file_name += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}'
     
     with PdfPages(file_name + "_spectra.pdf") as pdf:

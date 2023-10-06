@@ -31,9 +31,14 @@ def get_rows_cols(n):
     return nrows, ncols
 
 
-def plot_all(data):
+def plot_all(data, args):
     # Plot to PDF
-    with PdfPages("LAB4DTune_plot.pdf") as pdf:
+    
+    config = data["config"]
+    file_name = args.input.replace(".json", "")
+    file_name += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}'
+    
+    with PdfPages(file_name + ".pdf") as pdf:
         for ch in get_channels(data):
             fig = plt.figure()
             ax = fig.subplots()
@@ -62,9 +67,8 @@ def plot_all(data):
     for ax in axs.T:
         ax[-1].set_xlabel("Seam")
 
-        
     fig.tight_layout()
-    plt.savefig("LAB4DTune_plot_all.png")
+    plt.savefig(file_name + "_all.png")
 
 
 def plot_channel(ax, data, ch, print_data=False):
@@ -77,14 +81,15 @@ def plot_channel(ax, data, ch, print_data=False):
         colors="red",
         linestyles="dashed",
     )
-    ax.legend(loc="upper right")
+    ax.legend(loc="lower right")
     if print_data:
         ax.text(
-            0.05,
+            0.03,
             0.98,
             get_result_str(data, ch),
             transform=ax.transAxes,
             verticalalignment="top",
+            fontsize="small"
         )
     ax.set_xlabel("Seam")
     ax.set_ylabel("dt (ps)")
@@ -114,7 +119,7 @@ if __name__ == "__main__":
         data = json.load(f)
     if args.channel == None:
         print_results(data)
-        plot_all(data)
+        plot_all(data, args)
     else:
         plot_single(data, args.channel)
     # plt.show()

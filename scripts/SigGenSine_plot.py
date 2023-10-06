@@ -48,7 +48,10 @@ def get_rows_cols(n):
 def plot_all(data, args):
     # Plot to PDF
     
-    fname = args.input.replace("json", "pdf")
+    config = data["config"]
+    fname = args.input.replace(".json", "")
+    fname += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}.pdf'
+    
     with PdfPages(fname) as pdf:
         for ch in get_channels(data):
             fig, ax = plt.subplots()
@@ -65,7 +68,7 @@ def plot_all(data, args):
 
     # Plot to screen
 
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(6 * ncols, 5 * nrows))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, figsize=(6 * ncols, 5 * nrows))
     idx = 0
     for ch in get_channels(data):
         if args.channel is not None and ch not in args.channel:
@@ -77,9 +80,10 @@ def plot_all(data, args):
             ax = axs[idx // ncols][idx % ncols]
         plot_channel(ax, data, ch)
         idx += 1
-        ax.set_xlabel("Time (ns)")
-        ax.set_ylabel("Voltage (ADC counts)")
-    
+        ax.set_ylabel("voltage / ADC counts")
+
+    for ax in axs.T:
+        ax[-1].set_xlabel("time / ns")
     
     fig.tight_layout()
     if args.channel is not None:
