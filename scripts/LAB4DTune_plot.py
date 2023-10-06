@@ -3,21 +3,41 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 
 import radiant_test
+import colorama
 
 
 def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
+def get_color(passed):
+    if passed:
+        return colorama.Fore.GREEN 
+    else:
+        return colorama.Fore.RED
 
 def get_result_str(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
-    return (
-        f"seam sample: {data_ch['seam_sample']:6.1f} ps - "
-        + f"slow sample: {data_ch['slow_sample']:6.1f} ps - "
-        + f"rms: {data_ch['rms']:6.2f} ps - "
-        + f"result: {result}"
-    )
+     
+    reset = colorama.Style.RESET_ALL
+    slow = data_ch['slow_sample']
+    seam = data_ch['seam_sample']
+    
+    expected_values = data["config"]["expected_values"]
+
+    seam_sample_min = expected_values["seam_sample_min"]
+    seam_sample_max = expected_values["seam_sample_max"]
+    slow_sample_min = expected_values["slow_sample_min"]
+    slow_sample_max = expected_values["slow_sample_max"]
+    rms_max = expected_values["rms_max"]
+    
+    out = (
+        f" {get_color(result == 'PASS')} {result} {reset} |"
+        + get_color(seam_sample_min < seam < seam_sample_max) + f"{f'{seam:6.1f} ps':^24}{reset} | "
+        + get_color(slow_sample_min < slow < slow_sample_max)+ f"{f'{slow:6.1f} ps':^21}{reset} | "
+        + get_color(data_ch['rms'] < rms_max) + f"{data_ch['rms']:6.2f} ps{reset}")
+    
+    return out
 
 
 def get_rows_cols(n):
@@ -102,8 +122,18 @@ def plot_single(data, ch):
 
 
 def print_results(data):
+    expected_values = data["config"]["expected_values"]
+
+    seam_sample_min = expected_values["seam_sample_min"]
+    seam_sample_max = expected_values["seam_sample_max"]
+    slow_sample_min = expected_values["slow_sample_min"]
+    slow_sample_max = expected_values["slow_sample_max"]
+    rms_max = expected_values["rms_max"]
+
+    print(f'{"CH":<5} | {"result":^7} | {f"{seam_sample_min} < seam sample < {seam_sample_max}":^20} | '
+          f'{f"{slow_sample_min} < slow sample < {slow_sample_max}":^20} | {f"rms < {rms_max}":^10}')
     for ch in get_channels(data):
-        print(f"ch. {ch:2d} - {get_result_str(data, ch)}")
+        print(f"{ch:<5} | {get_result_str(data, ch)}")
 
 
 if __name__ == "__main__":
