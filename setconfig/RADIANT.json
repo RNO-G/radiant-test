@@ -1,11 +1,17 @@
 {
     "name": "RADIANT",
+
+    "default_args": {
+        "args": {
+            "use_uart": true
+        }
+    },
+
     "tests": {
         "uCComms": {},
         "FPGAComms": {},
         "LAB4DTune": {},
         "LAB4DGlitch": {},
-        "FrontEndNoise": {},
         "SigGenSine_90MHz": {
             "base": "SigGenSine",
             "args": {

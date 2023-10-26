@@ -4,8 +4,8 @@
         "max_total": 2 
     },
     "args": {
-        "band": 2,
-        "frequency": 500,
-        "use_uart": false
+        "band": 0,
+        "frequency": 90,
+        "use_uart": true
     }
 }
