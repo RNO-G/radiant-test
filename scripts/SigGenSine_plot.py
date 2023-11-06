@@ -51,15 +51,20 @@ def plot_all(data, args):
     config = data["config"]
     fname = args.input.replace(".json", "")
     fname += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}.pdf'
-    
-    with PdfPages(fname) as pdf:
-        for ch in get_channels(data):
-            fig, ax = plt.subplots()
-            plot_channel(ax, data, ch, print_fit=True)
-            ax.set_xlabel("Time (ns)")
-            ax.set_ylabel("Voltage (ADC counts)")
-            pdf.savefig()
-            plt.close()
+
+    if not args.web:
+        with PdfPages(fname) as pdf:
+            for ch in get_channels(data):
+                fig, ax = plt.subplots()
+                plot_channel(ax, data, ch, print_fit=True)
+                ax.set_xlabel("Time (ns)")
+                ax.set_ylabel("Voltage (ADC counts)")
+                if 1:
+                    for i in range(16):
+                        ax.axvline(128 * i / 3.2, color="k", lw=1, zorder=0)
+                
+                pdf.savefig()
+                plt.close()
 
     if args.channel is None:
         nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
@@ -68,7 +73,7 @@ def plot_all(data, args):
 
     # Plot to screen
 
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, figsize=(6 * ncols, 5 * nrows))
+    fig2, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, figsize=(6 * ncols, 5 * nrows))
     idx = 0
     for ch in get_channels(data):
         if args.channel is not None and ch not in args.channel:
@@ -85,12 +90,14 @@ def plot_all(data, args):
     for ax in axs.T:
         ax[-1].set_xlabel("time / ns")
     
-    fig.tight_layout()
-    if args.channel is not None:
-        plt.savefig(fname.replace(".pdf", "_" + "_".join([str(c) for c in args.channel]) + ".pdf"))
-    else:
-        plt.savefig(fname.replace(".pdf", "_all_channels.pdf"))
+    fig2.tight_layout()
+    if not args.web:
+        if args.channel is not None:
+            plt.savefig(fname.replace(".pdf", "_" + "_".join([str(c) for c in args.channel]) + ".pdf"))
+        else:
+            plt.savefig(fname.replace(".pdf", "_all_channels.pdf"))
 
+    return fig2
 
 def plot_channel(ax, data, ch, print_fit=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
@@ -139,10 +146,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, nargs="*", help="only plot single channel")
+    parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
     args = parser.parse_args()
 
     with open(args.input, "r") as f:
         data = json.load(f)
+        
+    if args.web:
+        return plot_all(data, args)
+
                 
     # if args.channel == None:
     print_results(data)
