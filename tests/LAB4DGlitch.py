@@ -20,7 +20,7 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
         )
 
         for quad in self.get_quads():
-            print(quad)
+
             # select the quad for calibration (connect to the signal generator)
             self.device.radiant_calselect(quad=quad)
             # run the test for the selected quad
@@ -104,7 +104,7 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
         data = self.device.daq_record_data(num_events=self.conf['args']['number_of_used_events'], force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'], use_uart=self.conf["args"]["use_uart"])
         waveforms = data["data"]["WAVEFORM"]
         for ich, ch in enumerate(radiant_test.get_channels_for_quad(quad)):
-            print(ich, ch)
+
             if ch not in self.conf["args"]["channels"]:
                 continue
             
