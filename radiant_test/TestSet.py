@@ -24,6 +24,9 @@ class TestSet(object):
         for key in self.conf["tests"].keys():
             if default_args is not None:
                 for key2 in default_args:
+                    if key2 not in self.conf["tests"][key]:
+                        self.conf["tests"][key][key2] = {}  
+                        
                     self.conf["tests"][key][key2].update(default_args[key2])
 
             if not "base" in self.conf["tests"][key]:
