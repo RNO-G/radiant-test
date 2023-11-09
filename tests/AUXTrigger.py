@@ -48,21 +48,30 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
     def calc_trigger(self, root_file, channel, run_length):
         f = uproot.open(root_file)
         data = f["combined"]
-        has_surface = np.array(data['header/trigger_info/trigger_info.radiant_trigger'])
+
+        has_surface = data['header/trigger_info/trigger_info.radiant_trigger'].array() == True
+        mask_rf0 = data['header/trigger_info/trigger_info.which_radiant_trigger'].array() == 0
+        rf0_true = has_surface & mask_rf0
+
         waveforms = np.array(data['waveforms/radiant_data[24][2048]'])  #events, channels, samples
         thresholds = np.array(data['daqstatus/radiant_thresholds[24]'])
         thresh = np.round(thresholds[:, channel]*2.5/(2**24-1),2)[10]
         
         index_max_amp = np.argmax(np.abs(waveforms[:,channel,:]), axis=1)
         pulse_correct = (1450 < index_max_amp) & (index_max_amp < 1750)
-        surface_pulse = has_surface & pulse_correct
+        surface_pulse = rf0_true & pulse_correct
 
-        trig_eff = waveforms[surface_pulse,channel,:].shape[0] / run_length
+        trig_eff = waveforms[surface_pulse, channel,:].shape[0] / run_length
+        trigger_eff_err = np.sqrt(waveforms[surface_pulse, channel,:].shape[0]) / run_length
+        if trigger_eff_err == 0:
+            trigger_eff_err = np.nan
+
         max_amp = (np.max(np.abs(waveforms[surface_pulse,channel,:]), axis=1))
-        snr = max_amp / (np.sqrt(np.mean(waveforms[surface_pulse,channel:1000]**2, axis=1)))
+        snr = max_amp /np.std(waveforms[surface_pulse,channel,:1000]**2, axis=1)
 
         self.dic = {}
         self.dic['trig_eff'] = trig_eff
+        self.dic['trigger_eff_err'] = trigger_eff_err
         self.dic['snr'] = snr
         self.dic['threshold'] = thresh
         self.dic['root_dir'] = root_file
@@ -81,6 +90,7 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
 
     def run(self):
         super(AUXTrigger, self).run()
+        #TODO initialize signal gen
         self.initialize_config(self.conf['args']['ch_radiant_under_test'], self.conf['args']['ch_radiant_clock'], self.conf['args']['trigger_threshold'])
         self.calc_trigger(self.data_dir, self.conf['args']['ch_radiant_under_test'], self.conf['args']['ch_radiant_clock'], self.conf['args']['run_length'])
         self.eval_results(self.dic)
