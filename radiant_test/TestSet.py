@@ -23,7 +23,8 @@ class TestSet(object):
         module = __import__("tests")
         for key in self.conf["tests"].keys():
             if default_args is not None:
-                self.conf["tests"][key].update(default_args)
+                for key2 in default_args:
+                    self.conf["tests"][key][key2].update(default_args[key2])
 
             if not "base" in self.conf["tests"][key]:
                 self.add_test(getattr(module, key)(), self.conf["tests"][key])
