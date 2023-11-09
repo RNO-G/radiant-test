@@ -81,7 +81,7 @@ class FrontEndNoise(radiant_test.RADIANTChannelTest):
         data = self.device.daq_record_data(
             num_events=self.conf['args']['number_of_used_events'], force_trigger=True, 
             force_trigger_interval=self.conf['args']['force_trigger_interval'],
-            use_uart=self.conf['args']['uart'])
+            use_uart=self.conf['args']['use_uart'])
         
         waveforms = data["data"]["WAVEFORM"]
         self.logger.info(f"Data taking done")
