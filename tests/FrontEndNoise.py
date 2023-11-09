@@ -34,7 +34,7 @@ class FrontEndNoise(radiant_test.RADIANTChannelTest):
     def _fit_average_spectrum(self, data):
         # define a linear fit function
         def linear_func(x, a, b):
-            return x*a + b
+            return x * a + b
         
         def fit_linear_func(frequency, spectrum):
                 popt, pcov = curve_fit(linear_func, frequency, spectrum)
@@ -61,10 +61,12 @@ class FrontEndNoise(radiant_test.RADIANTChannelTest):
     
 
     def _check_fit(self, data):
-        if data['fit_slope'] > self.conf["expected_values"]["slope_max"] or data['fit_slope'] < self.conf["expected_values"]["slope_min"]:
+        if data['fit_slope'] > self.conf["expected_values"]["slope_max"] or \
+            data['fit_slope'] < self.conf["expected_values"]["slope_min"]:
             return False
         
-        if data['fit_offset'] > self.conf["expected_values"]["offset_max"] or data['fit_offset'] < self.conf["expected_values"]["offset_min"]:
+        if data['fit_offset'] > self.conf["expected_values"]["offset_max"] or \
+            data['fit_offset'] < self.conf["expected_values"]["offset_min"]:
             return False
         
         if data['fit_average_residual'] > self.conf["expected_values"]["average_residual_max"]:
@@ -76,7 +78,10 @@ class FrontEndNoise(radiant_test.RADIANTChannelTest):
     def _run_channels(self):
         self.logger.info(f"Start data taking")
         
-        data = self.device.daq_record_data(num_events=self.conf['args']['number_of_used_events'], force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'])
+        data = self.device.daq_record_data(
+            num_events=self.conf['args']['number_of_used_events'], force_trigger=True, 
+            force_trigger_interval=self.conf['args']['force_trigger_interval'],
+            use_uart=self.conf['args']['uart'])
         
         waveforms = data["data"]["WAVEFORM"]
         self.logger.info(f"Data taking done")
