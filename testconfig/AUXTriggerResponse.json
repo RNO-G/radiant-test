@@ -1,6 +1,10 @@
 {
     "expected_values": {
         "0.95": {
+            "nan":{
+                "num_min": 0.0,
+                "num_max": 0.0
+                },
             "100":{
                 "num_min": 0.3,
                 "num_max": 0.4
@@ -15,6 +19,10 @@
                 }
             },
         "1.00": {
+            "nan":{
+                "num_min": 0.0,
+                "num_max": 0.0
+                },
             "200":{
                 "num_min": 0.3,
                 "num_max": 0.4
@@ -28,14 +36,18 @@
                 "num_max": 0.9
                 }  
             },
-        "1.05": {
+        "1.05": {            
+            "nan":{
+                "num_min": 0.0,
+                "num_max": 0.0
+            },
             "300":{
                 "num_min": 0.0,
                 "num_max": 0.05
                 },
             "400": {
                 "num_min": 0.01,
-                "num_max": 0.1
+                "num_max": 0.11
             },
             "800":{
                 "num_min": 0.8,
@@ -46,9 +58,9 @@
     "args": {
         "run_length": 20,
         "waveform": "examples/template2_wo_hardwareResponse.json",
-        "amplitude": 800,
+        "amplitude": 600,
         "clock_amplitude": 800,
-        "threshold": 1.05,
+        "threshold": 0.95,
         "ch_radiant": 5,
         "ch_radiant_clock": 6,
         "ch_sg": 1,

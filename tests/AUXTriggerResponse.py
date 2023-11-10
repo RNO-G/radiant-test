@@ -73,9 +73,11 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         max_amp = (np.max(np.abs(waveforms[rf0_pulse,ch_test,:]), axis=1))
         snr = max_amp / np.std(waveforms[rf0_pulse,ch_test,:1000], axis=1)
 
-        amp_bins = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-        ref_amp = min(amp_bins, key=lambda x: abs(x - np.max(max_amp)))
-        print('ref_amp', ref_amp)
+        amp_bins = [0, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+        if len(max_amp) > 0:
+            ref_amp = min(amp_bins, key=lambda x: abs(x - np.max(max_amp)))
+        else:
+             ref_amp = np.nan
 
         self.dic = {}
         self.dic['trig_eff'] = trig_eff
@@ -104,6 +106,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
     def run(self):
         super(AUXTriggerResponse, self).run()
+        self.device.radiant_calselect(quad=None) #make sure calibration is off
         self.initialize_signal_gen(self.conf['args']['waveform'], 
                                     self.conf['args']['ch_sg'], 
                                     self.conf['args']['ch_sg_clock'], 
@@ -117,6 +120,8 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                           self.conf['args']['ch_radiant_clock'],
                           self.conf['args']['run_length'])
         self.eval_results(self.dic)
+        self.awg.output_off(self.conf['args']['ch_sg'])
+        self.awg.output_off(self.conf['args']['ch_sg_clock'])
 
 if __name__ == "__main__":
     radiant_test.run(AUXTriggerResponse)
