@@ -47,11 +47,3 @@ class AbstractSignalGenerator(abc.ABC):
     @abc.abstractmethod
     def set_waveform(self, channel, waveform_dic):
         pass
-
-    @abc.abstractmethod
-    def set_delay(self, channel, delay):
-        pass
-
-    @abc.abstractmethod
-    def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock, delay):
-        pass

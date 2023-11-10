@@ -1,28 +1,58 @@
 {
     "expected_values": {
         "0.95": {
-            "num_min": 0.1,
-            "num_max": 0.8}
-        },
+            "100":{
+                "num_min": 0.3,
+                "num_max": 0.4
+                },
+            "400":{
+                "num_min": 0.8,
+                "num_max": 0.9
+                },
+            "600":{
+                "num_min": 0.8,
+                "num_max": 0.9
+                }
+            },
         "1.00": {
-            "num_min": 0.3,
-            "num_max": 1
-        },
+            "200":{
+                "num_min": 0.3,
+                "num_max": 0.4
+                },
+            "400": {
+                "num_min": 0.65,
+                "num_max": 0.85
+               },
+            "600":{
+                "num_min": 0.8,
+                "num_max": 0.9
+                }  
+            },
         "1.05": {
-            "num_min": 0.5,
-            "num_max": 1
-        },
+            "300":{
+                "num_min": 0.0,
+                "num_max": 0.05
+                },
+            "400": {
+                "num_min": 0.01,
+                "num_max": 0.1
+            },
+            "800":{
+                "num_min": 0.8,
+                "num_max": 0.9
+                }
+        }
+    },
     "args": {
-        "run_length": 60,
+        "run_length": 20,
         "waveform": "examples/template2_wo_hardwareResponse.json",
-        "amplitude": 600,
+        "amplitude": 800,
         "clock_amplitude": 800,
-        "threshold": 0.95,
-        "ch_radiant": [8],
-        "ch_radiant_clock": [0],
+        "threshold": 1.05,
+        "ch_radiant": 5,
+        "ch_radiant_clock": 6,
         "ch_sg": 1,
         "ch_sg_clock": 2,
-        "root_filename": "auxtrigger_response_test.root",
-        "ip_address": "192.168.1.20"
+        "root_filename": "auxtrigger_response_test.root"
     }
 } 
