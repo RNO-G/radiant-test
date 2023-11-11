@@ -1,4 +1,4 @@
 {
     "test_site": "desy",
-    "signal_gen_ip_address": "192.168.0.11"
+    "signal_gen_ip_address": "192.168.1.11"
 } 

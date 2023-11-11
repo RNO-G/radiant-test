@@ -24,7 +24,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         self.awg.set_waveform(ch_signal, waveform)  
         self.awg.set_amplitude_mVpp(ch_signal, amp_sig)
         self.awg.set_amplitude_mVpp(ch_clock, amp_clock)
-        self.awg.set_frequency()
         for ch in [ch_signal, ch_clock]:
             self.awg.output_on(ch)
 
@@ -36,7 +35,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         run.run_conf.radiant_load_thresholds_from_file(False)
         run.run_conf.radiant_servo_enable(False)
 
-        run.run_conf.radiant_trigger_rf0_mask(channel_test)
+        run.run_conf.radiant_trigger_rf0_mask([channel_test])
         run.run_conf.radiant_trigger_rf0_num_coincidences(1)
         run.run_conf.radiant_trigger_rf0_enable(True)
 
@@ -49,7 +48,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         self.data_dir = run.start(delete_src=True, rootify=True)
 
     def calc_trigger(self, root_file, ch_test, ch_clock, run_length):
-        #load data
         f = uproot.open(root_file)
         data = f["combined"]
 
@@ -66,7 +64,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
         clock_amp = (np.max(np.abs(waveforms[:, ch_clock, :]), axis=1)) > 200
         rf0_pulse = rf0_true & pulse_test_correct & clock_amp
-    
+        print(f'{waveforms[rf0_pulse,ch_test,:].shape[0]} total trigger in {run_length} seconds')
         trig_eff = waveforms[rf0_pulse,ch_test,:].shape[0] / run_length
         trigger_eff_err = np.sqrt(waveforms[rf0_pulse,ch_test,:].shape[0]) / run_length
         if trigger_eff_err == 0:
@@ -75,21 +73,32 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         max_amp = (np.max(np.abs(waveforms[rf0_pulse,ch_test,:]), axis=1))
         snr = max_amp / np.std(waveforms[rf0_pulse,ch_test,:1000], axis=1)
 
-        
+        amp_bins = [0, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+        if len(max_amp) > 0:
+            ref_amp = min(amp_bins, key=lambda x: abs(x - np.max(max_amp)))
+        else:
+             ref_amp = np.nan
+
         self.dic = {}
         self.dic['trig_eff'] = trig_eff
         self.dic['trigger_eff_err'] = trigger_eff_err
-        self.dic['snr'] = snr
+        #self.dic['snr'] = snr #if needed, add to json not as np array or change json to accept np array
         self.dic['threshold'] = thresh
-        self.dic['root_dir'] = root_file
-    
+        self.dic['root_dir'] = str(root_file)
+        self.dic['ref_amp'] = ref_amp
+        print('dic', self.dic)
+
     def eval_results(self, data):
         passed = False
+        print('data', data)
 
-        threshold = data['threshold']
+        threshold = f'{data["threshold"]:.2f}'
+        ref_amp = str(data['ref_amp'])
+
+
         if (
-            data['trig_eff'] >= self.conf["expected_values"][threshold]["num_min"]
-            and data['trig_eff'] < self.conf["expected_values"][threshold]["num_max"]
+            data['trig_eff'] >= self.conf["expected_values"][threshold][ref_amp]["num_min"]
+            and data['trig_eff'] < self.conf["expected_values"][threshold][ref_amp]["num_max"]
         ):
             passed = True
         
@@ -97,14 +106,13 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
     def run(self):
         super(AUXTriggerResponse, self).run()
+        self.device.radiant_calselect(quad=None) #make sure calibration is off
         self.initialize_signal_gen(self.conf['args']['waveform'], 
                                     self.conf['args']['ch_sg'], 
                                     self.conf['args']['ch_sg_clock'], 
                                     self.conf['args']['amplitude'], 
-                                    self.conf['args']['clock_amplitude'], 
-                                    500)
+                                    self.conf['args']['clock_amplitude'])
         self.initialize_config(self.conf['args']['ch_radiant'], 
-                               self.conf['args']['ch_radiant_clock'], 
                                self.conf['args']['threshold'], 
                                self.conf['args']['run_length'])
         self.calc_trigger(self.data_dir/"combined.root", 
@@ -112,6 +120,8 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                           self.conf['args']['ch_radiant_clock'],
                           self.conf['args']['run_length'])
         self.eval_results(self.dic)
+        self.awg.output_off(self.conf['args']['ch_sg'])
+        self.awg.output_off(self.conf['args']['ch_sg_clock'])
 
 if __name__ == "__main__":
     radiant_test.run(AUXTriggerResponse)

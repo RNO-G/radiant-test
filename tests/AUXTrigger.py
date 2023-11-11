@@ -12,22 +12,20 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
     def __init__(self):
         super(AUXTrigger, self).__init__()
 
-    def on_board_signal_gen(self, channel, waveform, amplitude):
+    def initialze_on_board_signal_gen(self, band, freq, channel):
         self.device.radiant_sig_gen_off()
-        self.device.radiant_sig_gen_configure(
-            pulse=False, band=self.conf["args"]["band"]
-        )
+        self.device.radiant_sig_gen_configure(pulse=False, band=band)
         self.device.radiant_sig_gen_on()
-        self.device.radiant_sig_gen_set_frequency(
-            frequency=self.conf["args"]["frequency"]
-        )
+        self.device.radiant_sig_gen_set_frequency(frequency=freq)
 
-        for quad in self.get_quads():
-            self.device.radiant_calselect(quad=quad)
-            self._run_quad(quad)
+        if channel in np.arange(0,8,1):
+            quad = 1
+        elif channel in np.arange(8,16,1):
+            quad = 2
+        elif channel in np.arange(16,24,1):
+            quad = 3
+        self.device.radiant_calselect(quad=quad)
 
-        self.device.radiant_sig_gen_off()
-        self.device.radiant_calselect(quad=None)
 
     def initialize_config(self, channel, threshold, run_length):
         run = stationrc.remote_control.Run(self.device)
@@ -35,7 +33,7 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
             run.run_conf.radiant_threshold_initial(ch, threshold)
 
         run.run_conf.radiant_trigger_rf0_enable(True)
-        run.run_conf.radiant_trigger_rf0_mask(channel)
+        run.run_conf.radiant_trigger_rf0_mask([channel])
         run.run_conf.radiant_trigger_rf0_num_coincidences(1)
         run.run_conf.radiant_trigger_rf1_enable(False)
         run.run_conf.radiant_trigger_soft_enable(False)  # no forced trigger
@@ -72,14 +70,14 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
         self.dic = {}
         self.dic['trig_eff'] = trig_eff
         self.dic['trigger_eff_err'] = trigger_eff_err
-        self.dic['snr'] = snr
+        #self.dic['snr'] = snr
         self.dic['threshold'] = thresh
         self.dic['root_dir'] = root_file
     
     def eval_results(self, data):
         passed = False
 
-        threshold = data['threshold']
+        threshold = f'{data["threshold"]:.2f}'
         if (
             data['trig_eff'] >= self.conf["expected_values"][threshold]["num_min"]
             and data['trig_eff'] < self.conf["expected_values"][threshold]["num_max"]
@@ -90,10 +88,14 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
 
     def run(self):
         super(AUXTrigger, self).run()
-        #TODO initialize signal gen
-        self.initialize_config(self.conf['args']['ch_radiant_under_test'], self.conf['args']['ch_radiant_clock'], self.conf['args']['trigger_threshold'])
-        self.calc_trigger(self.data_dir, self.conf['args']['ch_radiant_under_test'], self.conf['args']['ch_radiant_clock'], self.conf['args']['run_length'])
+        self.initialze_on_board_signal_gen(self.conf["args"]["band"], self.conf["args"]["band"], self.conf['args']['ch_radiant'])
+        self.initialize_config(self.conf['args']['ch_radiant'], 
+                               self.conf['args']['threshold'], 
+                               self.conf['args']['run_length'])
+        self.calc_trigger(self.data_dir/"combined.root", self.conf['args']['ch_radiant'], self.conf['args']['run_length'])
         self.eval_results(self.dic)
+        self.device.radiant_sig_gen_off()
+        self.device.radiant_calselect(quad=None)
 
 if __name__ == "__main__":
     radiant_test.run(AUXTrigger)
