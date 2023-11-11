@@ -1,0 +1,8 @@
+{
+    "expected_values": {
+        "radiant_voltage_min": 4950,
+        "radiant_voltage_max": 5050,
+        "radiant_current_min": 3000,
+        "radiant_current_max": 4000
+    }
+}
