@@ -1,23 +1,41 @@
 {
     "expected_values": {
         "0.95": {
-            "num_min": 0.1,
-            "num_max": 0.8}
+            "80": {
+                "num_min": 34,
+                "num_max": 35
+            },
+            "650": {
+                "num_min": 23,
+                "num_max": 25
+            }
         },
-        "1.00": {
-            "num_min": 0.3,
-            "num_max": 1
+        "1.00": {            
+            "80": {
+                "num_min": 32,
+                "num_max": 34
+            },
+            "650": {
+                "num_min": 34,
+                "num_max": 36
+            }
         },
-        "1.05": {
-            "num_min": 0.5,
-            "num_max": 1
-        },
+        "1.05": {            
+            "80": {
+                "num_min": 34,
+                "num_max": 36
+            },
+            "650": {
+                "num_min": 32,
+                "num_max": 34
+            }
+        }
+    },
     "args": {
-        "band": 0,
-        "freq": 200,
+        "freq": 80,
         "run_length": 10,
-        "threshold": 0.95,
-        "ch_radiant": 5,
+        "threshold": 1.05,
+        "ch_radiant": 16,
         "root_filename": "auxtrigger_test.root"
     }
 } 

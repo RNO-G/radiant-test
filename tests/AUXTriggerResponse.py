@@ -53,7 +53,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
         waveforms = np.array(data['waveforms/radiant_data[24][2048]'])  #events, channels, samples
         thresholds = np.array(data['daqstatus/radiant_thresholds[24]'])
-        thresh = np.round(thresholds[:, ch_test]*2.5/(2**24-1),2)[10]
+        thresh = np.round(thresholds[0, ch_test]*2.5/(2**24-1),2) # select threshold of first event and test channel 
 
         has_surface = data['header/trigger_info/trigger_info.radiant_trigger'].array() == True
         mask_rf0 = data['header/trigger_info/trigger_info.which_radiant_trigger'].array() == 0
