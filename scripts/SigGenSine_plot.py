@@ -151,10 +151,6 @@ if __name__ == "__main__":
 
     with open(args.input, "r") as f:
         data = json.load(f)
-        
-    if args.web:
-        return plot_all(data, args)
-
                 
     # if args.channel == None:
     print_results(data)

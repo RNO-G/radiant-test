@@ -36,7 +36,7 @@ def print_result(data, channel=None):
         print(f'points above threshold: {data["run"]["measurements"][f"{channel}"]["measured_value"]["points_above_threshold"]}')
     
 
-def plot_all(data):
+def plot_all(data, args):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
@@ -49,6 +49,9 @@ def plot_all(data):
             ax = axs[ch // ncols][ch % ncols]
         plot_channel(ax, data, ch)
     fig.tight_layout()
+
+    if args.web:
+        return fig
 
 
 def plot_all_diff(data):
@@ -103,12 +106,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, help="only plot single channel")
+    parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
     args = parser.parse_args()
 
     with open(args.input, "r") as f:
         data = json.load(f)
     if args.channel == None:
-        plot_all(data)
+        plot_all(data, args)
         plot_all_diff(data)
         print_result(data)
     else:
