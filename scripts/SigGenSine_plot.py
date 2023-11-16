@@ -2,7 +2,6 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 
-import radiant_test
 import colorama
 
 
@@ -102,7 +101,7 @@ def plot_all(data, args):
 def plot_channel(ax, data, ch, print_fit=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     y = np.asarray(data_ch["waveform"])
-    x = np.arange(len(y)) / radiant_test.RADIANT_SAMPLING_RATE
+    x = np.arange(len(y)) / (data['radiant_sample_rate']/1000)
     ax.plot(x, y, label=f"ch {ch}", lw=1)
     ax.plot(
         x,

@@ -2,8 +2,6 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 
-import radiant_test
-
 def get_rows_cols(n):
     if n <= 9:
         nrows = int(np.ceil(n / 3))
