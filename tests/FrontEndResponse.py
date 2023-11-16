@@ -6,6 +6,11 @@ import stationrc.remote_control
 import numpy as np
 import uproot
 import scipy
+from __future__ import absolute_import, division, print_function
+import numpy as np
+import fractions
+import decimal
+import scipy.signal
 
 parser = argparse.ArgumentParser()
 
@@ -62,11 +67,13 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
         run.run_conf.comment("FrontEndResponse Test")
         self.data_dir = run.start(delete_src=True, rootify=True)
 
+
     def calc_response(self, root_file):
         template_time, template_wf = self.get_template_input(self.conf['args']['waveform'])
         f = uproot.open(root_file)
         data = f["combined"]
         waveforms = np.array(data['waveforms/radiant_data[24][2048]'])  #events, channels, samples
+        #time = np.arange(0,len(waveforms),1)/3.2
         cc = scipy.signal.correlate(waveforms, self.conf['args']['waveform'])
 
     def eval_results(self, data):

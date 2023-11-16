@@ -64,7 +64,12 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
             avg_residual = np.sum(np.abs(wvf - sine(np.asarray(wvf), *popt))) / len(wvf)
             return popt, avg_residual
 
-        popt, avg_residual = fit_sine(wvf)
+        try:
+            popt, avg_residual = fit_sine(wvf)
+        except ValueError:
+            popt = [0, 0, 0, 0]
+            avg_residual = 0
+            
         data = dict()
         data["waveform"] = wvf
         data["fit_amplitude"] = (
