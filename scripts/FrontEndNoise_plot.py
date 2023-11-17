@@ -21,13 +21,23 @@ def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
 
-def print_result(data, channel=None):
+def print_result(data, channel=None, web=False):
+    if web:
+        web_dict = {'channel': [], 'result': [],'slope': [], 'offset': [], 'average residual': []}
+
     if channel is None:
         for ch in get_channels(data):
             print(f'---- channel: {ch} ----')
             print(f"slope: {data['run']['measurements'][str(ch)]['measured_value']['fit_slope']}")
             print(f"offset: {data['run']['measurements'][str(ch)]['measured_value']['fit_offset']}")
             print(f"average residual: {data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual']}")
+
+            if web:
+                web_dict['channel'].append(ch)
+                web_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+                web_dict['slope'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_slope'])
+                web_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
+                web_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual'])
     else:
         print(f'---- channel: {channel} ----')
         print(f"slope: {data['run']['measurements'][str(channel)]['measured_value']['fit_slope']}")
@@ -35,7 +45,7 @@ def print_result(data, channel=None):
         print(f"average residual: {data['run']['measurements'][str(channel)]['measured_value']['fit_average_residual']}")
 
 
-def plot_all(data, args):
+def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
@@ -49,7 +59,7 @@ def plot_all(data, args):
         plot_channel(ax, data, ch)
     fig.tight_layout()
 
-    if args.web:
+    if args_web:
         return fig
 
 
@@ -85,7 +95,7 @@ if __name__ == "__main__":
     with open(args.input, "r") as f:
         data = json.load(f)
     if args.channel == None:
-        plot_all(data, args)
+        plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
         print_result(data)
     else:
         plot_single(data, args.channel)

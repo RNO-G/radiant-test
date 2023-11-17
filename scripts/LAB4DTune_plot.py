@@ -62,22 +62,21 @@ def get_rows_cols(n):
     return nrows, ncols
 
 
-def plot_all(data, args):
+def plot_all(data, args_input="", args_channel=None, args_web=False):
     # Plot to PDF
-    
-    config = data["config"]
-    file_name = args.input.replace(".json", "")
-    file_name += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}'
-    
-    with PdfPages(file_name + ".pdf") as pdf:
-        for ch in get_channels(data):
-            fig = plt.figure()
-            ax = fig.subplots()
-            plot_channel(ax, data, ch, print_data=True)
-            ax.set_xlabel("Time (ns)")
-            ax.set_ylabel("Voltage (ADC counts)")
-            pdf.savefig()
-            plt.close()
+    if not args_web:
+        config = data["config"]
+        file_name = args_input.replace(".json", "")
+        file_name += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}'
+        with PdfPages(file_name + ".pdf") as pdf:
+            for ch in get_channels(data):
+                fig = plt.figure()
+                ax = fig.subplots()
+                plot_channel(ax, data, ch, print_data=True)
+                ax.set_xlabel("Time (ns)")
+                ax.set_ylabel("Voltage (ADC counts)")
+                pdf.savefig()
+                plt.close()
 
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
@@ -99,8 +98,10 @@ def plot_all(data, args):
         ax[-1].set_xlabel("Seam")
 
     fig.tight_layout()
-    plt.savefig(file_name + "_all.png")
-
+    if not args_web:
+        plt.savefig(file_name + "_all.png")
+    else:
+        return fig
 
 def plot_channel(ax, data, ch, print_data=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
@@ -154,13 +155,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, help="only plot single channel")
+    parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
     args = parser.parse_args()
 
     with open(args.input, "r") as f:
         data = json.load(f)
     if args.channel == None:
         print_results(data)
-        plot_all(data, args)
+        plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
     else:
         plot_single(data, args.channel)
     # plt.show()

@@ -6,9 +6,9 @@ import re
 import colorama
 
 
-def get_figure(channels, args):
+def get_figure(channels, args_channel):
     
-    if len(channels) == 1 or args.channel is not None:
+    if len(channels) == 1 or args_channel is not None:
         fig, ax = plt.subplots()
         return fig, [ax]
     else:
@@ -16,7 +16,7 @@ def get_figure(channels, args):
         return fig, axs.flatten()
     
     
-def plot_data(data, args):
+def plot_all(data, args_input="", args_channel=None, args_web=False):
     
     measurements = data["run"]["measurements"]
     config = data["config"]
@@ -40,14 +40,14 @@ def plot_data(data, args):
     rms_variation_per_window = np.std(rms_per_window_per_event, axis=-1)
     rms_mean_per_window = np.mean(rms_per_window_per_event, axis=-1)
     
-    fig, axs = get_figure(channels, args)
+    fig, axs = get_figure(channels, args_channel)
          
     result_str = f'{"CH":<5} | {"variation < {}".format(config["expected_values"]["variation_tolerance"]):^20} | {"min_power > {}".format(config["expected_values"]["min_power"]):^20} | {"max power < {}".format(config["expected_values"]["max_power"]):^20}\n'
     result_str += "-----------------------------------------------------------------------\n"
 
     for result, ch, ax, mean, std in zip(results, act_channels, axs, rms_mean_per_window, rms_variation_per_window):
                 
-        if args.channel is not None and args.channel != idx:  # skip 
+        if args_channel is not None and args_channel != idx:  # skip 
             continue
             
         mean_variation = np.mean(std)
@@ -95,22 +95,24 @@ def plot_data(data, args):
     fig.supylabel(r"$\langle ADC \rangle \pm \sigma(ADC)$")
 
     fig.tight_layout()
-    fn = args.input.replace("json", "png")
     
-    if args.channel is not None:
-        fn = fn.replace(".png", f"_{str(args.channel)}.png")
+    if not args_web:
+        fn = args_input.replace("json", "png")
+        if args_channel is not None:
+            fn = fn.replace(".png", f"_{str(args_channel)}.png")
+        fig.savefig(fn)
+        plt.close()
+        print(result_str)
+    else: 
+        return fig
     
-    fig.savefig(fn)
-    
-    print(result_str)
-    
-    plt.close()
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, nargs="*", help="only plot single channel")
+    parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
     args = parser.parse_args()
     
     if re.search("WindowStability", args.input) is None:
@@ -119,4 +121,4 @@ if __name__ == "__main__":
     with open(args.input, "r") as f:
         data = json.load(f)
     
-    plot_data(data, args)
+    plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)

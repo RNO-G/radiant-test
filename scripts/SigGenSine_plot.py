@@ -44,14 +44,12 @@ def get_rows_cols(n):
     return nrows, ncols
 
 
-def plot_all(data, args):
-    # Plot to PDF
-    
-    config = data["config"]
-    fname = args.input.replace(".json", "")
-    fname += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}.pdf'
-
-    if not args.web:
+def plot_all(data, args_input="", args_channel=None, args_web=False):
+    # Plot to PDF    
+    if not args_web:
+        config = data["config"]
+        fname = args_input.replace(".json", "")
+        fname += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}.pdf'
         with PdfPages(fname) as pdf:
             for ch in get_channels(data):
                 fig, ax = plt.subplots()
@@ -65,17 +63,17 @@ def plot_all(data, args):
                 pdf.savefig()
                 plt.close()
 
-    if args.channel is None:
+    if args_channel is None:
         nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     else:
-        nrows, ncols = get_rows_cols(len(args.channel))
+        nrows, ncols = get_rows_cols(len(args_channel))
 
     # Plot to screen
 
     fig2, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, figsize=(6 * ncols, 5 * nrows))
     idx = 0
     for ch in get_channels(data):
-        if args.channel is not None and ch not in args.channel:
+        if args_channel is not None and ch not in args_channel:
             continue
         
         if nrows == 1:
@@ -90,9 +88,9 @@ def plot_all(data, args):
         ax[-1].set_xlabel("time / ns")
     
     fig2.tight_layout()
-    if not args.web:
-        if args.channel is not None:
-            plt.savefig(fname.replace(".pdf", "_" + "_".join([str(c) for c in args.channel]) + ".pdf"))
+    if not args_web:
+        if args_channel is not None:
+            plt.savefig(fname.replace(".pdf", "_" + "_".join([str(c) for c in args_channel]) + ".pdf"))
         else:
             plt.savefig(fname.replace(".pdf", "_all_channels.pdf"))
 
@@ -153,7 +151,7 @@ if __name__ == "__main__":
                 
     # if args.channel == None:
     print_results(data)
-    plot_all(data, args)
+    plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
     # else:
     #     plot_single(data, args.channel)
     # plt.show()

@@ -16,7 +16,9 @@ def get_rows_cols(n):
 def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
-def print_result(data, channel=None):
+def print_result(data, channel=None, web=False):
+    if web:
+        web_dict = {'channel': [], 'result': [],'control (mean)': [], 'control (std)': [], 'glitch (mean)': [], 'glitch (std)': [], 'points above threshold': []}
     if channel is None:
         for ch in get_channels(data):
             data_control = data["run"]["measurements"][f"{ch}"]["measured_value"]["voltage_differences_control"]
@@ -25,6 +27,16 @@ def print_result(data, channel=None):
             print(f'control: {np.mean(data_control)} +- {np.std(data_control)}')
             print(f'glitch: {np.mean(data_glitch)} +- {np.std(data_glitch)}')
             print(f'points above threshold: {data["run"]["measurements"][f"{ch}"]["measured_value"]["points_above_threshold"]}')
+
+            if web:
+                web_dict['channel'].append(ch)
+                web_dict['result'].append(data["run"]["measurements"][f"{ch}"]['result'])
+                web_dict['control (mean)'].append(np.mean(data_control))
+                web_dict['control (std)'].append(np.std(data_control))
+                web_dict['glitch (mean)'].append(np.mean(data_glitch))
+                web_dict['glitch (std)'].append(np.std(data_glitch))
+                web_dict['points above threshold'].append(data["run"]["measurements"][f"{ch}"]["measured_value"]["points_above_threshold"])
+
     else:
         data_control = data["run"]["measurements"][f"{channel}"]["measured_value"]["voltage_differences_control"]
         data_glitch = data["run"]["measurements"][f"{channel}"]["measured_value"]["voltage_differences_glitch"]
@@ -33,8 +45,11 @@ def print_result(data, channel=None):
         print(f'glitch: {np.mean(data_glitch)} +- {np.std(data_glitch)}')
         print(f'points above threshold: {data["run"]["measurements"][f"{channel}"]["measured_value"]["points_above_threshold"]}')
     
+    if web:
+        return web_dict
+    
 
-def plot_all(data, args):
+def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
@@ -48,7 +63,7 @@ def plot_all(data, args):
         plot_channel(ax, data, ch)
     fig.tight_layout()
 
-    if args.web:
+    if args_web:
         return fig
 
 
@@ -110,7 +125,7 @@ if __name__ == "__main__":
     with open(args.input, "r") as f:
         data = json.load(f)
     if args.channel == None:
-        plot_all(data, args)
+        plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
         plot_all_diff(data)
         print_result(data)
     else:

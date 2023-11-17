@@ -75,26 +75,26 @@ def print_result(data):
     print(result_str)
     
     
-def plot_data(data, args):
+def plot_all(data, args_input="", args_channel=None, args_not_channel=[], args_web=False):
     
     channels = np.sort([int(ch) for ch in data["run"]["measurements"].keys()])
     measurements = {ch:  data["run"]["measurements"][str(ch)] for ch in channels}
     config = data["config"]
 
     frequencies = np.fft.rfftfreq(2048, 1 / 3.2e9)
-    
-    # file_name = os.path.basename(args.input).replace(".json", "")
-    file_name = args.input.replace(".json", "")
-    file_name += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}'
-    
-    with PdfPages(file_name + "_spectra.pdf") as pdf:
-        for ch in measurements.keys():
-            fig, ax = plt.subplots()
-            if int(ch) in args.not_channel:
-                continue
-            plot_channel(ax, frequencies, measurements[ch], ch)
-            pdf.savefig()
-            plt.close()
+   
+    if not args_web:
+        # file_name = os.path.basename(args.input).replace(".json", "")
+        file_name = args_input.replace(".json", "")
+        file_name += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}'
+        with PdfPages(file_name + "_spectra.pdf") as pdf:
+            for ch in measurements.keys():
+                fig, ax = plt.subplots()
+                if int(ch) in args_not_channel:
+                    continue
+                plot_channel(ax, frequencies, measurements[ch], ch)
+                pdf.savefig()
+                plt.close()
     
     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     
@@ -106,8 +106,8 @@ def plot_data(data, args):
     # descibes the RMS over all frequecies but the primary signal over the primary signal
     thds2 = np.array([m['measured_value']["harmonic_distortion2"] for m in measurements.values()])
     
-    if len(args.not_channel):
-        for ch in args.not_channel:
+    if len(args_not_channel):
+        for ch in args_not_channel:
             mask = channels != ch
             channels = channels[mask]
             thds = thds[mask]
@@ -117,7 +117,7 @@ def plot_data(data, args):
     axs[1].plot(channels, thds2, ls="", marker="s", markersize=8, label="THD2")
     
     label = "ignored"
-    for ch in args.not_channel:
+    for ch in args_not_channel:
         axs[0].axvline(ch, lw=0.5, ls="--", color="lightgray", label=label)
         axs[1].axvline(ch, lw=0.5, ls="--", color="lightgray", label=label)
         label = ""
@@ -129,8 +129,10 @@ def plot_data(data, args):
         ax.grid()
 
     fig.tight_layout()
-    plt.savefig(file_name + "_thd.png")
-    
+    if not args_web:
+        plt.savefig(file_name + "_thd.png")
+    else:
+        return fig
     
 if __name__ == "__main__":
 
@@ -138,10 +140,11 @@ if __name__ == "__main__":
     parser.add_argument("input", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, nargs="*", help="only plot single channel")
     parser.add_argument("-nc", "--not_channel", type=int, nargs="*", default=[], help="only plot single channel")
+    parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
     args = parser.parse_args()
     
     with open(args.input, "r") as f:
         data = json.load(f)
     
-    plot_data(data, args)
+    plot_all(data, args_input=args.input, args_channel=args.channel, args_not_channel=args.not_channel, args_web=args.web)
     print_result(data)
