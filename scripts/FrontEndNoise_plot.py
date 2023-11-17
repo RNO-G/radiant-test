@@ -21,7 +21,7 @@ def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
 
-def print_result(data, channel=None, web=False):
+def print_results(data, channel=None, web=False):
     if web:
         web_dict = {'channel': [], 'result': [],'slope': [], 'offset': [], 'average residual': []}
 
@@ -99,10 +99,10 @@ if __name__ == "__main__":
         data = json.load(f)
     if args.channel == None:
         plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
-        print_result(data)
+        print_results(data)
     else:
         plot_single(data, args.channel)
-        print_result(data, args.channel)
+        print_results(data, args.channel)
     plt.show()
 
 

@@ -16,7 +16,7 @@ def get_rows_cols(n):
 def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
-def print_result(data, channel=None, web=False):
+def print_results(data, channel=None, web=False):
     if web:
         web_dict = {'channel': [], 'result': [],'control (mean)': [], 'control (std)': [], 'glitch (mean)': [], 'glitch (std)': [], 'points above threshold': []}
     if channel is None:
@@ -127,9 +127,9 @@ if __name__ == "__main__":
     if args.channel == None:
         plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
         plot_all_diff(data)
-        print_result(data)
+        print_results(data)
     else:
         plot_single(data, args.channel)
         plot_single_diff(data, args.channel)
-        print_result(data, args.channel)
+        print_results(data, args.channel)
     plt.show()

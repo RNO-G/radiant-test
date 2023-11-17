@@ -34,7 +34,10 @@ def plot_channel(ax, frequencies, measurement, ch):
     ax.legend(title=f"Channel {ch}")
     
     
-def print_result(data):
+def print_results(data, web=False):
+    if web:
+        web_dict = {'channel': [], 'result': [],'harmonic distortion': [], 'harmonic distortion**2': []}
+
     channels = np.sort([int(ch) for ch in data["run"]["measurements"].keys()])
     measurements = {ch:  data["run"]["measurements"][str(ch)] for ch in channels}
     config = data["config"]
@@ -72,7 +75,16 @@ def print_result(data):
         result_str += f"{thd2:^20.3f}" + colorama.Style.RESET_ALL
         result_str += "\n"
 
+        if web:
+            web_dict['channel'].append(int(ch))
+            web_dict['result'].append(data["run"]["measurements"][f"{ch}"]['result'])
+            web_dict['harmonic distortion'].append(thd)
+            web_dict['harmonic distortion**2'].append(thd2)
+
     print(result_str)
+
+    if web:
+        return web_dict
     
     
 def plot_all(data, args_input="", args_channel=None, args_not_channel=[], args_web=False):
@@ -147,4 +159,4 @@ if __name__ == "__main__":
         data = json.load(f)
     
     plot_all(data, args_input=args.input, args_channel=args.channel, args_not_channel=args.not_channel, args_web=args.web)
-    print_result(data)
+    print_results(data)

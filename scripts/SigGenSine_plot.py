@@ -131,9 +131,23 @@ def plot_single(data, ch):
     plot_channel(ax, data, ch, print_fit=True)
 
 
-def print_results(data):
+def print_results(data, web=False):
+    if web:
+        web_dict = {'channel': [], 'result': [], 'amplitude': [],'frequency': [], 'offset': [], 'average residual': []}
+
     for ch in get_channels(data):
         print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
+
+        if web:
+            web_dict['channel'].append(ch)
+            web_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+            web_dict['amplitude'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_amplitude'])
+            web_dict['frequency'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_frequency'])
+            web_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
+            web_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_avg_residual'])
+    
+    if web:
+        return web_dict
 
 
 if __name__ == "__main__":

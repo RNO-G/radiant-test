@@ -2,7 +2,6 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 
-import radiant_test
 import colorama
 
 
@@ -107,7 +106,7 @@ def plot_channel(ax, data, ch, print_data=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     ax.plot(data_ch["times"], ".", label=f"ch {ch}")
     ax.hlines(
-        1e3 / radiant_test.RADIANT_SAMPLING_RATE,
+        1e3 / (data['radiant_sample_rate']/1000),
         0,
         len(data_ch["times"]),
         colors="red",
@@ -133,7 +132,10 @@ def plot_single(data, ch):
     plot_channel(ax, data, ch, print_data=True)
 
 
-def print_results(data):
+def print_results(data, web=False):
+    if web:
+        web_dict = {'channel': [], 'result': [],'seam sample': [], 'slow sample': [], 'rms': []}
+
     expected_values = data["config"]["expected_values"]
 
     seam_sample_min = expected_values["seam_sample_min"]
@@ -147,6 +149,15 @@ def print_results(data):
     for ch in get_channels(data):
         print(f"{ch:<5} | {get_result_str(data, ch)}")
 
+        if web:
+            web_dict['channel'].append(ch)
+            web_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+            web_dict['seam sample'].append(data['run']['measurements'][str(ch)]['measured_value']['seam_sample'])
+            web_dict['slow sample'].append(data['run']['measurements'][str(ch)]['measured_value']['slow_sample'])
+            web_dict['rms'].append(data['run']['measurements'][str(ch)]['measured_value']['rms'])
+    
+    if web:
+        return web_dict
 
 if __name__ == "__main__":
     import argparse
