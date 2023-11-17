@@ -44,6 +44,9 @@ def print_result(data, channel=None, web=False):
         print(f"offset: {data['run']['measurements'][str(channel)]['measured_value']['fit_offset']}")
         print(f"average residual: {data['run']['measurements'][str(channel)]['measured_value']['fit_average_residual']}")
 
+    if web:
+        return web_dict
+
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
