@@ -1,15 +1,21 @@
 {
     "expected_values": {
+        "0.92": {
+            "fit_params":{
+                "num_min": [0.49, 250],
+                "num_max": [0.51, 260]
+                }
+            },
         "0.95": {
-            "nan":{
-                "num_min": 0.0,
-                "num_max": 0.0
+            "fit_params":{
+                "num_min": [0.49, 220],
+                "num_max": [0.51, 235]
                 },
-            "100":{
+            "200":{
                 "num_min": 0.3,
                 "num_max": 0.4
                 },
-            "400":{
+            "500":{
                 "num_min": 0.8,
                 "num_max": 0.9
                 },
@@ -19,37 +25,33 @@
                 }
             },
         "1.00": {
-            "nan":{
-                "num_min": 0.0,
-                "num_max": 0.0
+            "fit_params":{
+                "num_min": [0.49, 240],
+                "num_max": [0.51, 270]
                 },
-            "200":{
+            "300":{
                 "num_min": 0.3,
                 "num_max": 0.4
                 },
-            "400": {
+            "500": {
                 "num_min": 0.65,
                 "num_max": 0.85
                },
-            "600":{
+            "700":{
                 "num_min": 0.8,
                 "num_max": 0.9
                 }  
             },
-        "1.05": {            
-            "nan":{
-                "num_min": 0.0,
-                "num_max": 0.0
-            },
-            "300":{
+        "1.05": {     
+            "400":{
                 "num_min": 0.0,
                 "num_max": 0.05
                 },
-            "400": {
+            "500": {
                 "num_min": 0.01,
                 "num_max": 0.11
             },
-            "800":{
+            "900":{
                 "num_min": 0.8,
                 "num_max": 0.9
                 }
@@ -58,13 +60,17 @@
     "args": {
         "run_length": 20,
         "waveform": "examples/template2_wo_hardwareResponse.json",
-        "amplitude": 600,
         "clock_amplitude": 800,
-        "threshold": 0.95,
-        "ch_radiant": 5,
-        "ch_radiant_clock": 6,
-        "ch_sg": 1,
-        "ch_sg_clock": 2,
-        "root_filename": "auxtrigger_response_test.root"
+        "thresholds": [0.95, 1.00, 1.05],
+        "root_filename": "auxtrigger_response_test.root",
+        "0.95": {
+            "amplitudes": [200, 500, 700]
+        },
+        "1.00": {
+            "amplitudes": [300, 500, 700]
+        },
+        "1.05": {
+            "amplitudes": [400, 500, 900]
+        }
     }
 } 
