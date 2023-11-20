@@ -77,34 +77,53 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
         trig_rate = waveforms[rf0_true, channel,:].shape[0] / run_length
         print(f'trigger rate {trig_rate} Hz')
 
-        max_amp = (np.max(np.abs(waveforms[rf0_true,channel,:]), axis=1))
         self.dic = {}
         self.dic['trig_rate'] = trig_rate
         self.dic['threshold'] = thresh
         self.dic['ref_freq'] = ref_freq
         self.dic['root_dir'] = str(root_file)
+        return self.dic
     
-    def eval_results(self, data):
+    def eval_results(self, channel, data):
         passed = False
 
-        threshold = f'{data["threshold"]:.2f}'
-        ref_freq = str(data["ref_freq"])
-        if (
-            data['trig_rate'] >= self.conf["expected_values"][threshold][ref_freq]["num_min"]
-            and data['trig_rate'] < self.conf["expected_values"][threshold][ref_freq]["num_max"]
-        ):
-            passed = True
-        
-        self.add_measurement("AUXTrigger", data, passed)
+        passed_list = []
+        for thresh in data.keys():
+            for ref_freq in data[thresh]:
+                data[thresh][ref_freq]['trig_eff']['passed'] = {}
+                trig_rate =  data[thresh][ref_freq]['trig_rate']
+                if (
+                    trig_rate >= self.conf["expected_values"][thresh][ref_freq]["num_min"]
+                    and trig_rate < self.conf["expected_values"][thresh][ref_freq]["num_max"]
+                ):
+                    passed = True   
+                else:
+                    passed = False     
+
+                data[thresh][ref_freq]['trig_eff']['passed'] = passed
+                passed_list.append(passed)
+
+        if all(passed_list):
+            passed_all_points = True
+        else:
+            passed_all_points = False 
+        self.add_measurement(f"AUXTrigger_ch_{channel}", data, passed_all_points)
+
 
     def run(self):
         super(AUXTrigger, self).run()
-        self.initialze_on_board_signal_gen(self.conf["args"]["freq"], self.conf['args']['ch_radiant'])
-        self.initialize_config(self.conf['args']['ch_radiant'], 
-                               self.conf['args']['threshold'], 
-                               self.conf['args']['run_length'])
-        self.calc_trigger(self.data_dir/"combined.root", self.conf['args']['ch_radiant'], self.conf['args']['run_length'], self.conf["args"]["freq"])
-        self.eval_results(self.dic)
+        for ch in range(24):
+            self.dic_curve = {}
+            for thresh in self.conf["args"]["thresholds"]:
+                self.dic_all[f"{thresh}:2f"] = {}
+                for freq in self.conf["args"]["freqs"]:
+                    self.dic_all[f"{thresh}:2f"][f"{freq}:0f"] = {}
+                    self.initialze_on_board_signal_gen(freq, ch)
+                    self.initialize_config(ch, thresh, 
+                                        self.conf['args']['run_length'])
+                    data = self.calc_trigger(self.data_dir/"combined.root", ch, self.conf['args']['run_length'], freq)
+                    self.dic_curve[f"{thresh}:2f"][f"{freq}:0f"] = data
+            self.eval_results(ch, self.dic)
         self.device.radiant_sig_gen_off()
         self.device.radiant_calselect(quad=None)      
 

@@ -32,10 +32,9 @@
         }
     },
     "args": {
-        "freq": 80,
+        "freqs": [80, 650],
         "run_length": 10,
-        "threshold": 1.05,
-        "ch_radiant": 16,
+        "thresholds": [0.95, 1.00, 1.05],
         "root_filename": "auxtrigger_test.root"
     }
 } 
