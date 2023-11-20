@@ -145,7 +145,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
         passed_list = []
         for thresh in data.keys():
-            for amp in data[thresh]:
+            for amp in data[thresh].keys():
                 data[thresh][amp]['trig_eff']['passed'] = {}
                 trig_eff = data[thresh][amp]['trig_eff']
 
