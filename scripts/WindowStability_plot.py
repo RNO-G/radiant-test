@@ -31,6 +31,21 @@ def calculate_variation(rms_per_window_per_event):
     return mean_variation, min_power, max_power, rms_mean_per_window, rms_variation_per_window
 
 
+def get_measured_values(data):
+    measured_val_dict = {'channel': [], 'result': [],'variation': [], 'min power': [], 'max power': []}
+
+    channels = sorted([int(ch) for ch in data["run"]["measurements"].keys()])
+    for ch in channels:
+        mean_variation, min_power, max_power, _, _ = calculate_variation(data['run']['measurements'][str(ch)]["measured_value"])
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+        measured_val_dict['variation'].append(mean_variation)
+        measured_val_dict['min power'].append(min_power)
+        measured_val_dict['max power'].append(max_power)
+
+    return measured_val_dict
+
+
 def print_results(data):
     
     measurements = dict(sorted(data["run"]["measurements"].items(), key=lambda x: int(x[0])))
