@@ -1,6 +1,7 @@
 import numpy as np
 from NuRadioReco.utilities import units
 import matplotlib.pyplot as plt
+import colorama
 
 def get_rows_cols(n):
     if n <= 9:
@@ -11,6 +12,29 @@ def get_rows_cols(n):
         ncols = 6
 
     return nrows, ncols
+
+
+def get_fit_results_str(data, ch, with_color=False):
+    data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
+    result = data["run"]["measurements"][f"{ch}"]["result"]
+    
+    color_start = ""
+    color_end = ""
+    if with_color:
+        if result == "FAIL":
+            color_start = colorama.Fore.RED
+        else:
+            color_start = colorama.Fore.GREEN
+        
+        color_end = colorama.Style.RESET_ALL
+    
+    return (
+        color_start
+        + f"slope: {data_ch['fit_slope']:6.1f} - "
+        + f"offset: {data_ch['fit_offset']:6.1f} - "
+        + f"average residual: {data_ch['fit_average_residual']} - "
+        + f"result: {result}" + color_end
+    )
 
 
 def lin_func(x,a,b):
@@ -27,10 +51,7 @@ def print_results(data, channel=None, web=False):
 
     if channel is None:
         for ch in get_channels(data):
-            print(f'---- channel: {ch} ----')
-            print(f"slope: {data['run']['measurements'][str(ch)]['measured_value']['fit_slope']}")
-            print(f"offset: {data['run']['measurements'][str(ch)]['measured_value']['fit_offset']}")
-            print(f"average residual: {data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual']}")
+            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
 
             if web:
                 web_dict['channel'].append(ch)
@@ -39,10 +60,7 @@ def print_results(data, channel=None, web=False):
                 web_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
                 web_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual'])
     else:
-        print(f'---- channel: {channel} ----')
-        print(f"slope: {data['run']['measurements'][str(channel)]['measured_value']['fit_slope']}")
-        print(f"offset: {data['run']['measurements'][str(channel)]['measured_value']['fit_offset']}")
-        print(f"average residual: {data['run']['measurements'][str(channel)]['measured_value']['fit_average_residual']}")
+        print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
 
     if web:
         return web_dict

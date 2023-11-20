@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
+import colorama
 
 def get_rows_cols(n):
     if n <= 9:
@@ -13,8 +14,34 @@ def get_rows_cols(n):
     return nrows, ncols
 
 
+def get_fit_results_str(data, ch, with_color=False):
+    data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
+    result = data["run"]["measurements"][f"{ch}"]["result"]
+    
+    color_start = ""
+    color_end = ""
+    if with_color:
+        if result == "FAIL":
+            color_start = colorama.Fore.RED
+        else:
+            color_start = colorama.Fore.GREEN
+        
+        color_end = colorama.Style.RESET_ALL
+    
+    return (
+        color_start
+        + f'control (mean +- std): {np.mean(data_ch["voltage_differences_control"]):6.1f} +-'
+        + f'{np.std(data_ch["voltage_differences_control"]):6.2f} - '
+        + f'glitch (mean +- std): {np.mean(data_ch["voltage_differences_glitch"]):6.1f} +-'
+        + f'{np.std(data_ch["voltage_differences_glitch"]):6.2f} - '
+        + f'points above threshold: {data_ch["points_above_threshold"]} - '
+        + f"result: {result}" + color_end
+    )
+
+
 def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
+
 
 def print_results(data, channel=None, web=False):
     if web:
@@ -23,10 +50,7 @@ def print_results(data, channel=None, web=False):
         for ch in get_channels(data):
             data_control = data["run"]["measurements"][f"{ch}"]["measured_value"]["voltage_differences_control"]
             data_glitch = data["run"]["measurements"][f"{ch}"]["measured_value"]["voltage_differences_glitch"]
-            print(f'---- channel: {ch} ----')
-            print(f'control: {np.mean(data_control)} +- {np.std(data_control)}')
-            print(f'glitch: {np.mean(data_glitch)} +- {np.std(data_glitch)}')
-            print(f'points above threshold: {data["run"]["measurements"][f"{ch}"]["measured_value"]["points_above_threshold"]}')
+            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
 
             if web:
                 web_dict['channel'].append(ch)
@@ -38,13 +62,8 @@ def print_results(data, channel=None, web=False):
                 web_dict['points above threshold'].append(data["run"]["measurements"][f"{ch}"]["measured_value"]["points_above_threshold"])
 
     else:
-        data_control = data["run"]["measurements"][f"{channel}"]["measured_value"]["voltage_differences_control"]
-        data_glitch = data["run"]["measurements"][f"{channel}"]["measured_value"]["voltage_differences_glitch"]
-        print(f'---- channel: {channel} ----')
-        print(f'control: {np.mean(data_control)} +- {np.std(data_control)}')
-        print(f'glitch: {np.mean(data_glitch)} +- {np.std(data_glitch)}')
-        print(f'points above threshold: {data["run"]["measurements"][f"{channel}"]["measured_value"]["points_above_threshold"]}')
-    
+        print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
+         
     if web:
         return web_dict
     
@@ -104,6 +123,7 @@ def plot_single(data, ch):
     fig = plt.figure()
     ax = fig.subplots()
     plot_channel(ax, data, ch)
+
 
 def plot_single_diff(data, ch):
     fig = plt.figure()
