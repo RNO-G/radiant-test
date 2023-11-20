@@ -33,11 +33,21 @@ def plot_channel(ax, frequencies, measurement, ch):
 
     ax.legend(title=f"Channel {ch}")
     
-    
-def print_results(data, web=False):
-    if web:
-        web_dict = {'channel': [], 'result': [],'harmonic distortion': [], 'harmonic distortion**2': []}
 
+def get_measured_values(data):
+    measured_val_dict = {'channel': [], 'result': [],'harmonic distortion': [], 'harmonic distortion**2': []}
+
+    channels = np.sort([int(ch) for ch in data["run"]["measurements"].keys()])
+    for ch in channels:
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+        measured_val_dict['harmonic distortion'].append(data['run']['measurements'][str(ch)]['measured_value']["harmonic_distortion"])
+        measured_val_dict['harmonic distortion**2'].append(data['run']['measurements'][str(ch)]['measured_value']["harmonic_distortion2"])
+
+    return measured_val_dict
+
+
+def print_results(data):
     channels = np.sort([int(ch) for ch in data["run"]["measurements"].keys()])
     measurements = {ch:  data["run"]["measurements"][str(ch)] for ch in channels}
     config = data["config"]
@@ -75,16 +85,7 @@ def print_results(data, web=False):
         result_str += f"{thd2:^20.3f}" + colorama.Style.RESET_ALL
         result_str += "\n"
 
-        if web:
-            web_dict['channel'].append(int(ch))
-            web_dict['result'].append(data["run"]["measurements"][f"{ch}"]['result'])
-            web_dict['harmonic distortion'].append(thd)
-            web_dict['harmonic distortion**2'].append(thd2)
-
     print(result_str)
-
-    if web:
-        return web_dict
     
     
 def plot_all(data, args_input="", args_channel=None, args_not_channel=[], args_web=False):
@@ -146,6 +147,7 @@ def plot_all(data, args_input="", args_channel=None, args_not_channel=[], args_w
     else:
         return fig
     
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()

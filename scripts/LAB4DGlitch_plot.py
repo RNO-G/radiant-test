@@ -43,29 +43,28 @@ def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
 
-def print_results(data, channel=None, web=False):
-    if web:
-        web_dict = {'channel': [], 'result': [],'control (mean)': [], 'control (std)': [], 'glitch (mean)': [], 'glitch (std)': [], 'points above threshold': []}
+def get_measured_values(data):
+    measured_val_dict = {'channel': [], 'result': [],'control (mean)': [], 'control (std)': [], 'glitch (mean)': [], 'glitch (std)': [], 'points above threshold': []}
+
+    for ch in get_channels(data):
+        data_control = data["run"]["measurements"][f"{ch}"]["measured_value"]["voltage_differences_control"]
+        data_glitch = data["run"]["measurements"][f"{ch}"]["measured_value"]["voltage_differences_glitch"]
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+        measured_val_dict['control (mean)'].append(np.mean(data_control))
+        measured_val_dict['control (std)'].append(np.std(data_control))
+        measured_val_dict['glitch (mean)'].append(np.mean(data_glitch))
+        measured_val_dict['glitch (std)'].append(np.std(data_glitch))
+        measured_val_dict['points above threshold'].append(data["run"]["measurements"][f"{ch}"]["measured_value"]["points_above_threshold"])
+
+    return measured_val_dict
+
+def print_results(data, channel=None):
     if channel is None:
         for ch in get_channels(data):
-            data_control = data["run"]["measurements"][f"{ch}"]["measured_value"]["voltage_differences_control"]
-            data_glitch = data["run"]["measurements"][f"{ch}"]["measured_value"]["voltage_differences_glitch"]
             print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
-
-            if web:
-                web_dict['channel'].append(ch)
-                web_dict['result'].append(data["run"]["measurements"][f"{ch}"]['result'])
-                web_dict['control (mean)'].append(np.mean(data_control))
-                web_dict['control (std)'].append(np.std(data_control))
-                web_dict['glitch (mean)'].append(np.mean(data_glitch))
-                web_dict['glitch (std)'].append(np.std(data_glitch))
-                web_dict['points above threshold'].append(data["run"]["measurements"][f"{ch}"]["measured_value"]["points_above_threshold"])
-
     else:
         print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
-         
-    if web:
-        return web_dict
     
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):

@@ -45,25 +45,25 @@ def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
 
-def print_results(data, channel=None, web=False):
-    if web:
-        web_dict = {'channel': [], 'result': [],'slope': [], 'offset': [], 'average residual': []}
+def get_measured_values(data):
+    measured_val_dict = {'channel': [], 'result': [],'slope': [], 'offset': [], 'average residual': []}
 
+    for ch in get_channels(data):
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+        measured_val_dict['slope'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_slope'])
+        measured_val_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
+        measured_val_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual'])
+
+    return measured_val_dict
+    
+
+def print_results(data, channel=None):
     if channel is None:
         for ch in get_channels(data):
-            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
-
-            if web:
-                web_dict['channel'].append(ch)
-                web_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
-                web_dict['slope'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_slope'])
-                web_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
-                web_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual'])
+            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")                
     else:
         print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
-
-    if web:
-        return web_dict
 
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):

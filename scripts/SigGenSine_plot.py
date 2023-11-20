@@ -96,6 +96,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
 
     return fig2
 
+
 def plot_channel(ax, data, ch, print_fit=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     y = np.asarray(data_ch["waveform"])
@@ -124,30 +125,29 @@ def plot_channel(ax, data, ch, print_fit=False):
         ax.legend(loc="upper right")
 
 
-
 def plot_single(data, ch):
     fig = plt.figure()
     ax = fig.subplots()
     plot_channel(ax, data, ch, print_fit=True)
 
 
-def print_results(data, web=False):
-    if web:
-        web_dict = {'channel': [], 'result': [], 'amplitude': [],'frequency': [], 'offset': [], 'average residual': []}
+def get_measured_values(data):
+    measured_val_dict = {'channel': [], 'result': [], 'amplitude': [],'frequency': [], 'offset': [], 'average residual': []}
 
     for ch in get_channels(data):
-        print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+        measured_val_dict['amplitude'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_amplitude'])
+        measured_val_dict['frequency'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_frequency'])
+        measured_val_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
+        measured_val_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_avg_residual'])
 
-        if web:
-            web_dict['channel'].append(ch)
-            web_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
-            web_dict['amplitude'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_amplitude'])
-            web_dict['frequency'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_frequency'])
-            web_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
-            web_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_avg_residual'])
-    
-    if web:
-        return web_dict
+    return measured_val_dict
+
+
+def print_results(data):
+    for ch in get_channels(data):
+        print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
 
 
 if __name__ == "__main__":

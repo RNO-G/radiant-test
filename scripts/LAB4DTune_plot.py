@@ -8,6 +8,7 @@ import colorama
 def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
+
 def get_result_str_plot(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
@@ -24,6 +25,7 @@ def get_color(passed):
         return colorama.Fore.GREEN 
     else:
         return colorama.Fore.RED
+
 
 def get_result_str(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
@@ -102,6 +104,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
     else:
         return fig
 
+
 def plot_channel(ax, data, ch, print_data=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     ax.plot(data_ch["times"], ".", label=f"ch {ch}")
@@ -132,10 +135,20 @@ def plot_single(data, ch):
     plot_channel(ax, data, ch, print_data=True)
 
 
-def print_results(data, web=False):
-    if web:
-        web_dict = {'channel': [], 'result': [],'seam sample': [], 'slow sample': [], 'rms': []}
+def get_measured_values(data):
+    measured_val_dict = {'channel': [], 'result': [],'seam sample': [], 'slow sample': [], 'rms': []}
 
+    for ch in get_channels(data):
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+        measured_val_dict['seam sample'].append(data['run']['measurements'][str(ch)]['measured_value']['seam_sample'])
+        measured_val_dict['slow sample'].append(data['run']['measurements'][str(ch)]['measured_value']['slow_sample'])
+        measured_val_dict['rms'].append(data['run']['measurements'][str(ch)]['measured_value']['rms'])
+
+    return measured_val_dict
+
+
+def print_results(data):
     expected_values = data["config"]["expected_values"]
 
     seam_sample_min = expected_values["seam_sample_min"]
@@ -149,15 +162,6 @@ def print_results(data, web=False):
     for ch in get_channels(data):
         print(f"{ch:<5} | {get_result_str(data, ch)}")
 
-        if web:
-            web_dict['channel'].append(ch)
-            web_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
-            web_dict['seam sample'].append(data['run']['measurements'][str(ch)]['measured_value']['seam_sample'])
-            web_dict['slow sample'].append(data['run']['measurements'][str(ch)]['measured_value']['slow_sample'])
-            web_dict['rms'].append(data['run']['measurements'][str(ch)]['measured_value']['rms'])
-    
-    if web:
-        return web_dict
 
 if __name__ == "__main__":
     import argparse
