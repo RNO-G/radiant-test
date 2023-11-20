@@ -6,5 +6,7 @@ from .SigGenSine import SigGenSine
 from .HarmonicDistortion import HarmonicDistortion
 from .LAB4DGlitch import LAB4DGlitch
 from .LAB4DTune import LAB4DTune
+from .RADIANTPower import RADIANTPower
+from .SystemPower import SystemPower
 from .uCComms import uCComms
 from .WindowStability import WindowStability

@@ -8,7 +8,9 @@
     },
 
     "tests": {
+        "SystemPower": {},
         "uCComms": {},
+        "RADIANTPower": {},
         "FPGAComms": {},
         "LAB4DTune": {},
         "LAB4DGlitch": {},

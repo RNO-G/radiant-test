@@ -116,22 +116,6 @@ class Keysight81160A(AbstractSignalGenerator):
         #self.instrument.write(f"DATA{channel} VOLATILE {','.join(waveform_str)}")
         self.set_frequency_MHz(channel, freq) 
 
-
-
-    def set_delay(self, channel, delay):
-        #apply channel coupling
-        self.instrument.write(f"TRAC:CHAN{channel} ON")
-
-    def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock, delay):
-        for ch in [ch_signal, ch_clock]:
-            self.awg.output_off(ch)
-        self.set_waveform(ch_signal, waveform)  
-        self.set_amplitude_mVpp(ch_signal, amp_sig)
-        self.set_amplitude_mVpp(ch_clock, amp_clock)
-        self.set_frequency()
-        for ch in [ch_signal, ch_clock]:
-            self.awg.output_on(ch)
-
     def get_system_state(self):
         self.instrument.write("SYST:SET?")
         binary_data = self.instrument.read_raw()

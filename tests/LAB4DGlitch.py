@@ -88,10 +88,13 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
         
         return True
 
-
     def _run_channels(self):
         self.logger.info(f"Start data taking")
-        data = self.device.daq_record_data(num_events=self.conf['args']['number_of_used_events'], force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'])
+        data = self.device.daq_record_data(
+            num_events=self.conf['args']['number_of_used_events'], 
+            force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'],
+            use_uart=self.conf['args']['use_uart'])
+        
         waveforms = data["data"]["WAVEFORM"]
         self.logger.info(f"Data taking done")
         for ich, ch in enumerate(self.conf['args']['channels']):
@@ -101,7 +104,14 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
             self.add_measurement(f"{ch}", data, passed=self._compare_voltage_differences(data))
 
     def _run_quad(self, quad):
-        data = self.device.daq_record_data(num_events=self.conf['args']['number_of_used_events'], force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'], use_uart=self.conf["args"]["use_uart"])
+        self.logger.info(f"Start data taking with quad {quad} ...")
+
+        data = self.device.daq_record_data(
+            num_events=self.conf['args']['number_of_used_events'], force_trigger=True, 
+            force_trigger_interval=self.conf['args']['force_trigger_interval'], 
+            use_uart=self.conf["args"]["use_uart"])
+        self.logger.info(f" ... finished")
+
         waveforms = data["data"]["WAVEFORM"]
         for ich, ch in enumerate(radiant_test.get_channels_for_quad(quad)):
 

@@ -53,6 +53,7 @@ class Test(object):
         self.result_dict["initialize"]["timestamp"] = get_timestamp()
 
     def run(self):
+        self.logger.info("Running ...")
         self.result_dict["run"] = dict()
         self.result_dict["run"]["timestamp"] = get_timestamp()
         self.result_dict["run"]["measurements"] = dict()

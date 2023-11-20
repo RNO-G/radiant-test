@@ -15,22 +15,15 @@
                 "frequency": 90
             }
         },
-        "SigGenSine_510MHz": {
+        "SigGenSine_300MHz": {
             "base": "SigGenSine",
             "args": {
-                "band": 2,
-                "frequency": 510
+                "band": 1,
+                "frequency": 300
             }
         },
-        "WindowStability_90MHz": {
-            "base": "WindowStability",
-            "args": {
-                "band": 0,
-                "frequency": 90
-            }
-        },
-        "WindowStability_510MHz": {
-            "base": "WindowStability",
+        "SigGenSine_510MHz": {
+            "base": "SigGenSine",
             "args": {
                 "band": 2,
                 "frequency": 510

@@ -32,7 +32,6 @@ class WindowStability(radiant_test.RADIANTChannelTest):
     def _run_quad(self, quad):
 
         self.logger.info(f"Taking data for quad {quad} ...")
-        
         data = self.device.daq_record_data(
             num_events=self.conf["args"]["num_events"], force_trigger=True, read_header=True, 
             use_uart=self.conf["args"]["use_uart"])
