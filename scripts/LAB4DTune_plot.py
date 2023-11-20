@@ -2,12 +2,12 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 
-import radiant_test
 import colorama
 
 
 def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
+
 
 def get_result_str_plot(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
@@ -25,6 +25,7 @@ def get_color(passed):
         return colorama.Fore.GREEN 
     else:
         return colorama.Fore.RED
+
 
 def get_result_str(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
@@ -62,22 +63,21 @@ def get_rows_cols(n):
     return nrows, ncols
 
 
-def plot_all(data, args):
+def plot_all(data, args_input="", args_channel=None, args_web=False):
     # Plot to PDF
-    
-    config = data["config"]
-    file_name = args.input.replace(".json", "")
-    file_name += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}'
-    
-    with PdfPages(file_name + ".pdf") as pdf:
-        for ch in get_channels(data):
-            fig = plt.figure()
-            ax = fig.subplots()
-            plot_channel(ax, data, ch, print_data=True)
-            ax.set_xlabel("Time (ns)")
-            ax.set_ylabel("Voltage (ADC counts)")
-            pdf.savefig()
-            plt.close()
+    if not args_web:
+        config = data["config"]
+        file_name = args_input.replace(".json", "")
+        file_name += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}'
+        with PdfPages(file_name + ".pdf") as pdf:
+            for ch in get_channels(data):
+                fig = plt.figure()
+                ax = fig.subplots()
+                plot_channel(ax, data, ch, print_data=True)
+                ax.set_xlabel("Time (ns)")
+                ax.set_ylabel("Voltage (ADC counts)")
+                pdf.savefig()
+                plt.close()
 
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
@@ -99,14 +99,17 @@ def plot_all(data, args):
         ax[-1].set_xlabel("Seam")
 
     fig.tight_layout()
-    plt.savefig(file_name + "_all.png")
+    if not args_web:
+        plt.savefig(file_name + "_all.png")
+    else:
+        return fig
 
 
 def plot_channel(ax, data, ch, print_data=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     ax.plot(data_ch["times"], ".", label=f"ch {ch}")
     ax.hlines(
-        1e3 / radiant_test.RADIANT_SAMPLING_RATE,
+        1e3 / (data['radiant_sample_rate']/1000),
         0,
         len(data_ch["times"]),
         colors="red",
@@ -132,6 +135,19 @@ def plot_single(data, ch):
     plot_channel(ax, data, ch, print_data=True)
 
 
+def get_measured_values(data):
+    measured_val_dict = {'channel': [], 'result': [],'seam sample': [], 'slow sample': [], 'rms': []}
+
+    for ch in get_channels(data):
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+        measured_val_dict['seam sample'].append(data['run']['measurements'][str(ch)]['measured_value']['seam_sample'])
+        measured_val_dict['slow sample'].append(data['run']['measurements'][str(ch)]['measured_value']['slow_sample'])
+        measured_val_dict['rms'].append(data['run']['measurements'][str(ch)]['measured_value']['rms'])
+
+    return measured_val_dict
+
+
 def print_results(data):
     expected_values = data["config"]["expected_values"]
 
@@ -154,13 +170,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, help="only plot single channel")
+    parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
     args = parser.parse_args()
 
     with open(args.input, "r") as f:
         data = json.load(f)
     if args.channel == None:
         print_results(data)
-        plot_all(data, args)
+        plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
     else:
         plot_single(data, args.channel)
     # plt.show()

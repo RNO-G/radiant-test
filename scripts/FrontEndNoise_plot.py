@@ -1,8 +1,7 @@
 import numpy as np
 from NuRadioReco.utilities import units
 import matplotlib.pyplot as plt
-
-import radiant_test
+import colorama
 
 def get_rows_cols(n):
     if n <= 9:
@@ -15,6 +14,29 @@ def get_rows_cols(n):
     return nrows, ncols
 
 
+def get_fit_results_str(data, ch, with_color=False):
+    data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
+    result = data["run"]["measurements"][f"{ch}"]["result"]
+    
+    color_start = ""
+    color_end = ""
+    if with_color:
+        if result == "FAIL":
+            color_start = colorama.Fore.RED
+        else:
+            color_start = colorama.Fore.GREEN
+        
+        color_end = colorama.Style.RESET_ALL
+    
+    return (
+        color_start
+        + f"slope: {data_ch['fit_slope']:6.1f} - "
+        + f"offset: {data_ch['fit_offset']:6.1f} - "
+        + f"average residual: {data_ch['fit_average_residual']} - "
+        + f"result: {result}" + color_end
+    )
+
+
 def lin_func(x,a,b):
     return x*a + b
 
@@ -23,21 +45,28 @@ def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
 
-def print_result(data, channel=None):
+def get_measured_values(data):
+    measured_val_dict = {'channel': [], 'result': [],'slope': [], 'offset': [], 'average residual': []}
+
+    for ch in get_channels(data):
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+        measured_val_dict['slope'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_slope'])
+        measured_val_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
+        measured_val_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual'])
+
+    return measured_val_dict
+    
+
+def print_results(data, channel=None):
     if channel is None:
         for ch in get_channels(data):
-            print(f'---- channel: {ch} ----')
-            print(f"slope: {data['run']['measurements'][str(ch)]['measured_value']['fit_slope']}")
-            print(f"offset: {data['run']['measurements'][str(ch)]['measured_value']['fit_offset']}")
-            print(f"average residual: {data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual']}")
+            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")                
     else:
-        print(f'---- channel: {channel} ----')
-        print(f"slope: {data['run']['measurements'][str(channel)]['measured_value']['fit_slope']}")
-        print(f"offset: {data['run']['measurements'][str(channel)]['measured_value']['fit_offset']}")
-        print(f"average residual: {data['run']['measurements'][str(channel)]['measured_value']['fit_average_residual']}")
+        print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
 
 
-def plot_all(data):
+def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
@@ -50,6 +79,9 @@ def plot_all(data):
             ax = axs[ch // ncols][ch % ncols]
         plot_channel(ax, data, ch)
     fig.tight_layout()
+
+    if args_web:
+        return fig
 
 
 def plot_channel(ax, data, ch):
@@ -78,16 +110,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, help="only plot single channel")
+    parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
     args = parser.parse_args()
 
     with open(args.input, "r") as f:
         data = json.load(f)
     if args.channel == None:
-        plot_all(data)
-        print_result(data)
+        plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
+        print_results(data)
     else:
         plot_single(data, args.channel)
-        print_result(data, args.channel)
+        print_results(data, args.channel)
     plt.show()
 
 

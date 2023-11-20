@@ -81,22 +81,28 @@ class WindowStability(radiant_test.RADIANTChannelTest):
 
 
     def _check_data(self, rms_per_window_per_event):
-        
-        rms_variation_per_window = np.zeros(32)
-        rms_mean_per_window = np.zeros(32)
-        for i, ele in rms_per_window_per_event.items():
-            rms_mean_per_window[int(i)] = np.mean(ele)
-            rms_variation_per_window[int(i)] = np.std(ele)
-            
-        mean_variation = np.mean(rms_variation_per_window)
-        min_power = np.amin(rms_mean_per_window)
-        max_power = np.amax(rms_mean_per_window)
-        
+                   
+        mean_variation, min_power, max_power = calculate_variation(rms_per_window_per_event)
+
         passed = ((mean_variation < self.conf["expected_values"]["variation_tolerance"]) and
                   (min_power > self.conf["expected_values"]["min_power"]) and
                   (max_power < self.conf["expected_values"]["max_power"]))
         
         return passed
+    
+    
+def calculate_variation(rms_per_window_per_event):
+    rms_variation_per_window = np.zeros(32)
+    rms_mean_per_window = np.zeros(32)
+    for i, ele in rms_per_window_per_event.items():
+        rms_mean_per_window[int(i)] = np.mean(ele)
+        rms_variation_per_window[int(i)] = np.std(ele)
+        
+    mean_variation = np.mean(rms_variation_per_window)
+    min_power = np.amin(rms_mean_per_window)
+    max_power = np.amax(rms_mean_per_window)
+    
+    return mean_variation, min_power, max_power
     
 
 if __name__ == "__main__":

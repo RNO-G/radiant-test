@@ -2,7 +2,6 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 
-import radiant_test
 import colorama
 
 
@@ -45,33 +44,36 @@ def get_rows_cols(n):
     return nrows, ncols
 
 
-def plot_all(data, args):
-    # Plot to PDF
-    
-    config = data["config"]
-    fname = args.input.replace(".json", "")
-    fname += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}.pdf'
-    
-    with PdfPages(fname) as pdf:
-        for ch in get_channels(data):
-            fig, ax = plt.subplots()
-            plot_channel(ax, data, ch, print_fit=True)
-            ax.set_xlabel("Time (ns)")
-            ax.set_ylabel("Voltage (ADC counts)")
-            pdf.savefig()
-            plt.close()
+def plot_all(data, args_input="", args_channel=None, args_web=False):
+    # Plot to PDF    
+    if not args_web:
+        config = data["config"]
+        fname = args_input.replace(".json", "")
+        fname += f'_{config["args"]["frequency"]}MHz_band{config["args"]["band"]}.pdf'
+        with PdfPages(fname) as pdf:
+            for ch in get_channels(data):
+                fig, ax = plt.subplots()
+                plot_channel(ax, data, ch, print_fit=True)
+                ax.set_xlabel("Time (ns)")
+                ax.set_ylabel("Voltage (ADC counts)")
+                if 1:
+                    for i in range(16):
+                        ax.axvline(128 * i / 3.2, color="k", lw=1, zorder=0)
+                
+                pdf.savefig()
+                plt.close()
 
-    if args.channel is None:
+    if args_channel is None:
         nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     else:
-        nrows, ncols = get_rows_cols(len(args.channel))
+        nrows, ncols = get_rows_cols(len(args_channel))
 
     # Plot to screen
 
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, figsize=(6 * ncols, 5 * nrows))
+    fig2, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, figsize=(6 * ncols, 5 * nrows))
     idx = 0
     for ch in get_channels(data):
-        if args.channel is not None and ch not in args.channel:
+        if args_channel is not None and ch not in args_channel:
             continue
         
         if nrows == 1:
@@ -85,17 +87,20 @@ def plot_all(data, args):
     for ax in axs.T:
         ax[-1].set_xlabel("time / ns")
     
-    fig.tight_layout()
-    if args.channel is not None:
-        plt.savefig(fname.replace(".pdf", "_" + "_".join([str(c) for c in args.channel]) + ".pdf"))
-    else:
-        plt.savefig(fname.replace(".pdf", "_all_channels.pdf"))
+    fig2.tight_layout()
+    if not args_web:
+        if args_channel is not None:
+            plt.savefig(fname.replace(".pdf", "_" + "_".join([str(c) for c in args_channel]) + ".pdf"))
+        else:
+            plt.savefig(fname.replace(".pdf", "_all_channels.pdf"))
+
+    return fig2
 
 
 def plot_channel(ax, data, ch, print_fit=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     y = np.asarray(data_ch["waveform"])
-    x = np.arange(len(y)) / radiant_test.RADIANT_SAMPLING_RATE
+    x = np.arange(len(y)) / (data['radiant_sample_rate']/1000)
     ax.plot(x, y, label=f"ch {ch}", lw=1)
     ax.plot(
         x,
@@ -120,11 +125,24 @@ def plot_channel(ax, data, ch, print_fit=False):
         ax.legend(loc="upper right")
 
 
-
 def plot_single(data, ch):
     fig = plt.figure()
     ax = fig.subplots()
     plot_channel(ax, data, ch, print_fit=True)
+
+
+def get_measured_values(data):
+    measured_val_dict = {'channel': [], 'result': [], 'amplitude': [],'frequency': [], 'offset': [], 'average residual': []}
+
+    for ch in get_channels(data):
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(data['run']['measurements'][str(ch)]['result'])
+        measured_val_dict['amplitude'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_amplitude'])
+        measured_val_dict['frequency'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_frequency'])
+        measured_val_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
+        measured_val_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_avg_residual'])
+
+    return measured_val_dict
 
 
 def print_results(data):
@@ -139,6 +157,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, nargs="*", help="only plot single channel")
+    parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
     args = parser.parse_args()
 
     with open(args.input, "r") as f:
@@ -146,7 +165,7 @@ if __name__ == "__main__":
                 
     # if args.channel == None:
     print_results(data)
-    plot_all(data, args)
+    plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
     # else:
     #     plot_single(data, args.channel)
     # plt.show()
