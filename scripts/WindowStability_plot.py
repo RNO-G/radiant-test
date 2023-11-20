@@ -16,50 +16,39 @@ def get_figure(channels, args_channel):
         return fig, axs.flatten()
     
     
-def plot_all(data, args_input="", args_channel=None, args_web=False):
     
-    measurements = data["run"]["measurements"]
-    config = data["config"]
-    channels = config["args"]["channels"]
+def calculate_variation(rms_per_window_per_event):
+    rms_variation_per_window = np.zeros(32)
+    rms_mean_per_window = np.zeros(32)
+    for i, ele in rms_per_window_per_event.items():
+        rms_mean_per_window[int(i)] = np.mean(ele)
+        rms_variation_per_window[int(i)] = np.std(ele)
         
-    # This assumes that for each channel and window the same amount of data were taken 
-    # (should be half of what is configured in the test)
-    first_channel = list(measurements.keys())[0]
-    n_events = len(measurements[first_channel]["measured_value"]["0"])
-
-    rms_per_window_per_event = np.zeros((len(channels), 32, n_events))
-
-    act_channels = np.empty(len(channels), dtype=int)
-    results = []
-    for idx, (ch, ch_ele) in enumerate(measurements.items()):
-        act_channels[idx] = ch
-        results.append(ch_ele["result"])
-        for window, window_ele in ch_ele["measured_value"].items():
-            rms_per_window_per_event[idx, int(window)] = np.array(window_ele)
-
-    rms_variation_per_window = np.std(rms_per_window_per_event, axis=-1)
-    rms_mean_per_window = np.mean(rms_per_window_per_event, axis=-1)
+    mean_variation = np.mean(rms_variation_per_window)
+    min_power = np.amin(rms_mean_per_window)
+    max_power = np.amax(rms_mean_per_window)
     
-    fig, axs = get_figure(channels, args_channel)
-         
-    result_str = f'{"CH":<5} | {"variation < {}".format(config["expected_values"]["variation_tolerance"]):^20} | {"min_power > {}".format(config["expected_values"]["min_power"]):^20} | {"max power < {}".format(config["expected_values"]["max_power"]):^20}\n'
+    return mean_variation, min_power, max_power, rms_mean_per_window, rms_variation_per_window
+
+
+def print_results(data):
+    
+    measurements = dict(sorted(data["run"]["measurements"].items(), key=lambda x: int(x[0])))
+    config = data["config"]
+        
+    result_str = f'{"CH":<5} | {"variation < {}".format(config["expected_values"]["variation_tolerance"]):^20} | ' + \
+        f'{"min_power > {}".format(config["expected_values"]["min_power"]):^20} | ' + \
+        f'{"max power < {}".format(config["expected_values"]["max_power"]):^20}\n'
+    
     result_str += "-----------------------------------------------------------------------\n"
 
-    for result, ch, ax, mean, std in zip(results, act_channels, axs, rms_mean_per_window, rms_variation_per_window):
+    for ch, ele in measurements.items():        
+        result = ele["result"]
                 
-        if args_channel is not None and args_channel != idx:  # skip 
-            continue
-            
-        mean_variation = np.mean(std)
-        min_power = np.amin(mean)
-        max_power = np.amax(mean)
-        
-        ax.plot(mean, lw=2, label=rf"Mean: $\sigma$ = {np.std(mean):.2f}")
-        ax.fill_between(np.arange(32), mean - std, mean + std, alpha=0.3,
-                            label=rf"STD: $\mu$ = {mean_variation:.2f}, $\sigma$ = {np.std(std):.2f}")
-        ax.grid()
-        ax.legend(title=f"Ch {ch}", title_fontsize=10, fontsize="small")
-        
+        # if args_channel is not None and args_channel != idx:  # skip 
+        #     continue
+        mean_variation, min_power, max_power, _, _ = calculate_variation(ele["measured_value"])
+
         # Create string for terminal output
         
         if result == "PASS":
@@ -91,6 +80,33 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
         result_str += f"{max_power:^20.2f}" + colorama.Style.RESET_ALL
         result_str += "\n"
         
+    print(result_str)
+        
+    
+def plot_all(data, args_input="", args_channel=None, args_web=False):
+    
+    measurements = dict(sorted(data["run"]["measurements"].items(), key=lambda x: int(x[0])))
+    config = data["config"]
+    channels = config["args"]["channels"]
+    
+    fig, axs = get_figure(channels, args_channel)
+
+    for ax, ch in zip(axs, measurements):
+        ele = measurements[ch]
+                
+        result = ele["result"]
+
+        mean_variation, min_power, max_power, mean, std = calculate_variation(ele["measured_value"])
+                
+        if args_channel is not None and args_channel != int(ch):  # skip 
+            continue
+
+        ax.plot(mean, lw=2, label=rf"Mean: $\sigma$ = {np.std(mean):.2f}")
+        ax.fill_between(np.arange(32), mean - std, mean + std, alpha=0.3,
+                            label=rf"STD: $\mu$ = {mean_variation:.2f}, $\sigma$ = {np.std(std):.2f}")
+        ax.grid()
+        ax.legend(title=f"Ch {ch}", title_fontsize=10, fontsize="small")
+                
     fig.supxlabel(r"$windows$")
     fig.supylabel(r"$\langle ADC \rangle \pm \sigma(ADC)$")
 
@@ -100,9 +116,9 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
         fn = args_input.replace("json", "png")
         if args_channel is not None:
             fn = fn.replace(".png", f"_{str(args_channel)}.png")
+        
         fig.savefig(fn)
         plt.close()
-        print(result_str)
     else: 
         return fig
     
@@ -122,3 +138,4 @@ if __name__ == "__main__":
         data = json.load(f)
     
     plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
+    print_results(data)
