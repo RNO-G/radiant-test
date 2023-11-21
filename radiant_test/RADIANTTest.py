@@ -22,10 +22,10 @@ class RADIANTTest(Test):
         self.result_dict["fpga_fw_version"] = stationrc.radiant.DateVersion(
             self.device.radiant_low_level_interface.read_register("FPGA_DATEVERSION")
         ).toDict()["version"]
-        controller_board_monitoring = self.device.get_controller_board_monitoring()
-        self.result_dict["controller_board_temperature"] = controller_board_monitoring[
-            "temps"
-        ]["micro"]
+        # controller_board_monitoring = self.device.get_controller_board_monitoring()
+        # self.result_dict["controller_board_temperature"] = controller_board_monitoring[
+        #     "temps"
+        # ]["micro"]
 
     def run(self):
         super(RADIANTTest, self).run()

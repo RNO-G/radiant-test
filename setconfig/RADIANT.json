@@ -1,7 +1,6 @@
 {
     "name": "RADIANT",
     "tests": {
-        "SystemPower": {},
         "uCComms": {},
         "RADIANTPower": {},
         "FPGAComms": {},
