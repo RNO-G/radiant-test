@@ -134,3 +134,12 @@ class Keysight81160A(AbstractSignalGenerator):
         self.set_waveform(channel, waveform)
         self.set_amplitude_mVpp(channel, 600)
         self.output_on(channel)
+    
+    def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock):
+        for ch in [ch_signal, ch_clock]:
+            self.output_off(ch)
+        self.set_waveform(ch_signal, waveform)  
+        self.set_amplitude_mVpp(ch_signal, amp_sig)
+        self.set_amplitude_mVpp(ch_clock, amp_clock)
+        for ch in [ch_signal, ch_clock]:
+            self.output_on(ch)

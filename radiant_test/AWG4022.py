@@ -30,6 +30,17 @@ class AWG4022(AbstractSignalGenerator):
         self.instrument = vxi11.Instrument(ip_address)
         logging.debug(f"Connected to {self.get_id()} at address {ip_address}.")
 
+    def get_id(self):
+        self.instrument.ask("*IDN?")
+
+    @validate_channel
+    def output_off(self, channel):
+        self.instrument.write(f"OUTP{channel} OFF")
+
+    @validate_channel
+    def output_on(self, channel):
+        self.instrument.write(f"OUTP{channel} ON")
+        
     def run_instrument(self):
         self.instrument.write("AFGControl:START")
 
@@ -121,19 +132,18 @@ class AWG4022(AbstractSignalGenerator):
         self.set_frequency_MHz(channel, freq)
         self.run_instrument()
 
-    def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock, delay):
+    def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock):
         for ch in [ch_signal, ch_clock]:
-            self.awg.output_off(ch)
-            self.awg.set_mode(ch, AWG4022.Mode.USER)
-        self.awg.set_waveform(ch_signal, waveform, amp_sig)
-        self.awg.set_waveform(ch_clock, waveform, amp_clock)
-        self.awg.output_on(ch_signal)
-        self.awg.output_on(ch_clock)
+            self.output_off(ch)
+            self.set_mode(ch, AWG4022.Mode.USER)
+        self.set_waveform(ch_signal, waveform, amp_sig)
+        self.set_waveform(ch_clock, waveform, amp_clock)
+        self.output_on(ch_signal)
+        self.output_on(ch_clock)
 
         self.instrument.write(f"SOUR1:BURS:MODE TRIG")
         self.instrument.write(f"SOUR2:BURS:MODE TRIG")
         self.instrument.write("TRIG:TIM 1")
         self.instrument.write(f"SOUR1:BURS:NCYC 1")
         self.instrument.write(f"SOUR2:BURS:NCYC 1")   
-        self.set_delay(ch_signal, delay)
-        self.awg.run_instrument()
+        self.run_instrument()

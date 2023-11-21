@@ -20,3 +20,8 @@ try:
     from .AWG4022 import AWG4022
 except:
     print("Could not import AWG4022 (will not be available)")
+
+try:
+    from .ArduinoNano import ArduinoNano
+except:
+    print("Could not import ArduinoNano (will not be available)")
