@@ -1,5 +1,4 @@
 import argparse
-import json
 import radiant_test
 import stationrc.common
 import stationrc.remote_control
@@ -7,9 +6,7 @@ import numpy as np
 import uproot
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
-
-parser = argparse.ArgumentParser()
-
+import logging
 class AUXTriggerResponse(radiant_test.RADIANTTest):
     def __init__(self):
         super(AUXTriggerResponse, self).__init__()
@@ -19,16 +16,11 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
             self.awg = radiant_test.Keysight81160A(self.site_conf['signal_gen_ip_address'])
         else:
             raise ValueError("Invalid test_site, use desy or ecap")
-        self.arduino = radiant_test.ArduinoNano()
-    
-    def initialize_signal_gen(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock):
-        for ch in [ch_signal, ch_clock]:
-            self.awg.output_off(ch)
-        self.awg.set_waveform(ch_signal, waveform)  
-        self.awg.set_amplitude_mVpp(ch_signal, amp_sig)
-        self.awg.set_amplitude_mVpp(ch_clock, amp_clock)
-        for ch in [ch_signal, ch_clock]:
-            self.awg.output_on(ch)
+        try:
+            self.arduino = radiant_test.ArduinoNano()
+        except:
+            logging.info("Arduino not connected")
+            self.arduino = None
 
     def initialize_config(self, channel_test, threshold, run_length):
         run = stationrc.remote_control.Run(self.device)
@@ -38,7 +30,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         run.run_conf.radiant_load_thresholds_from_file(False)
         run.run_conf.radiant_servo_enable(False)
 
-        run.run_conf.radiant_trigger_rf0_mask([channel_test])
+        run.run_conf.radiant_trigger_rf0_mask([int(channel_test)])
         run.run_conf.radiant_trigger_rf0_num_coincidences(1)
         run.run_conf.radiant_trigger_rf0_enable(True)
 
@@ -48,6 +40,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         run.run_conf.flower_trigger_enable(False)
         run.run_conf.run_length(run_length)
         run.run_conf.comment("AUX Trigger Response Test")
+        print('start run')
         self.data_dir = run.start(delete_src=True, rootify=True)
 
     def calc_trigger(self, root_file, ch_test, ch_clock, ref_amp, run_length):
@@ -67,7 +60,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
         clock_amp = (np.max(np.abs(waveforms[:, ch_clock, :]), axis=1)) > 200
         rf0_pulse = rf0_true & pulse_test_correct & clock_amp
-        print(f'{waveforms[rf0_pulse,ch_test,:].shape[0]} total trigger in {run_length} seconds')
+        logging.info(f'{waveforms[rf0_pulse,ch_test,:].shape[0]} total trigger in {run_length} seconds')
         trig_eff = waveforms[rf0_pulse,ch_test,:].shape[0] / run_length
         trigger_eff_err = np.sqrt(waveforms[rf0_pulse,ch_test,:].shape[0]) / run_length
         if trigger_eff_err == 0:
@@ -79,7 +72,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         self.dic_run['threshold'] = thresh
         self.dic_run['root_dir'] = str(root_file)
         self.dic_run['ref_amp'] = ref_amp
-        print('dic_run', self.dic_run)
         return self.dic_run
     
     def tanh_func(self, x, a, b, c):
@@ -103,7 +95,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
             fit_parameter = []
             popt, pcov = curve_fit(self.tanh_func, amps, trig_effs, p0=[0.5,400,10])
-            print(popt)
             fit_parameter.append(popt)
 
             ax1.plot(amps, trig_effs, marker='x', ls='none', color=color_labels, label=f'threshold: {thresh} ')
@@ -141,8 +132,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
     def eval_point_results(self, channel, data):
         passed = False
-        print('data', data)
-
         passed_list = []
         for thresh in data.keys():
             for amp in data[thresh].keys():
@@ -170,7 +159,9 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         super(AUXTriggerResponse, self).run()
         self.device.radiant_calselect(quad=None) #make sure calibration is off
 
-        for ch_radiant in np.arange(0,24,1):
+        for ch_radiant in np.arange(0,3,1):
+            logging.info(f"Testing channel {ch_radiant}")
+            print(f"Testing channel {ch_radiant}")
             if ch_radiant > 0 and ch_radiant < 24:
                 ch_radiant_clock = 0
                 ch_sig_clock = 1 # has to be connected to radiant channel 0
@@ -188,15 +179,18 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
             
             self.dic_curve = {}
             for thresh in self.conf['args']['thresholds']:
-                self.dic_all[f"{thresh}:2f"] = {}
-                for amp in self.conf['args'][f"{thresh}:2f"]['amplitudes']:
-                    self.dic_all[f"{thresh}:2f"][f"{amp}:0f"] = {}
+                print(f"Testing threshold {thresh}")
+                self.dic_curve[f"{thresh:.2f}"] = {}
+                for amp in self.conf['args'][f"{thresh:.2f}"]['amplitudes']:
+                    print(f"Testing amplitude {amp}")
+                    self.dic_curve[f"{thresh:.2f}"][f"{amp:.0f}"] = {}
 
-                    self.initialize_signal_gen(self.conf['args']['waveform'], 
+                    self.awg.setup_aux_trigger_response_test(self.conf['args']['waveform'], 
                                                 ch_sg, 
                                                 ch_sig_clock, 
                                                 amp, 
                                                 self.conf['args']['clock_amplitude'])
+                    
                     self.initialize_config(ch_radiant, 
                                         thresh, 
                                         self.conf['args']['run_length'])
@@ -205,7 +199,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                                     ch_radiant_clock,
                                     amp,
                                     self.conf['args']['run_length'])
-                    self.dic_curve[f"{thresh}:2f"][f"{amp}:0f"] = data
+                    self.dic_curve[f"{thresh:.2f}"][f"{amp:.0f}"] = data
             self.calc_trig_eff_curve(self.dic_curve)
             self.eval_curve_results(ch_radiant, self.dic_curve)
             #self.eval_point_results(ch_radiant, self.dic_curve)
