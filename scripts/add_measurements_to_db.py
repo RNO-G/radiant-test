@@ -34,6 +34,6 @@ if args.filenames is not None:
         add_single_measurement(file)    
 elif args.set_folder is not None:
     for file in os.listdir(os.path.join(args.result_dir, args.set_folder)):
-        add_single_measurement(file)
+        add_single_measurement(os.path.join(args.set_folder, file))
 else:
     raise ValueError('Either filenames or set_folder must be not None')
