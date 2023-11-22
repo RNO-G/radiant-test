@@ -15,7 +15,7 @@ parser.add_argument('--result_dir', type=str, nargs='?', default='/home/rno-g-94
 
 args = parser.parse_args()
 
-def add_single_measurement(file):
+def add_single_measurement(file, set_folder=None):
     print(f'---- {file} ----')
     # check if file is already in db
     existing_files_in_db = db['radiant_test_measurements'].distinct('filename')
@@ -23,9 +23,17 @@ def add_single_measurement(file):
         print(f'... is already in the database. Will be skipped')
     else:    
         # load the measurement
-        result_dict = json.load(open(os.path.join(args.result_dir, file)))
+        if set_folder is not None:
+            result_dict = json.load(open(os.path.join(args.result_dir, set_folder, file)))
+        else:
+            result_dict = json.load(open(os.path.join(args.result_dir, file)))
+
+        # add the filename to the dict
+        input_mask = result_dict
+        input_mask['filename'] = file
+
         # add the measurement to the database
-        db['radiant_test_measurements'].insert_one(result_dict)
+        db['radiant_test_measurements'].insert_one(input_mask)
         print('added to the database')
     
 if args.filenames is not None:
@@ -34,6 +42,6 @@ if args.filenames is not None:
         add_single_measurement(file)    
 elif args.set_folder is not None:
     for file in os.listdir(os.path.join(args.result_dir, args.set_folder)):
-        add_single_measurement(os.path.join(args.set_folder, file))
+        add_single_measurement(file, args.set_folder)
 else:
     raise ValueError('Either filenames or set_folder must be not None')
