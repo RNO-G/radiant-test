@@ -4,13 +4,13 @@ import json
 import os
 
 # opens the connection to the database
-mongo_client = MongoClient("mongodb://*******")
+mongo_client = MongoClient(os.environ.get('db_mongo_connection_string'))
 
 db = mongo_client.RNOG_live
 
 parser = argparse.ArgumentParser(description='Function to add the radiant test measurements to the live database')
 parser.add_argument('--filenames', type=str, nargs='+', default=None, help='measurement names (measured without a set)')
-parser.add_argument('--set_folder', type=str, nargs='+', default=None, help='Set result folder name')
+parser.add_argument('--set_folder', type=str, nargs='?', default=None, help='Set result folder name')
 parser.add_argument('--result_dir', type=str, nargs='?', default='/home/rno-g-949/radiant-test/results', help='Path to the directory where the results are saved.')
 
 args = parser.parse_args()
