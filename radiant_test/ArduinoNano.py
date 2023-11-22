@@ -4,12 +4,13 @@ from serial.tools import list_ports
 class ArduinoNano():
     def __init__(self):
         try:
-            self.dev = serial.Serial('/dev/cu.usbserial-A104WN3J', 9600, timeout=1)  # mac
-            # self.dev = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)  # linux
+            # self.dev = serial.Serial('/dev/cu.usbserial-A104WN3J', 9600, timeout=1)  # mac
+            self.dev = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)  # linux
             # self.dev = serial.Serial('COM3', 9600, timeout=1)  # windows
         except serial.SerialException as e:
-            print(f"Arduino not connected: {e}")
-            self.dev = None
+            print(f"Arduino not connected: {e}, chose from this ports")
+            print('\n'.join([p.device for p in list(list_ports.comports())]))
+
 
     def check_ports(self):
         port = list(list_ports.comports())

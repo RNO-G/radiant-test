@@ -24,4 +24,4 @@ except:
 try:
     from .ArduinoNano import ArduinoNano
 except:
-    print("Could not import ArduinoNano (will not be available)")
+    print("Could not import ArduinoNano (maybe you installed serial instead of pyserial?)")
