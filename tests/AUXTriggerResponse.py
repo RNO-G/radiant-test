@@ -7,6 +7,50 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import logging
 import os
+
+def get_next_amp(curve_dic):
+    sorted_curve_dic = {k: v for k, v in sorted(curve_dic.items(), key=lambda item: float(item[0]))}
+    print('look what we have so far:', sorted_curve_dic)
+
+    effs = np.array([curve_dic[key]['trig_eff'] for key in curve_dic.keys()])
+    sg_amps = np.array([curve_dic[key]['sg_amp'] for key in curve_dic.keys()])
+
+    mask = (0 < effs) & (effs < 1)
+    n_lower = np.sum(((0 < effs) & (effs <= 0.5)))
+    n_upper = np.sum(((0.5 < effs) & (effs < 1)))
+    print(f'{np.sum(mask)} good amps')
+    print(f'{len(sg_amps[effs == 0])} zeros, {len(sg_amps[effs == 1])} ones')
+
+    if np.sum(mask) > 1:
+        print('finetuning...')
+        sorted_lst = sorted(sg_amps[mask])
+        n = len(sorted_lst)
+        if n % 2 == 0:
+            middle1 = sorted_lst[n // 2 - 1]
+            middle2 = sorted_lst[n // 2]
+        else:
+            middle1 = sorted_lst[n // 2]
+            if n_lower > n_upper:
+                middle2 = sorted_lst[n // 2 + 1]
+            else:
+                middle2 = sorted_lst[n // 2 - 1]
+        out = (middle1 + middle2) / 2
+
+    else:
+        print('coarse tuning...')
+        if 0 not in effs:
+            out = np.min(sg_amps) - 100
+        elif 1 not in effs:
+            out = np.max(sg_amps) + 100
+        else:
+            amps_zero = sg_amps[effs == 0]
+            amps_one = sg_amps[effs == 1]
+            out = (np.max(amps_zero) + np.min(amps_one)) / 2
+    print('next amp:', int(out))
+    return int(out)
+
+def tanh_func(x, a, b, c):
+    return a*(np.tanh((x-b)/c) + 1)
 class AUXTriggerResponse(radiant_test.RADIANTTest):
     def __init__(self):
         super(AUXTriggerResponse, self).__init__()
@@ -22,9 +66,9 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
             self.arduino = radiant_test.ArduinoNano()
         except:
             logging.info("Arduino not connected")
-            self.arduino = None
 
     def initialize_config(self, channel_test, threshold, run_length):
+        print('trigger set on channel', channel_test)
         run = stationrc.remote_control.Run(self.device)
         for ch in range(24):
             run.run_conf.radiant_threshold_initial(ch, threshold)
@@ -44,16 +88,30 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         run.run_conf.comment("AUX Trigger Response Test")
         print('start run')
         self.data_dir = run.start(delete_src=True, rootify=True)
+    
+    def get_vpp_from_clock_trigger(self, ch, ch_clock, n_events):
+        data = self.device.daq_record_data(num_events=n_events, trigger_channels=[ch_clock], trigger_threshold=0.95, force_trigger=False)
+        waveforms = data["data"]["WAVEFORM"]
+        vpps = []
+        for event in waveforms:
+            max_amp = np.max(event['radiant_waveforms'][ch])
+            min_amp = np.min(event['radiant_waveforms'][ch])
+            vpps.append(max_amp - min_amp)
 
-    def calc_trigger_eff_points(self, root_file, ch_test, ch_clock, thresh, ref_amp, run_length, sg_trigger_rate):
+        vpp = np.mean(vpps)
+        vpp_err = np.std(vpps)
+        print(f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: {vpp:.2f} +- {vpp_err:.2f} mV')
+        return vpp, vpp_err
+
+    def calc_trigger_eff_points(self, root_file, ch_test, ch_clock, run_length, sg_trigger_rate):
         self.dic_run = {}
         if os.path.exists(root_file):
             file_size = os.path.getsize(root_file)
             file_size_kb = file_size / 1024
             if file_size_kb < 100:
                 logging.warning('File too small, probably no trigger')
-                self.dic_run['trig_eff'] = 0
-                self.dic_run['trigger_eff_err'] = 0
+                trig_eff = 0
+                trig_eff_err = 0
             else:
                 f = uproot.open(root_file)
                 data = f["combined"]
@@ -63,157 +121,131 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 mask_rf0 = data['header/trigger_info/trigger_info.which_radiant_trigger'].array() == 0
                 rf0_true = has_surface & mask_rf0
 
-                index_max_amp_test = np.argmax(np.abs(waveforms[:, ch_test, :]), axis=1)
+                index_max_amp_test = np.argmax(np.abs(waveforms[:, ch_clock, :]), axis=1)
                 pulse_test_correct = (1450 < index_max_amp_test) & (index_max_amp_test < 1750)
-
                 clock_amp = (np.max(np.abs(waveforms[:, ch_clock, :]), axis=1)) > 200
                 rf0_pulse = rf0_true & pulse_test_correct & clock_amp
-                print(f'threshold: {thresh}, amplitude: {ref_amp} mVpp')
+
                 print(f'{waveforms[rf0_pulse,ch_test,:].shape[0]} of approx. {run_length*sg_trigger_rate} pulses triggered')
                 
                 trig_eff = waveforms[rf0_pulse,ch_test,:].shape[0] / (run_length * sg_trigger_rate)
                 if trig_eff > 1:
                     trig_eff = 1
-                trigger_eff_err = np.sqrt(waveforms[rf0_pulse,ch_test,:].shape[0]) / run_length
-                if trigger_eff_err == 0:
-                    trigger_eff_err = np.nan
-
-                self.dic_run['trig_eff'] = trig_eff
-                self.dic_run['trigger_eff_err'] = trigger_eff_err
-            self.dic_run['threshold'] = thresh
-            self.dic_run['root_dir'] = str(root_file)
-            self.dic_run['ref_amp'] = ref_amp
-            return self.dic_run
+                trig_eff_err = np.sqrt(waveforms[rf0_pulse,ch_test,:].shape[0]) / run_length
+                if trig_eff_err == 0:
+                    trig_eff_err = np.nan
+            print(f'trigger efficiency: {trig_eff:.2f} +- {trig_eff_err:.2f}')
+            return trig_eff, trig_eff_err
             
-    def tanh_func(self, x, a, b, c):
-        return a*(np.tanh((x-b)/c) + 1)
-    
-    def calc_trigger_eff_curves(self, data, showPlot=True):
-        x_arr = np.linspace(40, 500, 100)
-        if showPlot:
-            fig1 = plt.figure(figsize=(10,8))
-            ax1 = fig1.add_subplot(1, 1, 1)
-
+    def calc_trigger_eff_curves(self, curve_dic):
+        sorted_curve_dic = {k: v for k, v in sorted(curve_dic.items(), key=lambda item: float(item[0]))}
         dic_out = {}
-        trig_effs = []
         amps = []
-        for amp in data.keys():
-            trig_effs.append(data[amp]['trig_eff'])
-            amps.append(int(amp))
+        trig_effs = []
+        for key in sorted_curve_dic.keys():
+            amps.append(float(key))
+            trig_effs.append(sorted_curve_dic[key]['trig_eff'])
         try:
-            popt, pcov = curve_fit(self.tanh_func, amps, trig_effs, p0=[0.5,230,2])
+            popt, pcov = curve_fit(tanh_func, amps, trig_effs, p0=[0.5, 200, 2])
+            print('there is a fit: ', popt)
         except:
             popt = [0,0,0]
+            pcov = None
             print('fit failed')
-        if showPlot:
-            ax1.plot(amps, trig_effs, marker='x', ls='none', label=f'fit: {popt}')
-            ax1.plot(x_arr, self.tanh_func(x_arr, *popt))
-        dic_out = {'amplitude_signal_gen': amps, 'trigger_eff': trig_effs, 'fit_parameter': {                
+        dic_out = {'mVpp': amps, 'trigger_effs': trig_effs, 'fit_parameter': {                
                 "magnitude": popt[0],
                 "horizon_shift": popt[1],
-                "steepness": popt[2]}}
-    
-        if showPlot:
-            ax1.set_ylabel('trigger efficiency')
-            ax1.set_xlabel('amplitude signal generator')
-            ax1.legend()
-            plt.show()
-
+                "steepness": popt[2],
+                "pcov": pcov.tolist()}, 'raw_data': sorted_curve_dic}
         return dic_out
 
     def eval_curve_results(self, channel, threshold, data):
         passed = False
         threshold = str(threshold)
-        data['fit_parameter']['res_magnitude'] = {}
-        data['fit_parameter']['res_horizon_shift'] = {}
-        data['fit_parameter']['res_steepness'] = {}
-        mag_passed = None
-        hor_passed = None
-        steep_passed = None
-        fit_params = self.conf["expected_values"][threshold]['fit_params']
-        if data['fit_parameter']['magnitude'] < fit_params["magnitude_min"]:
-            print(data['fit_parameter']['magnitude'], '<', fit_params["magnitude_min"])
-            passed = False
-            mag_passed = False
-        elif data['fit_parameter']['magnitude'] > fit_params["magnitude_max"]:
-            print(data['fit_parameter']['magnitude'], '>', fit_params["magnitude_max"])
-            passed = False
-            mag_passed = False
-        elif data['fit_parameter']['horizon_shift'] < fit_params["horizon_shift_min"]:
-            print(data['fit_parameter']['horizon_shift'], '<', fit_params["horizon_shift_min"])
-            passed = False
-            hor_passed = False
-        elif data['fit_parameter']['horizon_shift'] > fit_params["horizon_shift_max"]:
-            print(data['fit_parameter']['horizon_shift'], '>', fit_params["horizon_shift_max"])
-            passed = False
-            hor_passed = False
-        elif data['fit_parameter']['steepness'] < fit_params["steepness_min"]:
-            print(data['fit_parameter']['steepness'], '<', fit_params["steepness_min"])
-            passed = False
-            steep_passed = False
-        elif data['fit_parameter']['steepness'] > fit_params["steepness_max"]:
-            print(data['fit_parameter']['steepness'], '>', fit_params["steepness_max"])
-            passed = False
-            steep_passed = False
-        else:
-            passed = True
-        
-        if mag_passed is None:
-            mag_passed = True
-        if hor_passed is None:
-            hor_passed = True
-        if steep_passed is None:
-            steep_passed = True
-        
+        expected = self.conf["expected_values"][threshold]['fit_params']
+
+        def check_param(param_name, param_value, param_min, param_max):
+            if param_value < param_min or param_value > param_max:
+                print(param_value, f'not in range ({param_min}, {param_max})')
+                return False
+            return True
+
+        mag_passed = check_param('magnitude', data['fit_parameter']['magnitude'], expected['magnitude_min'], expected['magnitude_max'])
+        hor_passed = check_param('horizon_shift', data['fit_parameter']['horizon_shift'], expected['horizon_shift_min'], expected['horizon_shift_max'])
+        steep_passed = check_param('steepness', data['fit_parameter']['steepness'], expected['steepness_min'], expected['steepness_max'])
+
+        passed = mag_passed and hor_passed and steep_passed
+
         data['fit_parameter']['res_magnitude'] = mag_passed
         data['fit_parameter']['res_horizon_shift'] = hor_passed
         data['fit_parameter']['res_steepness'] = steep_passed
+
         print('Test passed:', passed)
         self.add_measurement(f"{channel}", data, passed)
+
 
     def run(self):
         super(AUXTriggerResponse, self).run()
         self.device.radiant_calselect(quad=None) #make sure calibration is off
-
-        for ch_radiant in np.arange(0,4,1):
+        for ch_radiant in np.arange(23,24,1):
             logging.info(f"Testing channel {ch_radiant}")
             print(f"Testing channel {ch_radiant}")
-            if ch_radiant >= 1 and ch_radiant < 24:
+            if ch_radiant > 0 and ch_radiant < 24:
                 ch_radiant_clock = 0
-                ch_sig_clock = 1 # has to be connected to radiant channel 0
-                ch_sg = 2
+                sg_ch_clock = 1 # has to be connected to radiant channel 0
+                sg_ch = 2
                 self.arduino.route_signal_to_channel(ch_radiant)
-                print('arduino', self.arduino.route_signal_to_channel(ch_radiant))
+                print('Arduino:', self.arduino.route_signal_to_channel(ch_radiant))
 
             elif ch_radiant == 0:
                 ch_radiant_clock = 1
 
-                ch_sig_clock = 2
-                ch_sg = 1 # has to be connected to radiant channel 0
+                sg_ch_clock = 2
+                sg_ch = 1 # has to be connected to radiant channel 0
                 self.arduino.route_signal_to_channel(ch_radiant_clock)
+                print('Arduino:', self.arduino.route_signal_to_channel(ch_radiant_clock))
 
             else:
                 raise ValueError("Invalid channel number")
-            
-            self.dic_curve = {}
+
             thresh = self.conf['args']['threshold']
+            sg_current_amp = self.conf['args']['sg_start_amp']
+
+            points_on_curve = 0
+            total_points = 0
             self.dic_curve = {}
-            for amp in self.conf['args']['amplitudes']:
-                self.dic_curve[f"{amp:.0f}"] = {}
+            while True:
+                print('set signal generator amplitude to', sg_current_amp)
                 self.awg.setup_aux_trigger_response_test(self.conf['args']['waveform'], 
-                                            ch_sg, 
-                                            ch_sig_clock, 
-                                            amp, 
+                                            sg_ch, 
+                                            sg_ch_clock, 
+                                            sg_current_amp, 
                                             self.conf['args']['clock_amplitude'], self.conf['args']['sg_trigger_rate'])
-                
+                vpp, vpp_err = self.get_vpp_from_clock_trigger(ch_radiant, ch_radiant_clock, self.conf['args']['n_vpp_events'])
+                vpp_str = f"{vpp:.2f}"
+                self.dic_curve[vpp_str] = {}
+                self.dic_curve[vpp_str]['vpp_err'] = round(vpp_err, 2)
+
                 self.initialize_config(ch_radiant, thresh, self.conf['args']['run_length'])
-                data_point = self.calc_trigger_eff_points(self.data_dir/"combined.root", ch_radiant, ch_radiant_clock, thresh, amp, self.conf['args']['run_length'],  self.conf['args']['sg_trigger_rate'])
-                self.dic_curve[f"{amp:.0f}"] = data_point
-            dic_out = self.calc_trigger_eff_curves(self.dic_curve, showPlot=False)
+                
+                trig_eff_point, trig_eff_err = self.calc_trigger_eff_points(self.data_dir/"combined.root", ch_radiant, ch_radiant_clock, self.conf['args']['run_length'], self.conf['args']['sg_trigger_rate'])
+                self.dic_curve[vpp_str]['trig_eff'] = round(trig_eff_point, 2)
+                self.dic_curve[vpp_str]['trig_eff_err'] = round(trig_eff_err, 2)
+                self.dic_curve[vpp_str]['sg_amp'] = sg_current_amp
+                if 0 < trig_eff_point < 1:
+                    points_on_curve += 1
+                total_points += 1
+
+                sg_current_amp = get_next_amp(self.dic_curve)
+
+                if points_on_curve == 1 and total_points > 4:
+                    break
+
+            dic_out = self.calc_trigger_eff_curves(self.dic_curve)
             self.eval_curve_results(ch_radiant, thresh, dic_out)
 
-        self.awg.output_off(ch_sg)
-        self.awg.output_off(ch_sig_clock)
+        self.awg.output_off(sg_ch)
+        self.awg.output_off(sg_ch_clock)
 
 if __name__ == "__main__":
     radiant_test.run(AUXTriggerResponse)
