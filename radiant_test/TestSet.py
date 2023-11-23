@@ -37,6 +37,7 @@ class TestSet(object):
                     self.conf["tests"][key],
                 )
                 self.tests[-1].name = key
+                self.tests[-1].result_dict["test_name"] = key
 
     def add_test(self, test, alt_conf):
         if alt_conf:
