@@ -1,0 +1,28 @@
+{
+    "name": "AUXTriggerResponse",
+
+    "default_args": {
+        "args": {
+            "run_length": 20,
+            "waveform": "examples/template2_wo_hardwareResponse.json",
+            "clock_amplitude": 800
+        }
+    },
+
+    "tests": {
+        "AUXTriggerResponse_thresh_0.92": {
+            "base": "AUXTriggerResponse",
+            "args": {
+                "threshold": 0.92,
+                "amplitudes": [200, 400, 500, 600, 700]
+            }
+        },
+        "AUXTriggerResponse_thresh_0.94": {
+            "base": "AUXTriggerResponse",
+            "args": {
+                "threshold": 0.94,
+                "amplitudes": [200, 400, 500, 600, 700]
+            }
+        }
+    }
+}
