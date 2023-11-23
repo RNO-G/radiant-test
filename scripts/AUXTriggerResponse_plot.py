@@ -2,6 +2,7 @@ import numpy as np
 from NuRadioReco.utilities import units
 import matplotlib.pyplot as plt
 import colorama
+from matplotlib.lines import Line2D
 
 def get_rows_cols(n=24):
     if n <= 9:
@@ -14,27 +15,36 @@ def get_rows_cols(n=24):
     return nrows, ncols
 
 
+def get_color(passed):
+    if passed:
+        return colorama.Fore.GREEN 
+    else:
+        return colorama.Fore.RED
+    
+    
+def get_axis_color(ax, passed):
+    if passed == 'PASS':
+        color = '#6da34d'
+    elif passed == 'FAIL':
+        color = '#B50A1B'
+    ax.spines['bottom'].set_color(color)  # x-axis
+    ax.spines['top'].set_color(color)
+    ax.spines['left'].set_color(color)   # y-axis
+    ax.spines['right'].set_color(color)
+
 def get_fit_results_str(data, ch, with_color=False):
     data_ch = data["run"]["measurements"][str(ch)]["measured_value"]["fit_parameter"]
     result = data["run"]["measurements"][str(ch)]["result"]
-
-    color_start = ""
-    color_end = ""
-    if with_color:
-        if result == "FAIL":
-            color_start = colorama.Fore.RED
-        else:
-            color_start = colorama.Fore.GREEN
-        
-        color_end = colorama.Style.RESET_ALL
     
-    return (
-        color_start
-        + f'magnitude: {data_ch["magnitude"]:6.1f} - '
-        + f'horizon_shift: {data_ch["horizon_shift"]:6.1f} - '
-        + f'steepness: {data_ch["steepness"]} - '
-        + f'result: {result}' + color_end
-    )
+    color_end = colorama.Style.RESET_ALL
+
+    out = (
+        f" {get_color(result == 'PASS')} {result} {color_end} |"
+        + get_color(data_ch["res_magnitude"]) + f'magnitude: {data_ch["magnitude"]:.2f}{color_end} |'
+        + get_color(data_ch["res_horizon_shift"]) + f'horizon_shift: {data_ch["horizon_shift"]:.2f}{color_end}|'
+        + get_color(data_ch["res_steepness"]) + f'steepness: {data_ch["steepness"]:.2f}{color_end}')
+    
+    return out
 
 def tanh_func(x, a, b, c):
     return a*(np.tanh((x-b)/c) + 1)
@@ -65,8 +75,6 @@ def print_results(data, channel=None):
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols()
-    # Plot to screen
-
     fig = plt.figure(figsize=(15,15))
     axs = fig.subplots(nrows=nrows, ncols=ncols)
     for ch in get_channels(data):
@@ -80,27 +88,25 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
     if args_web:
         return fig
 
-
 def plot_channel(ax, data, ch):
-    x_arr = np.linspace(40,1000, 100)
+    x_arr = np.linspace(40,500, 100)
     amps = data['run']['measurements'][f"{ch}"]['measured_value']["amplitude_signal_gen"]
     trig_eff = data['run']['measurements'][f"{ch}"]['measured_value']['trigger_eff']
     fit_params = data['run']['measurements'][f"{ch}"]['measured_value']['fit_parameter']
+    res = data['run']['measurements'][f"{ch}"]['result']
     popt = [fit_params['magnitude'], fit_params['horizon_shift'], fit_params['steepness']]
-    ax.plot(np.asarray(amps), trig_eff, marker='x', ls='', label=f'fit params: {fit_params["magnitude"]:.2f} {fit_params["magnitude"]:.2f} {fit_params["magnitude"]:.2f}')
-    ax.plot(x_arr, tanh_func(x_arr, *popt))
-    ax.set_ylim(0,1)
+    ax.plot(np.asarray(amps), trig_eff, marker='x', ls='', color='#2d5d7b')#: {fit_params["magnitude"]:.2f} {fit_params["horizon_shift"]:.2f} {fit_params["steepness"]:.2f}')
+    ax.plot(x_arr, tanh_func(x_arr, *popt), color='#6D8495')
+    ax.set_ylim(-0.05,1.05)
     ax.set_title(f'channel: {ch}')
     ax.set_ylabel('trigger efficiency')
     ax.set_xlabel('amplitude signal generator [mVpp]')
-        
+    get_axis_color(ax, res)
 
 def plot_single(data, ch):
     fig = plt.figure()
     ax = fig.subplots()
     plot_channel(ax, data, ch)
-
-
 
 if __name__ == "__main__":
     import argparse

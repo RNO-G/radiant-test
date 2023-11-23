@@ -1,4 +1,4 @@
 {
-    "test_site": "desy",
-    "signal_gen_ip_address": "192.168.1.11"
+    "test_site": "ecap",
+    "signal_gen_ip_address": "192.168.11.2"
 } 
