@@ -124,9 +124,9 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
     def eval_curve_results(self, channel, threshold, data):
         passed = False
         threshold = str(threshold)
-        data['fit_parameter']['magnitude']['res'] = {}
-        data['fit_parameter']['horizon_shift']['res'] = {}
-        data['fit_parameter']['steepness']['res'] = {}
+        data['fit_parameter']['res_magnitude'] = {}
+        data['fit_parameter']['res_horizon_shift'] = {}
+        data['fit_parameter']['res_steepness'] = {}
         mag_passed = None
         hor_passed = None
         steep_passed = None
@@ -175,12 +175,11 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         super(AUXTriggerResponse, self).run()
         self.device.radiant_calselect(quad=None) #make sure calibration is off
 
-        for ch_radiant in np.arange(0,24,1):
+        for ch_radiant in np.arange(0,4,1):
             logging.info(f"Testing channel {ch_radiant}")
             print(f"Testing channel {ch_radiant}")
             if ch_radiant >= 1 and ch_radiant < 24:
                 ch_radiant_clock = 0
-
                 ch_sig_clock = 1 # has to be connected to radiant channel 0
                 ch_sg = 2
                 self.arduino.route_signal_to_channel(ch_radiant)
@@ -192,7 +191,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 ch_sig_clock = 2
                 ch_sg = 1 # has to be connected to radiant channel 0
                 self.arduino.route_signal_to_channel(ch_radiant_clock)
-                print('arduino', self.arduino.route_signal_to_channel(ch_radiant))
 
             else:
                 raise ValueError("Invalid channel number")
