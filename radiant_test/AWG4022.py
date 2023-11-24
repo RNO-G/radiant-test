@@ -148,3 +148,19 @@ class AWG4022(AbstractSignalGenerator):
         self.instrument.write("SOUR1:BURS:NCYC 1")
         self.instrument.write("SOUR2:BURS:NCYC 1")   
         self.run_instrument()
+
+    def setup_sine_waves(self, frequency, p2p):
+        for sig_gen_cha in [1,2]:
+            # make sure both outouts are off
+            self.output_off(sig_gen_cha)
+            # set the trigger source to continuous
+            self.set_trigger_source(sig_gen_cha, AWG4022.TriggerSource.CONTINUOUS)
+            # set the signal gen to sine waves
+            self.set_mode(sig_gen_cha, AWG4022.Mode.SINUSOID)
+            # set the sine amplitude
+            self.set_amplitude_mVpp(sig_gen_cha, p2p)
+            # set the sine frequency
+            self.set_frequency_MHz(sig_gen_cha, frequency)
+
+            # turn the channel on
+            self.output_on(sig_gen_cha)
