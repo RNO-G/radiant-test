@@ -58,7 +58,7 @@ class FrontEndNoise(radiant_test.RADIANTChannelTest):
         data['fit_slope'] = popt[0]
         data['fit_offset'] = popt[1]
         data['fit_average_residual'] = avg_residual
-        data['maximal_25MHz_amplitude'] = np.max(np.asarray(data['average_frequency_spectrum'])[mask_25MHz])
+        data['maximal_25MHz_amplitude'] = np.max(np.asarray(data['average_frequency_spectrum'])[mask_25MHz][i_80MHz:])
 
         return data
     
