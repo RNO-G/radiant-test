@@ -45,9 +45,10 @@ class AWG4022(AbstractSignalGenerator):
         self.instrument.write("AFGControl:START")
 
     @validate_channel
-    def set_amplitude_mVpp(self, channel, amplitude):
+    def set_amplitude_mV(self, channel, amplitude):
+        print(f'set amplitude to {amplitude} mV on signal gen channel {channel}')
         AMPLITUDE_MIN = 50
-        AMPLITUDE_MAX = 1200
+        AMPLITUDE_MAX = 600
 
         if amplitude < AMPLITUDE_MIN or amplitude > AMPLITUDE_MAX:
             raise ValueError(
@@ -55,6 +56,10 @@ class AWG4022(AbstractSignalGenerator):
             )
         self.instrument.write(f"SOUR{channel}:VOLT:UNIT VPP")
         self.instrument.write(f"SOUR{channel}:VOLT:AMPL {amplitude*1e-3}")
+
+    def set_amplitude_mVpp(self, channel, Vpp):
+        amp = Vpp/2
+        self.set_amplitude_mV(channel, amp)
 
     @validate_channel
     def set_frequency_MHz(self, channel, frequency):
@@ -149,7 +154,7 @@ class AWG4022(AbstractSignalGenerator):
         self.instrument.write("SOUR2:BURS:NCYC 1")   
         self.run_instrument()
 
-    def setup_sine_waves(self, frequency, p2p):
+    def setup_sine_waves(self, frequency, amplitude):
         for sig_gen_cha in [1,2]:
             # make sure both outouts are off
             self.output_off(sig_gen_cha)
@@ -158,9 +163,10 @@ class AWG4022(AbstractSignalGenerator):
             # set the signal gen to sine waves
             self.set_mode(sig_gen_cha, AWG4022.Mode.SINUSOID)
             # set the sine amplitude
-            self.set_amplitude_mVpp(sig_gen_cha, p2p)
+            self.set_amplitude_mV(sig_gen_cha, amplitude)
             # set the sine frequency
             self.set_frequency_MHz(sig_gen_cha, frequency)
 
             # turn the channel on
             self.output_on(sig_gen_cha)
+        self.run_instrument()
