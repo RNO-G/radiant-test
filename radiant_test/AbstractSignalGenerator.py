@@ -29,6 +29,10 @@ class AbstractSignalGenerator(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def set_amplitude_mV(self, channel, amplitude):
+        pass
+
+    @abc.abstractmethod
     def set_frequency_MHz(self, channel, frequency):
         pass
 

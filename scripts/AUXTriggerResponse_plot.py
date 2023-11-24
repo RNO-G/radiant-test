@@ -89,9 +89,9 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
         return fig
 
 def plot_channel(ax, data, ch):
-    x_arr = np.linspace(40,500, 100)
-    amps = data['run']['measurements'][f"{ch}"]['measured_value']["amplitude_signal_gen"]
-    trig_eff = data['run']['measurements'][f"{ch}"]['measured_value']['trigger_eff']
+    x_arr = np.linspace(40, 150, 100)
+    amps = data['run']['measurements'][f"{ch}"]['measured_value']["Vpp"]
+    trig_eff = data['run']['measurements'][f"{ch}"]['measured_value']['trigger_effs']
     fit_params = data['run']['measurements'][f"{ch}"]['measured_value']['fit_parameter']
     res = data['run']['measurements'][f"{ch}"]['result']
     popt = [fit_params['magnitude'], fit_params['horizon_shift'], fit_params['steepness']]
@@ -100,7 +100,7 @@ def plot_channel(ax, data, ch):
     ax.set_ylim(-0.05,1.05)
     ax.set_title(f'channel: {ch}')
     ax.set_ylabel('trigger efficiency')
-    ax.set_xlabel('amplitude signal generator [mVpp]')
+    ax.set_xlabel('amplitude signal generator [ADC counts]')
     get_axis_color(ax, res)
 
 def plot_single(data, ch):
