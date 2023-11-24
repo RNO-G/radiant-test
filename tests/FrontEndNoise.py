@@ -24,7 +24,6 @@ class FrontEndNoise(radiant_test.RADIANTChannelTest):
         # calculate the frequency
         frequency = np.fft.rfftfreq(len(wfs[0]), d=(1. / radiant_test.RADIANT_SAMPLING_RATE))
 
-        
         save_data['frequency'] = list(frequency)
         save_data['average_frequency_spectrum'] = list(average_frequency_spec)
 
@@ -50,12 +49,16 @@ class FrontEndNoise(radiant_test.RADIANTChannelTest):
                     index = idf
             return index
 
-        i_80MHz = get_freq_index(data['frequency'], 0.08)
+        mask_not_25MHz = np.asarray(data['frequency'])*1000 % 25 >= 1 # need to convert frequency to MHz
+        mask_25MHz = np.asarray(data['frequency'])*1000 % 25 < 1 # need to convert frequency to MHz
 
-        popt, avg_residual = fit_linear_func(np.asarray(data['frequency'])[i_80MHz:], np.asarray(data['average_frequency_spectrum'])[i_80MHz:])
+        i_80MHz = get_freq_index(np.asarray(data['frequency'])[mask_not_25MHz], 0.08)
+
+        popt, avg_residual = fit_linear_func(np.asarray(data['frequency'])[mask_not_25MHz][i_80MHz:], np.asarray(data['average_frequency_spectrum'])[mask_not_25MHz][i_80MHz:])
         data['fit_slope'] = popt[0]
         data['fit_offset'] = popt[1]
         data['fit_average_residual'] = avg_residual
+        data['maximal_25MHz_amplitude'] = np.max(np.asarray(data['average_frequency_spectrum'])[mask_25MHz])
 
         return data
     
@@ -70,6 +73,9 @@ class FrontEndNoise(radiant_test.RADIANTChannelTest):
             return False
         
         if data['fit_average_residual'] > self.conf["expected_values"]["average_residual_max"]:
+            return False
+        
+        if data['maximal_25MHz_amplitude'] > self.conf["expected_values"]["maximal_25MHz_amplitude"]:
             return False
         
         return True
