@@ -33,6 +33,7 @@ def get_fit_results_str(data, ch, with_color=False):
         + f"slope: {data_ch['fit_slope']:6.1f} - "
         + f"offset: {data_ch['fit_offset']:6.1f} - "
         + f"average residual: {data_ch['fit_average_residual']} - "
+        + f"max amplitude 25MHz: {data_ch['maximal_25MHz_amplitude']} - "
         + f"result: {result}" + color_end
     )
 
@@ -46,7 +47,7 @@ def get_channels(data):
 
 
 def get_measured_values(data):
-    measured_val_dict = {'channel': [], 'result': [],'slope': [], 'offset': [], 'average residual': []}
+    measured_val_dict = {'channel': [], 'result': [],'slope': [], 'offset': [], 'average residual': [], 'max amplitude 25MHz': []}
 
     for ch in get_channels(data):
         measured_val_dict['channel'].append(ch)
@@ -54,6 +55,10 @@ def get_measured_values(data):
         measured_val_dict['slope'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_slope'])
         measured_val_dict['offset'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_offset'])
         measured_val_dict['average residual'].append(data['run']['measurements'][str(ch)]['measured_value']['fit_average_residual'])
+        if 'maximal_25MHz_amplitude' in data['run']['measurements'][str(ch)]['measured_value'].keys():
+            measured_val_dict['max amplitude 25MHz'].append(data['run']['measurements'][str(ch)]['measured_value']['maximal_25MHz_amplitude'])
+        else:
+            measured_val_dict['max amplitude 25MHz'].append(None)
 
     return measured_val_dict
     
