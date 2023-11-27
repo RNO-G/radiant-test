@@ -56,11 +56,11 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
         upper_buffer = False
         for evt, hd in zip(events, headers):
             # select here the two events that are covering all windows
-            if hd["radiant_start_windows"][0] < 16 and not lower_buffer:
+            if hd["radiant_start_windows"][channel][0] < 16 and not lower_buffer:
                 lower_buffer = True
                 waveforms[0] = evt["radiant_waveforms"][channel]
 
-            if hd["radiant_start_windows"][0] >= 16 and not upper_buffer:
+            if hd["radiant_start_windows"][channel][0] >= 16 and not upper_buffer:
                 upper_buffer = True
                 waveforms[1] = evt["radiant_waveforms"][channel]
         
@@ -93,7 +93,7 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
                 return False
         return True
 
-    def _fit_waveform(self, wvfs):
+    def _fit_waveforms(self, wvfs):
         def sine(x, amplitude, frequency, phase, offset):
             return amplitude * np.sin(2 * np.pi * frequency * x + phase) + offset
 
@@ -113,14 +113,13 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
             return popt, avg_residual
 
         window_label=['lower_buffer', 'higher_buffer']
+        data = dict()
         for iwvf, wvf in enumerate(wvfs):
             try:
                 popt, avg_residual = fit_sine(wvf)
             except ValueError:
                 popt = [0, 0, 0, 0]
                 avg_residual = 0
-            
-            data = dict()
             data[f"waveform_{window_label[iwvf]}"] = wvf
             data[f"fit_amplitude_{window_label[iwvf]}"] = (
                 popt[0] if popt[0] >= 0 else -popt[0]
