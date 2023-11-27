@@ -19,24 +19,29 @@ class BiasScan(radiant_test.RADIANTTest):
             self.conf["args"]["start"], self.conf["args"]["stop"],
             self.conf["args"]["points"])
 
-        mean_pedestal_per_channel = np.mean(pedestals, axis=-1)
-
         # v_adc, channel, sample -> channel, v_adc, sample
         pedestals = np.swapaxes(pedestals, 0, 1)
 
-        for ch, (mean_pedestal, ped) in enumerate(zip(mean_pedestal_per_channel.T, pedestals)):
-            lin_fit, a, b = fit(adc_list, mean_pedestal)
+        for ch, ped in enumerate(pedestals):
+            fit_param = np.array([fit(adc_list, ped[:, sample])[1:] for sample in range(4096)])
             data = {
                 "bias_dac": adc_list.tolist(),
                 "bias_adc": ped.tolist(),
-                "mean_bias_adc": mean_pedestal.tolist(),
-                "line_fit_para": [a, b]
+                "line_fit_para": [fit_param.T[0].tolist(), fit_param.T[1].tolist()]
             }
             self.add_measurement(f"{ch}", data, passed=self.check_line_fit(data))
 
+
     def check_line_fit(self, data):
-        lin_para = data["line_fit_para"]
-        return True
+        a, b = np.array(data["line_fit_para"])
+
+        a_min = self.conf["expected_values"]["a_min"]
+        a_max = self.conf["expected_values"]["a_max"]
+        b_min = self.conf["expected_values"]["b_min"]
+        b_max = self.conf["expected_values"]["b_max"]
+
+        return np.all([a_min <= a, a <= a_max]) and np.all([b_min <= b, b <= b_max])
+
 
     def bias_scan(self, start, end, points):
         intervals = np.arange(int(start), int(end), int((end - start) / points))
