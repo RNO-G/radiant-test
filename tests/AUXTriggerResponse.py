@@ -4,15 +4,13 @@ import stationrc.remote_control
 import numpy as np
 import uproot
 from scipy.optimize import curve_fit
-from scipy.odr import Model, RealData, ODR
 import matplotlib.pyplot as plt
 import logging
 import os
 
 
-def tanh_func(params, x):
-    a, b, c = params
-    return a * np.tanh(b * (x - c))
+def hill_eq(x, x0, p):
+    return 1 / (1 + (x0 / x)**p)
 
 class AUXTriggerResponse(radiant_test.RADIANTTest):
     def __init__(self):
@@ -60,7 +58,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
             max_amp = np.max(event['radiant_waveforms'][ch])
             min_amp = np.min(event['radiant_waveforms'][ch])
             vpps.append(max_amp - min_amp)
-
         vpp = np.mean(vpps)
         vpp_err = np.std(vpps)
         print(f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: {vpp:.2f} +- {vpp_err:.2f}')
@@ -148,9 +145,12 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 trig_eff = waveforms[rf0_pulse,ch_test,:].shape[0] / (run_length * sg_trigger_rate)
                 if trig_eff > 1:
                     trig_eff = 1
-                trig_eff_err = np.sqrt(waveforms[rf0_pulse,ch_test,:].shape[0]) / run_length
-                if trig_eff_err == 0:
+                    trig_eff_err = 0.01
+                elif trig_eff == 0:
                     trig_eff_err = np.nan
+                else:
+                    trig_eff_err = np.sqrt(waveforms[rf0_pulse,ch_test,:].shape[0]) / run_length
+                
             print(f'trigger efficiency: {trig_eff:.2f} +- {trig_eff_err:.2f}')
             return trig_eff, trig_eff_err
     
@@ -160,59 +160,41 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         vpp = []
         trig_effs = []
         vpp_err = []
-
         for key in sorted_curve_dic.keys():
             vpp.append(float(key))
             trig_effs.append(sorted_curve_dic[key]['trig_eff'])
             vpp_err.append(sorted_curve_dic[key]['vpp_err'])
-        
-        turn_amps = [key for key, value in sorted_curve_dic.items() if 0 < value['trig_eff'] < 1]
-        print('turning amps:', turn_amps)
-        float_turn_amps= [float(value) for value in turn_amps]
-        turn_amp = np.mean(float_turn_amps)
-
         try:
-            model = Model(tanh_func)
-            data = RealData(vpp, trig_effs, sx=vpp_err)
-            odr = ODR(data, model, beta0=[0.5, turn_amp, 1])
-            result = odr.run()
-            a_fit, b_fit, c_fit = result.beta
-            pcov = result.cov_beta.tolist()
-            print('there is a fit: ', a_fit, b_fit, c_fit)
-
+            popt, pcov = curve_fit(hill_eq, vpp, trig_effs, bounds=([0, 0], [np.inf, np.inf]), p0=[100, 2])
+            pcov = pcov.tolist()
         except:
             print('fit failed')
-            a_fit, b_fit, c_fit = None
+            popt = [None, None]
             pcov = None
 
         dic_out = {'Vpp': vpp, 'trigger_effs': trig_effs, 'fit_parameter': {                
-                "magnitude": a_fit,
-                "horizon_shift": b_fit,
-                "steepness": c_fit,
+                "halfway": popt[0],
+                "steepness": popt[1],
                 "pcov": pcov}, 'raw_data': sorted_curve_dic}
         return dic_out
 
-    def eval_curve_results(self, channel, threshold, data):
+    def eval_curve_results(self, channel, data):
         passed = False
-        threshold = str(threshold)
-        expected = self.conf["expected_values"][threshold]['fit_params']
-
-        def check_param(param_name, param_value, param_min, param_max):
-            if param_value < param_min or param_value > param_max:
+        def check_param(param_value, param_min, param_max):
+            if param_value is None:
+                print(param_value, 'is None')
+                return False
+            elif param_value < param_min or param_value > param_max:
                 print(param_value, f'not in range ({param_min}, {param_max})')
                 return False
             return True
 
-        mag_passed = check_param('magnitude', data['fit_parameter']['magnitude'], expected['magnitude_min'], expected['magnitude_max'])
-        hor_passed = check_param('horizon_shift', data['fit_parameter']['horizon_shift'], expected['horizon_shift_min'], expected['horizon_shift_max'])
-        steep_passed = check_param('steepness', data['fit_parameter']['steepness'], expected['steepness_min'], expected['steepness_max'])
+        hor_passed = check_param(data['fit_parameter']['halfway'], self.conf['expected_values']['halfway_min'], self.conf['expected_values']['halfway_max'])
+        steep_passed = check_param(data['fit_parameter']['steepness'], self.conf['expected_values']['steepness_min'], self.conf['expected_values']['steepness_max'])
+        passed = hor_passed and steep_passed
 
-        passed = mag_passed and hor_passed and steep_passed
-
-        data['fit_parameter']['res_magnitude'] = mag_passed
-        data['fit_parameter']['res_horizon_shift'] = hor_passed
+        data['fit_parameter']['res_halfway'] = hor_passed
         data['fit_parameter']['res_steepness'] = steep_passed
-
         print('Test passed:', passed)
         self.add_measurement(f"{channel}", data, passed)
 
@@ -220,7 +202,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
     def run(self):
         super(AUXTriggerResponse, self).run()
         self.device.radiant_calselect(quad=None) #make sure calibration is off
-        for ch_radiant in np.arange(1, 24,1):
+        for ch_radiant in np.arange(0, 24, 1):
             logging.info(f"Testing channel {ch_radiant}")
             print(f"Testing channel {ch_radiant}")
             if ch_radiant > 0 and ch_radiant < 24:
@@ -247,7 +229,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
             total_points = 0
             self.dic_curve = {}
             while True:
-                print('in run method current Vpp is', sg_current_amp)
                 self.awg.setup_aux_trigger_response_test(self.conf['args']['waveform'], 
                                             sg_ch, 
                                             sg_ch_clock, 
@@ -259,7 +240,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 self.dic_curve[vpp_str]['vpp_err'] = round(vpp_err, 2)
 
                 self.initialize_config(ch_radiant, thresh, self.conf['args']['run_length'])
-                print(self.data_dir/"combined.root", ch_radiant, ch_radiant_clock, self.conf['args']['run_length'], self.conf['args']['sg_trigger_rate'])
                 trig_eff_point, trig_eff_err = self.calc_trigger_eff_points(self.data_dir/"combined.root", ch_radiant, ch_radiant_clock, self.conf['args']['run_length'], self.conf['args']['sg_trigger_rate'])
                 self.dic_curve[vpp_str]['trig_eff'] = round(trig_eff_point, 2)
                 self.dic_curve[vpp_str]['trig_eff_err'] = round(trig_eff_err, 2)
@@ -268,13 +248,18 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                     points_on_curve += 1
                 total_points += 1
 
-                sg_current_amp = self.get_next_amp(self.dic_curve)
+                if points_on_curve >= self.conf['args']['points_on_slope'] and total_points > 4:
+                    break
 
-                if points_on_curve == self.conf['args']['points_on_slope'] and total_points > 4:
+                if total_points > 10:
+                    break
+
+                sg_current_amp = self.get_next_amp(self.dic_curve)
+                if sg_current_amp > 1400:
                     break
 
             dic_out = self.fit_trigger_curve(self.dic_curve)
-            self.eval_curve_results(ch_radiant, thresh, dic_out)
+            self.eval_curve_results(ch_radiant, dic_out)
 
         self.awg.output_off(sg_ch)
         self.awg.output_off(sg_ch_clock)

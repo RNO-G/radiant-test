@@ -27,17 +27,36 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
         self.device.radiant_sig_gen_off() # make sure internal signal gen is off
         self.device.radiant_calselect(quad=None) #make sure calibration is off
 
-        self.awg.setup_sine_waves(300, 500)
-
         # set up the signal generator
-        #set up the radiant (meaning only take force triggers (but maybe at high rate))
+        self.awg.setup_sine_waves(self.conf["args"]["frequency"], self.conf["args"]["amplitude"])
+
         # loop over all channels
-        # direct the signal to the corresponding channel
-        # self.arduino.route_signal_to_channel(ch_radiant_clock)
-        # take some sine waves -> fit the sine waves
-        # make sure that all readout windows are used
-        
+        for cha in self.conf["args"]["channels"]:
+            print(cha)
+            # direct the signal to the corresponding channel
+            self.arduino.route_signal_to_channel(cha)
+            
+            self.run_channel(cha)
+
         # turn off the signal gen     
+        self.awg.output_off(1)
+        self.awg.output_off(2)
+
+    def run_channel(self, channel):
+        # take some sine waves -> fit the sine waves
+        data = self.device.daq_record_data(
+            num_events=1, force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'], read_header=True, use_uart=self.conf["args"]["use_uart"]
+        )
+        events = data["data"]["WAVEFORM"]
+
+        # make sure that all readout windows are used
+        headers = data["data"]["HEADER"]
+        # for hd in headers:
+        #     print(hd["radiant_start_windows"])
+        # print(len(events))
+        
+        data = self._fit_waveform(wvf=events[0]["radiant_waveforms"][channel])
+        self.add_measurement(f"{channel}", data, passed=self._check_fit(data))
 
 
     def _check_fit(self, data):
@@ -100,19 +119,6 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
         data["fit_offset"] = popt[3]
         data["fit_avg_residual"] = avg_residual
         return data
-
-    def _run_quad(self, quad):
-        data = self.device.daq_record_data(
-            num_events=1, force_trigger=True, use_uart=self.conf["args"]["use_uart"]
-        )
-        event = data["data"]["WAVEFORM"][0]
-        for ch in radiant_test.get_channels_for_quad(quad):
-            if ch not in self.conf["args"]["channels"]:
-                continue
-
-            if ch in self.conf["args"]["channels"]:
-                data = self._fit_waveform(event["radiant_waveforms"][ch])
-                self.add_measurement(f"{ch}", data, passed=self._check_fit(data))
 
 
 if __name__ == "__main__":

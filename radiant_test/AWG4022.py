@@ -48,7 +48,7 @@ class AWG4022(AbstractSignalGenerator):
     def set_amplitude_mV(self, channel, amplitude):
         print(f'set amplitude to {amplitude} mV on signal gen channel {channel}')
         AMPLITUDE_MIN = 50
-        AMPLITUDE_MAX = 600
+        AMPLITUDE_MAX = 700
 
         if amplitude < AMPLITUDE_MIN or amplitude > AMPLITUDE_MAX:
             raise ValueError(
