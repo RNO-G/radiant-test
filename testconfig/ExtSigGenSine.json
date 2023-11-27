@@ -1,0 +1,16 @@
+{
+    "expected_values": {
+        "amplitude_min": 200,
+        "amplitude_max": 400,
+        "frequency_deviation": 0.002,
+        "offset_max": 50,
+        "avg_residual_max": 200
+    },
+    "args": {
+        "amplitude": 300,
+        "frequency": 90,
+        "number_of_events": 10,
+        "force_trigger_interval": 0.1,
+        "use_uart": false
+    }
+}

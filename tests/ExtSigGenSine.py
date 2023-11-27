@@ -45,39 +45,55 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
     def run_channel(self, channel):
         # take some sine waves -> fit the sine waves
         data = self.device.daq_record_data(
-            num_events=1, force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'], read_header=True, use_uart=self.conf["args"]["use_uart"]
+            num_events=self.conf['args']['number_of_events'], force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'], read_header=True, use_uart=self.conf["args"]["use_uart"]
         )
         events = data["data"]["WAVEFORM"]
+        headers = data["data"]["HEADER"]
 
         # make sure that all readout windows are used
-        headers = data["data"]["HEADER"]
-        # for hd in headers:
-        #     print(hd["radiant_start_windows"])
-        # print(len(events))
+        waveforms = [None, None]
+        lower_buffer = False
+        upper_buffer = False
+        for evt, hd in zip(events, headers):
+            # select here the two events that are covering all windows
+            if hd["radiant_start_windows"][0] < 16 and not lower_buffer:
+                lower_buffer = True
+                waveforms[0] = evt["radiant_waveforms"][channel]
+
+            if hd["radiant_start_windows"][0] >= 16 and not upper_buffer:
+                upper_buffer = True
+                waveforms[1] = evt["radiant_waveforms"][channel]
         
-        data = self._fit_waveform(wvf=events[0]["radiant_waveforms"][channel])
+        if waveforms[0] is None or waveforms[1] is None:
+            print('Not events are taken to test both buffers.')
+
+        # fit both events in the same fit_waveforms function
+        data = self._fit_waveforms(wvfs=waveforms)
+        # data = self._fit_waveforms(wvf=events[0]["radiant_waveforms"][channel])
         self.add_measurement(f"{channel}", data, passed=self._check_fit(data))
 
 
     def _check_fit(self, data):
-        if (
-            data["fit_amplitude"] < self.conf["expected_values"]["amplitude_min"]
-            or data["fit_amplitude"] > self.conf["expected_values"]["amplitude_max"]
-        ):
-            return False
-        frequency_deviation = (
-            np.abs(data["fit_frequency"] - self.conf["args"]["frequency"])
-            / self.conf["args"]["frequency"]
-        )
-        if frequency_deviation > self.conf["expected_values"]["frequency_deviation"]:
-            return False
-        if np.abs(data["fit_offset"]) > self.conf["expected_values"]["offset_max"]:
-            return False
-        if data["fit_avg_residual"] > self.conf["expected_values"]["avg_residual_max"]:
-            return False
+        window_label=['lower_buffer', 'higher_buffer']
+        for wl in window_label:
+            if (
+                data[f"fit_amplitude_{wl}"] < self.conf["expected_values"]["amplitude_min"]
+                or data[f"fit_amplitude_{wl}"] > self.conf["expected_values"]["amplitude_max"]
+            ):
+                return False
+            frequency_deviation = (
+                np.abs(data[f"fit_frequency_{wl}"] - self.conf["args"]["frequency"])
+                / self.conf["args"]["frequency"]
+            )
+            if frequency_deviation > self.conf["expected_values"]["frequency_deviation"]:
+                return False
+            if np.abs(data[f"fit_offset_{wl}"]) > self.conf["expected_values"]["offset_max"]:
+                return False
+            if data[f"fit_avg_residual_{wl}"] > self.conf["expected_values"]["avg_residual_max"]:
+                return False
         return True
 
-    def _fit_waveform(self, wvf):
+    def _fit_waveform(self, wvfs):
         def sine(x, amplitude, frequency, phase, offset):
             return amplitude * np.sin(2 * np.pi * frequency * x + phase) + offset
 
@@ -96,28 +112,31 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
             avg_residual = np.sum(np.abs(wvf - sine(np.asarray(wvf), *popt))) / len(wvf)
             return popt, avg_residual
 
-        try:
-            popt, avg_residual = fit_sine(wvf)
-        except ValueError:
-            popt = [0, 0, 0, 0]
-            avg_residual = 0
+        window_label=['lower_buffer', 'higher_buffer']
+        for iwvf, wvf in enumerate(wvfs):
+            try:
+                popt, avg_residual = fit_sine(wvf)
+            except ValueError:
+                popt = [0, 0, 0, 0]
+                avg_residual = 0
             
-        data = dict()
-        data["waveform"] = wvf
-        data["fit_amplitude"] = (
-            popt[0] if popt[0] >= 0 else -popt[0]
-        )  # ensure amplitude is not negative
-        data["fit_frequency"] = popt[1] * 1e3  # convert from GHz to MHz
-        data["fit_phase"] = (
-            popt[2] if popt[0] >= 0 else popt[2] + np.pi
-        )  # correct phase by pi if amplitude was fit negative
-        # Normalize phase to [0, 2pi)
-        while data["fit_phase"] < 0:
-            data["fit_phase"] += 2 * np.pi
-        while data["fit_phase"] >= 2 * np.pi:
-            data["fit_phase"] -= 2 * np.pi
-        data["fit_offset"] = popt[3]
-        data["fit_avg_residual"] = avg_residual
+            data = dict()
+            data[f"waveform_{window_label[iwvf]}"] = wvf
+            data[f"fit_amplitude_{window_label[iwvf]}"] = (
+                popt[0] if popt[0] >= 0 else -popt[0]
+            )  # ensure amplitude is not negative
+            data[f"fit_frequency_{window_label[iwvf]}"] = popt[1] * 1e3  # convert from GHz to MHz
+            data[f"fit_phase_{window_label[iwvf]}"] = (
+                popt[2] if popt[0] >= 0 else popt[2] + np.pi
+            )  # correct phase by pi if amplitude was fit negative
+            # Normalize phase to [0, 2pi)
+            while data[f"fit_phase_{window_label[iwvf]}"] < 0:
+                data[f"fit_phase_{window_label[iwvf]}"] += 2 * np.pi
+            while data[f"fit_phase_{window_label[iwvf]}"] >= 2 * np.pi:
+                data[f"fit_phase_{window_label[iwvf]}"] -= 2 * np.pi
+            data[f"fit_offset_{window_label[iwvf]}"] = popt[3]
+            data[f"fit_avg_residual_{window_label[iwvf]}"] = avg_residual
+        
         return data
 
 
