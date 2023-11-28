@@ -26,11 +26,11 @@ class HarmonicDistortion(radiant_test.RADIANTChannelTest):
 
         self.device.radiant_sig_gen_off()
         self.device.radiant_calselect(quad=None)
-        
+
     def check_data(self, data):
         harmonic_distortion = data["harmonic_distortion"]
         harmonic_distortion2 = data["harmonic_distortion2"]
-        
+
         if harmonic_distortion > self.conf["expected_values"]["max_harmonic"] or \
                 harmonic_distortion2 > self.conf["expected_values"]["max_total"] :
             return False
@@ -38,16 +38,16 @@ class HarmonicDistortion(radiant_test.RADIANTChannelTest):
             return True
 
     def calculate_harmoic_distortion(self, wfs):
-        
+
         signal_frequency = self.conf["args"]["frequency"] * 1e6  # conversion to Hz
 
         spec = np.abs(np.fft.rfft(wfs))
         frequencies = np.fft.rfftfreq(2048, 1 / 3.2e9)
-                
+
         signal_bin = np.argmin(np.abs(frequencies - signal_frequency))
         if frequencies[signal_bin] > signal_frequency:
             signal_bin -= 1
-        
+
         harmonics_sqared_sum = 0
         nth = 2
         harmonic_bins = []
@@ -58,16 +58,16 @@ class HarmonicDistortion(radiant_test.RADIANTChannelTest):
 
             if nth_bin >= len(frequencies) - 1:
                 break
-            
+
             if frequencies[nth_bin] > nth_freq:
                 nth_bin -= 1
-            
+
             harmonic_bins.append(int(nth_bin))
             harmonics_sqared_sum += spec[nth_bin] ** 2
-        
+
         harmonic_distortion = np.sqrt(harmonics_sqared_sum) / spec[signal_bin]
         harmonic_distortion2 = np.sqrt(np.sum(spec ** 2) - spec[signal_bin] ** 2) / spec[signal_bin]
-        
+
         data = {
             "waveform": list(wfs),
             "spectrum": list(spec),
@@ -77,7 +77,7 @@ class HarmonicDistortion(radiant_test.RADIANTChannelTest):
             "harmonic_distortion": float(harmonic_distortion),
             "harmonic_distortion2": float(harmonic_distortion2)
         }
-        
+
         return data
 
     def _run_quad(self, quad):
