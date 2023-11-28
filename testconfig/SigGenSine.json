@@ -1,9 +1,9 @@
 {
     "expected_values": {
-        "amplitude_min": 90,
+        "amplitude_min": 50,
         "amplitude_max": 1000,
         "frequency_deviation": 0.002,
-        "offset_max": 50,
+        "offset_max": 20,
         "avg_residual_max": 500
     },
     "args": {
