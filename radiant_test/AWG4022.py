@@ -164,6 +164,7 @@ class AWG4022(AbstractSignalGenerator):
             self.set_mode(sig_gen_cha, AWG4022.Mode.SINUSOID)
             # set the sine amplitude
             self.set_amplitude_mV(sig_gen_cha, amplitude)
+            self.set_offset(sig_gen_cha, 0)
             # set the sine frequency
             self.set_frequency_MHz(sig_gen_cha, frequency)
 
