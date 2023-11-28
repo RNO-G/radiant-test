@@ -69,19 +69,19 @@ def print_results(data, channel=None):
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols()
-    fig = plt.figure(figsize=(15,15))
+    fig = plt.figure(figsize=(12,6))
     axs = fig.subplots(nrows=nrows, ncols=ncols)
     for ch in get_channels(data):
         if nrows == 1:
             ax = axs[ch % ncols]
         else:
             ax = axs[ch // ncols][ch % ncols]
-        plot_channel(ax, data, ch)
+        plot_channel(fig, ax, data, ch)
     fig.tight_layout()
     if args_web:
         return fig
 
-def plot_channel(ax, data, ch):
+def plot_channel(fig, ax, data, ch):
     x_arr = np.linspace(40, 150, 100)
     amps = data['run']['measurements'][f"{ch}"]['measured_value']["Vpp"]
     trig_eff = data['run']['measurements'][f"{ch}"]['measured_value']['trigger_effs']
@@ -92,14 +92,49 @@ def plot_channel(ax, data, ch):
     ax.plot(x_arr, hill_eq(x_arr, *popt), color='#6D8495')
     ax.set_ylim(-0.05,1.05)
     ax.set_title(f'channel: {ch}')
-    ax.set_ylabel('trigger efficiency')
-    ax.set_xlabel('Vpp LAB4D [adc counts]')
+    #ax.set_ylabel('trigger efficiency')
+    #ax.set_xlabel('Vpp LAB4D [adc counts]')
+    fig.text(0.5, 0.0, 'Vpp LAB4D [adc counts]', ha='center', va='center')
+    fig.text(0.0, 0.5, 'trigger efficiency', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)
 
 def plot_single(data, ch):
     fig = plt.figure()
     ax = fig.subplots()
-    plot_channel(ax, data, ch)
+    plot_channel(fig, ax, data, ch)
+
+def plot_ana(data):
+    fig1, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+    x_arr = np.linspace(40, 150, 100)
+    num_colors = 24
+    cmap = cm.get_cmap('jet')
+    colors = [cmap(i / (num_colors - 1)) for i in range(num_colors)]
+    channels = get_channels(data)
+    for ch in channels:
+        amps_1 = data['run']['measurements'][str(ch)]['measured_value']['Vpp']
+        trig_effs_1 = data['run']['measurements'][str(ch)]['measured_value']['trigger_effs']
+        popt = [data['run']['measurements'][str(ch)]['measured_value']['fit_parameter']['halfway'], data['run']['measurements'][str(ch)]['measured_value']['fit_parameter']['steepness']]
+
+        measured_vpp_ch = []
+        input_vpp_ch = []
+        measured_vpp_err_ch = []
+        raw_data = data['run']['measurements'][str(ch)]['measured_value']['raw_data']
+        for key, value in raw_data.items():
+            measured_vpp_ch.append(float(key))
+            input_vpp_ch.append(value['sg_amp'])
+            measured_vpp_err_ch.append(value['vpp_err'])
+        ax2.errorbar(input_vpp_ch, measured_vpp_ch, yerr=measured_vpp_err_ch, marker='x', ls=':', color=colors[ch], label=str(ch))
+        y_fit = hill_eq(x_arr, *popt)
+        ax1.plot(x_arr, y_fit, alpha=0.5, color=colors[ch], label=f'{ch}')#, {popt[0]:.0f}, {popt[1]:.0f}' )
+        ax1.errorbar(amps_1, trig_effs_1, fmt='x', color=colors[ch])
+
+    ax2.legend(ncol=2)
+    ax2.set_xlabel('Vpp sig gen [mV]')
+    ax2.set_ylabel('Vpp LAB4D [adc counts]')
+    ax1.legend(ncol=2)
+    ax1.set_ylim(-0.05, 1.05)
+    ax1.set_xlabel('Vpp LAB4D [adc counts]')
+    ax1.set_ylabel('trigger efficiency')
 
 def adc_counts_to_volt(adc_counts):
     return (adc_counts / ((2**12) -1)) * 2.5
