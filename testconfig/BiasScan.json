@@ -1,9 +1,13 @@
 {
     "expected_values": {
         "a_min": 1.0,
-        "a_max": 1.3,
-        "b_min": 0,
-        "b_max": 250
+        "a_max": 1.6,
+        "a_width": 0.1,
+        "a_outlier": 10,
+        "b_min": -500,
+        "b_max": 500,
+        "b_width": 100,
+        "b_outlier": 10
     },
     "args": {
         "start": 1200,

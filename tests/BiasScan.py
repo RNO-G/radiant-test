@@ -35,12 +35,32 @@ class BiasScan(radiant_test.RADIANTTest):
     def check_line_fit(self, data):
         a, b = np.array(data["line_fit_para"])
 
-        a_min = self.conf["expected_values"]["a_min"]
-        a_max = self.conf["expected_values"]["a_max"]
-        b_min = self.conf["expected_values"]["b_min"]
-        b_max = self.conf["expected_values"]["b_max"]
+        for par, par_name in zip([a, b], ["a", "b"]):
 
-        return np.all([a_min <= a, a <= a_max]) and np.all([b_min <= b, b <= b_max])
+            _min = self.conf["expected_values"][f"{par_name}_min"]
+            _max = self.conf["expected_values"][f"{par_name}_max"]
+
+            _width = self.conf["expected_values"][f"{par_name}_width"]
+            _outliers = self.conf["expected_values"][f"{par_name}_outlier"]
+
+            mean = np.mean(par)
+
+            if not np.all([_min <= par, par <= _max]):
+            # if not _min <= mean <= _max:
+                return False
+
+            width = np.std(par)
+
+            # if distribution is to wide fail
+            if width > _width:
+                return False
+
+            # If there are any outliers fail
+            if np.any(np.abs(par - mean) > _outliers * width):
+                return False
+
+        # if it passed all test return True
+        return True
 
 
     def bias_scan(self, start, end, points):
