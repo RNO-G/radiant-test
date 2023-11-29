@@ -12,16 +12,23 @@ def print_results(data):
 
     add_color = lambda b: colorama.Fore.GREEN if b else colorama.Fore.RED
 
+    a_outlier = exp_v["a_outlier"]
+    a_width = exp_v["a_width"]
     a_min = exp_v["a_min"]
     a_max = exp_v["a_max"]
+    b_outlier = exp_v["b_outlier"]
+    b_width = exp_v["b_width"]
     b_min = exp_v["b_min"]
     b_max = exp_v["b_max"]
 
-    result_str = f'\n{"CH":<5} | {"{} <= a <= {}".format(a_min, a_max):^20} ' + \
-                             f'| {"{} <= b <= {}".format(b_min, b_max):^20}\n'
+    result_str = (f'\n{"CH":<5} | {"{} <= a <= {}".format(a_min, a_max):^20} '
+                             f'| {"{} <= b <= {}".format(b_min, b_max):^20} '
+                             f'| {f"sigma(a) < {a_width}":^20} '
+                             f'| {f"sigma(b) < {b_width}":^20}\n')
     result_str += f'{"":<5} | {"x / 4096":^20} ' + \
-                             f'| {"x / 4096":^20}\n'
-    result_str += "--------------------------------------------------------\n"
+                             f'| {"x / 4096":^20} | {f"/ outlier {a_outlier} x width ":^20} | {f"/ outlier {b_outlier} x width ":^20}\n'
+    result_str += "--------------------------------------------------------" + \
+        "-------------------------------------------\n"
 
 
     for idx, (ch, ch_ele) in enumerate(measurements.items()):
@@ -36,7 +43,18 @@ def print_results(data):
 
         result_str += add_color(np.sum(a_mask) == 4096) + f"{np.sum(a_mask):^20d}" + colorama.Style.RESET_ALL + " | "
 
-        result_str += add_color(np.sum(b_mask) == 4096) + f"{np.sum(b_mask):^20d}" + colorama.Style.RESET_ALL
+        result_str += add_color(np.sum(b_mask) == 4096) + f"{np.sum(b_mask):^20d}" + colorama.Style.RESET_ALL + " | "
+
+        width = np.std(a)
+        n = np.sum(np.abs(np.mean(a) - a) > a_outlier * width)
+
+        result_str += add_color(width < a_width) + f"{f'{width:.3f}' + colorama.Style.RESET_ALL + ' / ' + add_color(n == 0) + str(n) + colorama.Style.RESET_ALL:^33} | "
+
+        width = np.std(b)
+        n = np.sum(np.abs(np.mean(b) - b) > b_outlier * width)
+
+        result_str += add_color(width < b_width) + f"{f'{width:.3f}' + colorama.Style.RESET_ALL + ' / ' + add_color(n == 0) + str(n) + colorama.Style.RESET_ALL:^33}"
+
         result_str += "\n"
 
     print(result_str)
@@ -115,17 +133,29 @@ def plot_fit_parameter_distributions(data, args_input, args_web=False):
     fig2, axs2 = plt.subplots(4, 6, figsize=(16, 8), #sharex=True, sharey=True,
                             layout='constrained')
 
+    a_outlier = config["expected_values"]["a_outlier"]
     a_min = config["expected_values"]["a_min"]
     a_max = config["expected_values"]["a_max"]
+    b_outlier = config["expected_values"]["b_outlier"]
     b_min = config["expected_values"]["b_min"]
     b_max = config["expected_values"]["b_max"]
 
     for idx, (ax, ax2, ch_measurements) in enumerate(zip(axs.flatten(), axs2.flatten(), measurements.values())):
         a, b = np.array(ch_measurements["measured_value"]["line_fit_para"])
 
-        ax.hist(a, 50)
-        ax2.hist(b, 50)
+        a_mean = np.mean(a)
+        a_width = np.std(a)
+        n_a = np.sum(np.abs(a_mean - a) > a_outlier * a_width)
 
+        ax.hist(a, 50, label=r"$\sigma$ = %.3f, $n_\mathrm{out}$ = %d" % (a_width, n_a))
+        ax.set_yscale("log")
+
+        b_mean = np.mean(b)
+        b_width = np.std(b)
+        n_b = np.sum(np.abs(b_mean - b) > b_outlier * b_width)
+
+        ax2.hist(b, 50, label=r"$\sigma$ = %.0f, $n_\mathrm{out}$ = %d" % (b_width, n_b))
+        ax2.set_yscale("log")
         ax.grid()
         ax.axvline(a_min, color="r")
         ax.axvline(a_max, color="r")
@@ -133,6 +163,9 @@ def plot_fit_parameter_distributions(data, args_input, args_web=False):
         ax2.grid()
         ax2.axvline(b_min, color="r")
         ax2.axvline(b_max, color="r")
+
+        ax.legend(fontsize=10)
+        ax2.legend(fontsize=10)
 
     fig.supxlabel(r'slope', fontsize="x-large")
     fig2.supxlabel(r'$offset$', fontsize="x-large")
