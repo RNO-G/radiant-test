@@ -11,6 +11,8 @@ class LAB4DTune(radiant_test.RADIANTChannelTest):
     def run(self):
         super(LAB4DTune, self).run()
 
+        self.device.radiant_low_level_interface.calibration_load()
+
         for quad in self.get_quads():
             self.device.radiant_calselect(quad=quad)
             self._run_quad(quad=quad)
@@ -71,4 +73,6 @@ class LAB4DTune(radiant_test.RADIANTChannelTest):
 
 
 if __name__ == "__main__":
+    import logging
+    logging.basicConfig(level=logging.INFO)
     radiant_test.run(LAB4DTune)
