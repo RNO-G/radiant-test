@@ -4,7 +4,7 @@ import pathlib
 
 
 class TestSet(object):
-    def __init__(self, filename, device=None):
+    def __init__(self, filename, device=None, comment=None):
         self.device = device
         with open(filename, "r") as f:
             self.conf = json.load(f)
@@ -38,6 +38,8 @@ class TestSet(object):
                 )
                 self.tests[-1].name = key
                 self.tests[-1].result_dict["test_name"] = key
+                if comment is not None:
+                    self.test[-1].result_dict["comments"] = comment
 
     def add_test(self, test, alt_conf):
         if alt_conf:
