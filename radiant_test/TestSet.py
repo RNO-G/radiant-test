@@ -25,8 +25,8 @@ class TestSet(object):
             if default_args is not None:
                 for key2 in default_args:
                     if key2 not in self.conf["tests"][key]:
-                        self.conf["tests"][key][key2] = {}  
-                        
+                        self.conf["tests"][key][key2] = {}
+
                     self.conf["tests"][key][key2].update(default_args[key2])
 
             if not "base" in self.conf["tests"][key]:
@@ -38,8 +38,9 @@ class TestSet(object):
                 )
                 self.tests[-1].name = key
                 self.tests[-1].result_dict["test_name"] = key
-                if comment is not None:
-                    self.tests[-1].result_dict["comments"] = comment
+
+            if comment is not None:
+                self.tests[-1].result_dict["comments"] = comment
 
     def add_test(self, test, alt_conf):
         if alt_conf:
