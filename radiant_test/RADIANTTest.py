@@ -4,8 +4,8 @@ from .Test import Test
 
 
 class RADIANTTest(Test):
-    def __init__(self, device=None):
-        super(RADIANTTest, self).__init__(device)
+    def __init__(self, device=None, **kwargs):
+        super(RADIANTTest, self).__init__(device, **kwargs)
 
     def initialize(self):
         super(RADIANTTest, self).initialize()

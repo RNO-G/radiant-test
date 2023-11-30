@@ -15,12 +15,12 @@ class TestResult(enum.Enum):
 
 
 class Test(object):
-    def __init__(self, device=None):
+    def __init__(self, device=None, comment=None):
         self.device = device
         self.name = self.__class__.__name__
         self.logger = logging.getLogger(self.name)
         self.result = TestResult.DID_NOT_RUN
-        self.result_dict = {"dut_uid": None, "test_name": self.name}
+        self.result_dict = {"dut_uid": None, "test_name": self.name, "comments": comment}
 
         with open(pathlib.Path.cwd() / "testconfig" / f"{self.name}.json", "r") as f:
             self.conf = json.load(f)
