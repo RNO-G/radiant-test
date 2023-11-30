@@ -5,8 +5,8 @@ import radiant_test
 
 
 class SigGenSine(radiant_test.RADIANTChannelTest):
-    def __init__(self):
-        super(SigGenSine, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(SigGenSine, self).__init__(*args, **kwargs)
 
     def run(self):
         super(SigGenSine, self).run()
@@ -69,7 +69,7 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
         except ValueError:
             popt = [0, 0, 0, 0]
             avg_residual = 0
-            
+
         data = dict()
         data["waveform"] = wvf
         data["fit_amplitude"] = (

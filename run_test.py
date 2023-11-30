@@ -12,6 +12,6 @@ parser.add_argument("test", type=str, choices=tests, help="Test to execute")
 parser.add_argument("--comment", type=str, default=None, help="add a comment to the result dict of every test")
 args = parser.parse_args()
 
-test = getattr(module, args.test)()
-
+test = getattr(module, args.test)
+print(test)
 radiant_test.run(test, {"comment": args.comment})

@@ -3,8 +3,8 @@ from .radiant_helper import RADIANT_NUM_CHANNELS, RADIANT_NUM_QUADS, quad_for_ch
 
 
 class RADIANTChannelTest(RADIANTTest):
-    def __init__(self, device=None):
-        super(RADIANTChannelTest, self).__init__(device)
+    def __init__(self, device=None, **kwargs):
+        super(RADIANTChannelTest, self).__init__(device, **kwargs)
 
     def initialize(self):
         super(RADIANTChannelTest, self).initialize()
@@ -17,8 +17,8 @@ class RADIANTChannelTest(RADIANTTest):
 
     def finalize(self, result_dir="results"):
         super(RADIANTChannelTest, self).finalize(result_dir)
-        
-        
+
+
     def get_quads(self):
         channel_ids = self.conf["args"]["channels"]
         already_had = []
@@ -27,4 +27,3 @@ class RADIANTChannelTest(RADIANTTest):
             if not quad in already_had:
                 already_had.append(quad)
                 yield quad
-        
