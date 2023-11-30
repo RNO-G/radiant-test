@@ -27,7 +27,7 @@ def quad_for_channel(channel_id):
         return 2
     else:
         raise ValueError("Invalid channel id!")
-    
+
 
 def get_radiant():
     global RADIANT
@@ -35,3 +35,20 @@ def get_radiant():
     if RADIANT == None:
         RADIANT = stationrc.remote_control.VirtualStation()
     return RADIANT
+
+
+def uid_to_name(uid):
+    uid_to_names_dict = {
+        "e7e318ffb2ad88e350533357e0ea06e7": "ULB-003",
+        "e7e318ffb2ad88e35055334a2285c7bf": "ULB-005",
+        "e7e318ffb2ad88e35055334aa54b5690": "ULB-008",
+        "e7e318ffb2ad88e35055334ab599703d": "ULB-013",
+        "e7e318ffb2ad88e35055334abf07b869": "ULB-014",
+        "e7e318ffb2ad88e35053335737bcc1da": "ULB-015",
+    }
+
+    if uid in uid_to_names_dict:
+        return uid_to_names_dict[uid]
+    else:
+        print(f"Name for {uid} unknown")
+        return uid

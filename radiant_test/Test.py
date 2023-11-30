@@ -4,7 +4,7 @@ import enum
 import json
 import logging
 import pathlib
-
+from radiant_test.radiant_helper import uid_to_name
 from .util import get_timestamp
 
 
@@ -129,9 +129,12 @@ class Test(object):
         dir = pathlib.Path.cwd() / result_dir
         if not dir.exists():
             dir.mkdir(parents=True)
-        with open(
-            dir
-            / f'{self.result_dict["dut_uid"]}_{self.name}_{datetime.datetime.fromtimestamp(self.result_dict["initialize"]["timestamp"]).strftime("%Y%m%dT%H%M%S")}.json',
-            "w",
-        ) as f:
+
+        fname = (dir /
+            f'{uid_to_name(self.result_dict["dut_uid"])}_{self.name}_'
+            f'{datetime.datetime.fromtimestamp(self.result_dict["initialize"]["timestamp"]).strftime("%Y%m%dT%H%M%S")}.json')
+
+        self.logger.info(f"Store test results in {fname}")
+
+        with open(fname, "w",) as f:
             json.dump(self.result_dict, f, indent=4)

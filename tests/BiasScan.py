@@ -5,8 +5,8 @@ import radiant_test
 
 
 class BiasScan(radiant_test.RADIANTTest):
-    def __init__(self):
-        super(BiasScan, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(BiasScan, self).__init__(*args, **kwargs)
 
     def run(self):
         super(BiasScan, self).run()
