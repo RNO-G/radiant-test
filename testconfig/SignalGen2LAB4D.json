@@ -1,0 +1,9 @@
+{   "expected_values": {},
+    "args": {
+        "waveform": "examples/three_sinus_pulses.json",
+        "clock_amplitude": 700,
+        "threshold": 0.94,
+        "sg_trigger_rate": 10,
+        "run_length": 5
+        }
+} 

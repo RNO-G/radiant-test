@@ -94,8 +94,8 @@ def plot_channel(fig, ax, data, ch):
     ax.set_title(f'channel: {ch}')
     #ax.set_ylabel('trigger efficiency')
     #ax.set_xlabel('Vpp LAB4D [adc counts]')
-    fig.text(0.5, 0.0, 'Vpp LAB4D [adc counts]', ha='center', va='center')
-    fig.text(0.0, 0.5, 'trigger efficiency', ha='center', va='center', rotation='vertical')
+    fig.text(0.5, 0.01, 'Vpp LAB4D [adc counts]', ha='center', va='center')
+    fig.text(0.01, 0.5, 'trigger efficiency', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)
 
 def plot_single(data, ch):
@@ -136,8 +136,8 @@ def plot_ana(data):
     ax1.set_xlabel('Vpp LAB4D [adc counts]')
     ax1.set_ylabel('trigger efficiency')
 
-def adc_counts_to_volt(adc_counts):
-    return (adc_counts / ((2**12) -1)) * 2.5
+def adc_counts_to_m_volt(adc_counts):
+    return (adc_counts / ((2**12) -1)) * 2.5 * 1e3
 
 def plot_ana(data):
     fig1, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
@@ -164,10 +164,10 @@ def plot_ana(data):
         ax1.plot(x_arr, y_fit, alpha=0.5, color=colors[ch], label=f'{ch}')#, {popt[0]:.0f}, {popt[1]:.0f}' )
         ax1.errorbar(amps_1, trig_effs_1, fmt='x', color=colors[ch])
     ax2_x2 = ax2.twiny()
-    ax2_x2.set_xlabel('Vpp sig gen [mV]')
+    ax2_x2.set_xlabel('Vpp LAB4D [mV]')
     ax2_x2.set_xlim(ax2.get_xlim())  # Make sure the second x-axis has the same limits as the original x-axis
     ax2_x2.set_xticks(ax2.get_xticks())
-    ax2_x2.set_xticklabels([f'{adc_counts_to_volt(x):.1f}' for x in ax2.get_xticks()])
+    ax2_x2.set_xticklabels([f'{adc_counts_to_m_volt(x):.1f}' for x in ax2.get_xticks()])
 
     ax2.legend(ncol=2)
     ax2.set_xlabel('Vpp sig gen [mV]')

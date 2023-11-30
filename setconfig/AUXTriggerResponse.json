@@ -1,27 +1,43 @@
 {
     "name": "AUXTriggerResponse",
-
     "default_args": {
         "args": {
-            "run_length": 20,
+            "run_length": 10,
             "waveform": "examples/template2_wo_hardwareResponse.json",
-            "clock_amplitude": 800
+            "clock_amplitude": 900,
+            "sg_trigger_rate": 10,     
+            "n_vpp_events": 10,
+            "points_on_slope": 2
+
         }
     },
 
     "tests": {
         "AUXTriggerResponse_thresh_0.92": {
             "base": "AUXTriggerResponse",
+            "expected_values":{
+                "halfway_min": 70,
+                "halfway_max": 140,
+                "steepness_min": 20,
+                "steepness_max": 1000
+                },
             "args": {
-                "threshold": 0.92,
-                "amplitudes": [200, 400, 500, 600, 700]
-            }
-        },
+                "threshold": 0.92,        
+                "sg_start_amp": 800
+                }
+            },
+    
         "AUXTriggerResponse_thresh_0.94": {
             "base": "AUXTriggerResponse",
+            "expected_values":{
+                "halfway_min": 70,
+                "halfway_max": 150,
+                "steepness_min": 20,
+                "steepness_max": 1000
+                },
             "args": {
                 "threshold": 0.94,
-                "amplitudes": [200, 400, 500, 600, 700]
+                "sg_start_amp": 500
             }
         }
     }

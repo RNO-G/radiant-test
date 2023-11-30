@@ -1,29 +1,17 @@
-{
-    "expected_values": {
-        "0.92": {
-            "fit_params":{
-                "magnitude_min": 0.49,
-                "magnitude_max": 0.51,
-                "horizon_shift_min": 90,
-                "horizon_shift_max": 150,
-                "steepness_min": 5,
-                "steepness_max": 15
-                }
-            },
-        "0.94": {
-            "fit_params":{
-                "horizon_shift_min": 70,
-                "horizon_shift_max": 150,
-                "steepness_min": 25,
-                "steepness_max": 260
-                }
-            }
+{   "expected_values": {
+        "halfway_min": 70,
+        "halfway_max": 140,
+        "steepness_min": 20,
+        "steepness_max": 1000
         },
     "args": {
-        "run_length": 20,
-        "waveform": "examples/template2_wo_hardwareResponse.json",
-        "clock_amplitude": 800,
+        "run_length": 30,
+        "waveform": "examples/template2_wo_hardwareResponse_2.5GSps.json",
+        "clock_amplitude": 700,
         "threshold": 0.92,
-        "amplitudes": [200, 400, 500, 600, 700]
+        "sg_trigger_rate": 10,
+        "sg_start_amp": 500,
+        "n_vpp_events": 100,
+        "points_on_slope": 2
         }
 } 

@@ -8,9 +8,19 @@ import matplotlib.pyplot as plt
 import logging
 import os
 
-
 def hill_eq(x, x0, p):
     return 1 / (1 + (x0 / x)**p)
+
+def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
+    vpps = []
+    idices = []
+    h = window_size // 2
+    for i in range(start_index, end_index):
+        window = data[i-h:i+h]
+        vpp = np.max(window) - np.min(window)
+        idices.append(i)
+        vpps.append(vpp)
+    return vpps, idices
 
 class AUXTriggerResponse(radiant_test.RADIANTTest):
     def __init__(self):
@@ -50,18 +60,27 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         print('start run')
         self.data_dir = run.start(delete_src=True, rootify=True)
     
-    def get_vpp_from_clock_trigger(self, ch, ch_clock, n_events):
-        data = self.device.daq_record_data(num_events=n_events, trigger_channels=[ch_clock], trigger_threshold=0.95, force_trigger=False)
-        waveforms = data["data"]["WAVEFORM"]
-        vpps = []
-        for event in waveforms:
-            max_amp = np.max(event['radiant_waveforms'][ch])
-            min_amp = np.min(event['radiant_waveforms'][ch])
-            vpps.append(max_amp - min_amp)
-        vpp = np.mean(vpps)
-        vpp_err = np.std(vpps)
-        print(f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: {vpp:.2f} +- {vpp_err:.2f}')
-        return vpp, vpp_err
+    def get_vpp_from_clock_trigger(self, root_file, ch, ch_clock, amp, tag):
+            self.dic_run = {}
+            if os.path.exists(root_file):
+                file_size = os.path.getsize(root_file)
+                file_size_kb = file_size / 1024
+                if file_size_kb < 5:
+                    logging.warning('File too small, probably no trigger')
+                else:
+                    f = uproot.open(root_file)
+                    data = f["combined"]
+
+                    wfs = np.array(data['waveforms/radiant_data[24][2048]'])  #events, channels, samples
+                    vpps = []
+                    for i, wf in enumerate(wfs[:,0,0]):
+                        all_pps, indices = calc_sliding_vpp(wfs[i,ch,:])
+                        max_vpp = np.max(all_pps)
+                        vpps.append(float(max_vpp))
+                    vpp_mean = np.mean(vpps)
+                    vpp_err = np.std(vpps)
+                    print(f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: {vpp_mean:.2f} +- {vpp_err:.2f}')
+                    return vpp_mean, vpp_err
     
     def get_next_amp(self, curve_dic):
         sorted_curve_dic = {k: v for k, v in sorted(curve_dic.items(), key=lambda item: float(item[0]))}
@@ -136,7 +155,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 rf0_true = has_surface & mask_rf0
 
                 index_max_amp_test = np.argmax(np.abs(waveforms[:, ch_clock, :]), axis=1)
-                pulse_test_correct = (1450 < index_max_amp_test) & (index_max_amp_test < 1900)
+                pulse_test_correct = (1500 < index_max_amp_test) & (index_max_amp_test < 1700)
                 clock_amp = (np.max(np.abs(waveforms[:, ch_clock, :]), axis=1)) > 50
                 rf0_pulse = rf0_true & pulse_test_correct & clock_amp
 
@@ -234,7 +253,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                                             sg_ch_clock, 
                                             sg_current_amp, 
                                             self.conf['args']['clock_amplitude'], self.conf['args']['sg_trigger_rate'])
-                vpp, vpp_err = self.get_vpp_from_clock_trigger(ch_radiant, ch_radiant_clock, self.conf['args']['n_vpp_events'])
+                vpp, vpp_err = self.get_vpp_from_clock_trigger(self.data_dir/"combined.root", ch_radiant, ch_radiant_clock, amp_pp, key_str)
                 vpp_str = f"{vpp:.2f}"
                 self.dic_curve[vpp_str] = {}
                 self.dic_curve[vpp_str]['vpp_err'] = round(vpp_err, 2)
