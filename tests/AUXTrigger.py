@@ -1,10 +1,10 @@
 import argparse
-import json
 import radiant_test
 import stationrc.common
 import stationrc.remote_control
 import numpy as np
 import uproot
+import radiant_test.radiant_helper as rh
 
 parser = argparse.ArgumentParser()
 
@@ -13,7 +13,6 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
         super(AUXTrigger, self).__init__()
 
     def initialze_on_board_signal_gen(self, freq, channel):
-
         if freq >= 5 and freq < 100:
             band = 0
         elif freq >= 100 and freq < 300:
@@ -26,16 +25,11 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
             raise ValueError("Frequency must be greater than 5 MHz")
 
         self.device.radiant_sig_gen_off()
-        self.device.radiant_sig_gen_configure(pulse=False, band=band)
+        self.device.radiant_sig_gen_configure(pulse=True, band=band)
         self.device.radiant_sig_gen_on()
         self.device.radiant_sig_gen_set_frequency(frequency=freq)
 
-        if channel in [0, 1, 2, 3, 12, 13, 14, 15]:
-            quad = 0
-        elif channel in [4, 5, 6, 7, 16, 17, 18, 19,]:
-            quad = 1
-        elif channel in  [8, 9, 10, 11, 20, 21, 22, 23]:
-            quad = 2
+        quad = rh.quad_for_channel(channel)
         self.device.radiant_calselect(quad=quad)
 
 
@@ -89,7 +83,9 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
 
         passed_list = []
         for thresh in data.keys():
+            print('thresh', thresh)
             for ref_freq in data[thresh]:
+                data[thresh][ref_freq]['trig_eff'] = {}
                 data[thresh][ref_freq]['trig_eff']['passed'] = {}
                 trig_rate =  data[thresh][ref_freq]['trig_rate']
                 if (
@@ -112,18 +108,20 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
 
     def run(self):
         super(AUXTrigger, self).run()
-        for ch in range(24):
+        for ch in range(1):
+            print('Testing channel', ch)
             self.dic_curve = {}
             for thresh in self.conf["args"]["thresholds"]:
-                self.dic_all[f"{thresh}:2f"] = {}
+                print('Testing threshold', thresh)
+                self.dic_curve[f"{thresh:.2f}"] = {}
                 for freq in self.conf["args"]["freqs"]:
-                    self.dic_all[f"{thresh}:2f"][f"{freq}:0f"] = {}
+                    print('Testing freq', freq)
+                    self.dic_curve[f"{thresh:.2f}"][f"{freq:.0f}"] = {}
                     self.initialze_on_board_signal_gen(freq, ch)
-                    self.initialize_config(ch, thresh, 
-                                        self.conf['args']['run_length'])
+                    self.initialize_config(ch, thresh, self.conf['args']['run_length'])
                     data = self.calc_trigger(self.data_dir/"combined.root", ch, self.conf['args']['run_length'], freq)
-                    self.dic_curve[f"{thresh}:2f"][f"{freq}:0f"] = data
-            self.eval_results(ch, self.dic)
+                    self.dic_curve[f"{thresh:.2f}"][f"{freq:.0f}"] = data
+            self.eval_results(ch, self.dic_curve)
         self.device.radiant_sig_gen_off()
         self.device.radiant_calselect(quad=None)      
 
