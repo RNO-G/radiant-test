@@ -11,7 +11,7 @@ class LAB4DTune(radiant_test.RADIANTChannelTest):
     def run(self):
         super(LAB4DTune, self).run()
 
-        self.device.radiant_low_level_interface.calibration_load()
+        self.device.reset_radiant_board()  # initalizes RADIANT object on bbb new. Also loads calib.
 
         for quad in self.get_quads():
             self.device.radiant_calselect(quad=quad)

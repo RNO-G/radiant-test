@@ -10,3 +10,4 @@ from .RADIANTPower import RADIANTPower
 from .SystemPower import SystemPower
 from .uCComms import uCComms
 from .WindowStability import WindowStability
+from .BiasScan import BiasScan

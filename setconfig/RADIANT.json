@@ -1,5 +1,12 @@
 {
     "name": "RADIANT",
+
+    "default_args": {
+        "args": {
+            "use_uart": true
+        }
+    },
+
     "tests": {
         "uCComms": {},
         "RADIANTPower": {},
@@ -7,6 +14,7 @@
         "LAB4DTune": {},
         "LAB4DGlitch": {},
         "FrontEndNoise": {},
+        "BiasScan": {},
         "SigGenSine_90MHz": {
             "base": "SigGenSine",
             "args": {
@@ -15,11 +23,11 @@
             }
         },
 
-        "SigGenSine_300MHz": {
+        "SigGenSine_240MHz": {
             "base": "SigGenSine",
             "args": {
                 "band": 1,
-                "frequency": 300
+                "frequency": 240
             }
         },
 
@@ -36,12 +44,12 @@
                 "band": 0,
                 "frequency": 90
             }
-        },        
-        "WindowStability_300MHz": {
+        },
+        "WindowStability_240MHz": {
             "base": "WindowStability",
             "args": {
                 "band": 1,
-                "frequency": 300
+                "frequency": 240
             }
         },
         "WindowStability_510MHz": {
@@ -57,12 +65,12 @@
                 "band": 0,
                 "frequency": 90
             }
-        },        
-        "HarmonicDistortion_300MHz": {
+        },
+        "HarmonicDistortion_240MHz": {
             "base": "HarmonicDistortion",
             "args": {
                 "band": 1,
-                "frequency": 300
+                "frequency": 240
             }
         },
         "HarmonicDistortion_510MHz": {
