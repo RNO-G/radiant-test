@@ -8,6 +8,7 @@
     },
     "args": {
         "band": 2,
-        "frequency": 510
+        "frequency": 510,
+        "n_recordings": 1
     }
 }

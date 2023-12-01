@@ -5,8 +5,8 @@ import stationrc.remote_control
 
 
 class LAB4DTune(radiant_test.RADIANTChannelTest):
-    def __init__(self):
-        super(LAB4DTune, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(LAB4DTune, self).__init__(*args, **kwargs)
 
     def run(self):
         super(LAB4DTune, self).run()
@@ -21,26 +21,35 @@ class LAB4DTune(radiant_test.RADIANTChannelTest):
         self.device.radiant_calselect(quad=None)
 
     def _analyze_tune(self, times):
+        # times: n, samples
         data = dict()
         data["times"] = times.tolist()
-        data["seam_sample"] = times[0]
-        data["slow_sample"] = times[127]
-        data["rms"] = np.std(times)
+        if times.ndim == 1:
+            data["seam_sample"] = times[0]
+            data["slow_sample"] = times[127]
+            data["rms"] = np.std(times)
+        else:
+            data["seam_sample"] = times[:, 0].tolist()
+            data["slow_sample"] = times[:, 127].tolist()
+            data["rms"] = np.std(times, axis=1).tolist()
+
         return data
 
     def _check_tune(self, data):
-        if (
-            data["seam_sample"] < self.conf["expected_values"]["seam_sample_min"]
-            or data["seam_sample"] > self.conf["expected_values"]["seam_sample_max"]
-        ):
+        exp = self.conf["expected_values"]
+        seam = np.array(data["seam_sample"])
+        slow = np.array(data["slow_sample"])
+        rms = np.array(data["rms"])
+
+        if np.any(seam < exp["seam_sample_min"]) or np.any(seam > exp["seam_sample_max"]):
             return False
-        if (
-            data["slow_sample"] < self.conf["expected_values"]["slow_sample_min"]
-            or data["slow_sample"] > self.conf["expected_values"]["slow_sample_max"]
-        ):
+
+        if np.any(slow < exp["slow_sample_min"]) or np.any(slow > exp["slow_sample_max"]):
             return False
-        if data["rms"] > self.conf["expected_values"]["rms_max"]:
+
+        if np.any(rms > exp["rms_max"]):
             return False
+
         return True
 
     def _run_quad(self, quad):
@@ -61,9 +70,14 @@ class LAB4DTune(radiant_test.RADIANTChannelTest):
             frequency=self.conf["args"]["frequency"]
         )
 
-        t = stationrc.remote_control.get_time_run(
-            station=self.device, frequency=self.conf["args"]["frequency"] * 1e6
-        )
+        n_recordings = self.conf["args"]["n_recordings"]
+
+        t = np.squeeze([stationrc.remote_control.get_time_run(
+            station=self.device, frequency=self.conf["args"]["frequency"] * 1e6) for _ in range(n_recordings)])
+
+        if n_recordings > 1:
+            # n, channels, samples -> channels, n, samples
+            t = np.swapaxes(t, 0, 1)
 
         for ch in channels:
             data = self._analyze_tune(t[ch])

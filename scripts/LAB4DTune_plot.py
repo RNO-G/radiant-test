@@ -13,9 +13,9 @@ def get_result_str_plot(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
     return (
-       f"seam sample: {data_ch['seam_sample']:6.1f} ps - "
-        + f"slow sample: {data_ch['slow_sample']:6.1f} ps - "
-        + f"rms: {data_ch['rms']:6.2f} ps - "
+       f"seam sample: {np.mean(data_ch['seam_sample']):6.1f} ps - "
+        + f"slow sample: {np.mean(data_ch['slow_sample']):6.1f} ps - "
+        + f"rms: {np.mean(data_ch['rms']):6.2f} ps - "
         + f"result: {result}"
     )
 
@@ -30,10 +30,11 @@ def get_color(passed):
 def get_result_str(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
+    n_recordings = data["config"]["args"].pop("n_recordings", 1)
 
     reset = colorama.Style.RESET_ALL
-    slow = data_ch['slow_sample']
-    seam = data_ch['seam_sample']
+    slow = np.array(data_ch['slow_sample'])
+    seam = np.array(data_ch['seam_sample'])
 
     expected_values = data["config"]["expected_values"]
 
@@ -42,12 +43,21 @@ def get_result_str(data, ch):
     slow_sample_min = expected_values["slow_sample_min"]
     slow_sample_max = expected_values["slow_sample_max"]
     rms_max = expected_values["rms_max"]
-
-    out = (
-        f" {get_color(result == 'PASS')} {result}   {reset} |"
-        + get_color(seam_sample_min < seam < seam_sample_max) + f"{f'{seam:6.1f} ps':^30}{reset} | "
-        + get_color(slow_sample_min < slow < slow_sample_max)+ f"{f'{slow:6.1f} ps':^30}{reset} | "
-        + get_color(data_ch['rms'] < rms_max) + f"{data_ch['rms']:6.2f} ps{reset}")
+    if n_recordings == 1:
+        out = (
+            f" {get_color(result == 'PASS')} {result}   {reset} |"
+            + get_color(seam_sample_min < seam < seam_sample_max) + f"{f'{seam:6.1f} ps':^30}{reset} | "
+            + get_color(slow_sample_min < slow < slow_sample_max)+ f"{f'{slow:6.1f} ps':^30}{reset} | "
+            + get_color(data_ch['rms'] < rms_max) + f"{data_ch['rms']:6.2f} ps{reset}")
+    else:
+        out = (
+            f" {get_color(result == 'PASS')} {result}   {reset} |"
+            + get_color(np.all([seam_sample_min < seam, seam < seam_sample_max]))
+            + f"{f'{np.mean(seam):6.1f} ps':^30}{reset} | "
+            + get_color(np.all([slow_sample_min < slow, slow < slow_sample_max]))
+            + f"{f'{np.mean(slow):6.1f} ps':^30}{reset} | "
+            + get_color(np.all(np.array(data_ch['rms']) < rms_max))
+            + f"{np.mean(data_ch['rms']):6.2f} ps{reset}")
 
     return out
 
@@ -107,13 +117,18 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
 
 def plot_channel(ax, data, ch, print_data=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
-    ax.plot(data_ch["times"], ".", label=f"ch {ch}")
-    ax.hlines(
-        1e3 / (data['radiant_sample_rate']/1000),
-        0,
-        len(data_ch["times"]),
-        colors="red",
-        linestyles="dashed",
+
+    if np.array(data_ch["times"]).ndim == 1:
+        ax.plot(np.array(data_ch["times"]), ".", label=f"ch {ch}")
+    else:
+        ax.errorbar(np.arange(128), np.mean(np.array(data_ch["times"]), axis=0),
+                    np.std(np.array(data_ch["times"]), axis=0),
+                    marker="o", ls="", label=f"ch {ch}")
+
+    ax.axhline(
+        1e3 / (data['radiant_sample_rate'] / 1000),
+        color="red",
+        linestyle="dashed",
     )
     ax.legend(loc="lower right")
     if print_data:
