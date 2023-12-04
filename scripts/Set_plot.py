@@ -22,19 +22,20 @@ if __name__ == "__main__":
     scripts = glob.glob(f"{os.path.dirname(__file__)}/*_plot.py")
 
     print(f"Found the following tests: {test_files}")
-    for script in scripts:
-        test_name = os.path.basename(script).replace("_plot.py", "")
-        if test_name == "Set":
-            continue
+    for fn in test_files:
 
         any = False
-        for fn in test_files:
+        for script in scripts:
+            test_name = os.path.basename(script).replace("_plot.py", "")
+            if test_name == "Set":
+                continue
+
             if re.search(test_name, fn) is not None:
                 any = True
                 break
 
         if not any:
-            logging.info(f"Skip {test_name}")
+            logging.info(f"Skip {fn}")
             continue
 
         logging.info(f"Run plotting script for {test_name} on {os.path.basename(fn)}")
