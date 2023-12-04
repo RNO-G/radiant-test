@@ -5,7 +5,7 @@ import os
 import glob
 import re
 import logging
-logging.baseConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
 
