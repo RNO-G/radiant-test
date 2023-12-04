@@ -60,7 +60,7 @@ class AWG4022(AbstractSignalGenerator):
         return 1
     
     def query(self,cmd,delay=0):
-            return self.pg.query(cmd,delay=delay)
+        return self.pg.query(cmd,delay=delay)
 
     def write(self,cmd):
         return self.pg.write(cmd)

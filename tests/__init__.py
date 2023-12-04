@@ -11,3 +11,4 @@ from .SystemPower import SystemPower
 from .uCComms import uCComms
 from .WindowStability import WindowStability
 from .BiasScan import BiasScan
+from .SignalGen2LAB4D import SignalGen2LAB4D

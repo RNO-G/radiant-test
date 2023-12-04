@@ -25,19 +25,30 @@ def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
 class AUXTriggerResponse(radiant_test.RADIANTTest):
     def __init__(self):
         super(AUXTriggerResponse, self).__init__()
-        if self.site_conf['test_site'] == 'ecap':
-            self.awg = radiant_test.AWG4022(self.site_conf['signal_gen_ip_address'])
-            logging.warning("Site: ecap")
-        elif self.site_conf['test_site'] == 'desy':
-            self.awg = radiant_test.Keysight81160A(self.site_conf['signal_gen_ip_address'])
-            logging.warning("Site: desy")
-        else:
-            raise ValueError("Invalid test_site, use desy or ecap")
+        self.awg = radiant_test.Keysight81160A(self.site_conf['signal_gen_ip_address'])
         try:
             self.arduino = radiant_test.ArduinoNano()
         except:
             logging.info("Arduino not connected")
 
+
+    def get_channel_settings(radiant_ch):
+        """connect signale generator channel 1 to radiant channel 0 
+            and SG channel 2 to radiant channel 1-23"""
+        if radiant_ch > 0 and radiant_ch < 24:
+            sg_ch_clock = 1 # connected to radiant channel 0
+            sg_ch = 2  # connected to radiant channel 1-23
+            radiant_ch_clock = 0
+            self.arduino.route_signal_to_channel(radiant_ch)
+        elif radiant_ch == 0:
+            sg_ch_clock = 2  # connected to radiant channel 1-23
+            sg_ch = 1 # connected to radiant channel 0
+            radiant_ch_clock = 1
+            self.arduino.route_signal_to_channel(radiant_ch_clock)
+        else:
+            raise ValueError("Invalid channel number")
+        return sg_ch, sg_ch_clock, radiant_ch_clock
+    
     def initialize_config(self, channel_test, threshold, run_length):
         print('trigger set on channel', channel_test)
         run = stationrc.remote_control.Run(self.device)
@@ -223,25 +234,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         self.device.radiant_calselect(quad=None) #make sure calibration is off
         for ch_radiant in np.arange(0, 24, 1):
             logging.info(f"Testing channel {ch_radiant}")
-            print(f"Testing channel {ch_radiant}")
-            if ch_radiant > 0 and ch_radiant < 24:
-                ch_radiant_clock = 0
-                sg_ch_clock = 1 # connected to radiant channel 0
-                sg_ch = 2  # connected to radiant channel 1-23
-                self.arduino.route_signal_to_channel(ch_radiant)
-                print('Arduino:', self.arduino.route_signal_to_channel(ch_radiant))
-
-            elif ch_radiant == 0:
-                ch_radiant_clock = 1
-
-                sg_ch_clock = 2  # connected to radiant channel 1-23
-                sg_ch = 1 # connected to radiant channel 0
-                self.arduino.route_signal_to_channel(ch_radiant_clock)
-                print('Arduino:', self.arduino.route_signal_to_channel(ch_radiant_clock))
-
-            else:
-                raise ValueError("Invalid channel number")
-
+            sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant)
             thresh = self.conf['args']['threshold']
             sg_current_amp = self.conf['args']['sg_start_amp']
             points_on_curve = 0

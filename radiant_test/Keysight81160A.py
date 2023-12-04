@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import vxi11
 import json
-
+import sys
 from .AbstractSignalGenerator import AbstractSignalGenerator
 
 
@@ -27,10 +27,23 @@ class Keysight81160A(AbstractSignalGenerator):
     def __init__(self, ip_address):
         self.instrument = vxi11.Instrument(ip_address)
         logging.debug(f"Connected to {self.get_id()} at address {ip_address}.")
+        id = self.get_id()
+        if (id != "Agilent Technologies,81160A,MY51400292,1.0.3.0-2.6"):
+            logging.debug("Wrong device",id)
+            sys.exit()
+        else :
+            print("Connected to", self.get_id())
+        self.set_offset(1,0)
+        self.set_offset(2,0)
+        self.instrument.write("OUTP1:IMP 50")
+        self.instrument.write("OUTP2:IMP 50")
 
     def get_id(self):
-        self.instrument.ask("*IDN?")
+        return self.instrument.ask("*IDN?")
 
+    def query(self,cmd):
+        return self.instrument.ask(cmd)
+    
     @validate_channel
     def output_off(self, channel):
         self.instrument.write(f"OUTP{channel} OFF")
@@ -38,7 +51,7 @@ class Keysight81160A(AbstractSignalGenerator):
     @validate_channel
     def output_on(self, channel):
         self.instrument.write(f"OUTP{channel} ON")
-
+   
     @validate_channel
     def set_amplitude_mVpp(self, channel, amplitude):
         AMPLITUDE_MIN = 50
@@ -49,10 +62,21 @@ class Keysight81160A(AbstractSignalGenerator):
                 f"Only accepting values of {AMPLITUDE_MIN} <= amplitude <= {AMPLITUDE_MAX}."
             )
         self.instrument.write(f"VOLT{channel}:AMPL {amplitude*1e-3} VPP")
+    
+    @validate_channel
+    def set_amplitude_mV(self, channel, amplitude):
+        vpp = amplitude*2
+        self.set_amplitude_mVpp(channel, vpp)
 
     @validate_channel
     def set_frequency_MHz(self, channel, frequency):
         self.instrument.write(f"FREQ{channel} {frequency} MHZ")
+
+    def couple_to_channel_off(self, channel):
+        self.instrument.write(f":TRACk:CHANnel{channel} OFF")
+
+    def couple_to_channel_on(self, channel):
+        self.instrument.write(f":TRACk:CHANnel{channel} ON")
 
     @validate_channel
     def set_mode(self, channel, mode):
@@ -62,6 +86,10 @@ class Keysight81160A(AbstractSignalGenerator):
             self.instrument.write(f"FUNC{channel} USER")
         else:
             raise ValueError(f"Unsupported mode: {mode}.")
+
+    @validate_channel
+    def set_offset(self, channel, offset):
+        self.instrument.write(f"SOUR{channel}:VOLT:OFFS {offset} mV")
 
     @validate_channel
     def set_trigger_frequency_Hz(self, channel, frequency):
@@ -87,8 +115,8 @@ class Keysight81160A(AbstractSignalGenerator):
         with open(waveform_dic, "r") as f:
             dic = json.load(f)
         waveform = dic["wf"]
-        freq = dic["freq_wf"]
-        
+        freq=dic['freq_wf']
+
         if np.min(waveform) < WAVEFORM_AMP_MIN or np.max(waveform) > WAVEFORM_AMP_MAX:
             raise ValueError(
                 f"Only accepting waveforms with {WAVEFORM_AMP_MIN} <= amplitude <= {WAVEFORM_AMP_MAX}."
@@ -104,16 +132,12 @@ class Keysight81160A(AbstractSignalGenerator):
         scale = voltage_max/bit_range
         voltage_bit = (waveform / scale)
 
-        index = np.argmax(np.abs(waveform))
-
         out = ''
         for i in voltage_bit:
             out += str(i.round(4)) + ','
 
-        self.instrument.write(f"DATA{channel} VOLATILE, {out[:-1]}")
-
-       # waveform_str = [str(x) for x in voltage_bit[-200+index:index+300]]
-        #self.instrument.write(f"DATA{channel} VOLATILE {','.join(waveform_str)}")
+        self.instrument.write(f"DATA{channel} VOLATILE, {waveform[:-1]}")
+        self.instrument.write(f"SOUR{channel}:BURS:MODE TRIG")
         self.set_frequency_MHz(channel, freq) 
 
     def get_system_state(self):
@@ -135,10 +159,13 @@ class Keysight81160A(AbstractSignalGenerator):
         self.set_amplitude_mVpp(channel, 600)
         self.output_on(channel)
     
-    def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock):
+    def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock, trigger_rate):
         for ch in [ch_signal, ch_clock]:
             self.output_off(ch)
-        self.set_waveform(ch_signal, waveform)  
+        self.set_waveform(ch_signal, waveform)
+        self.set_waveform(ch_clock, waveform)  
+        self.set_trigger_frequency_Hz(ch_signal, trigger_rate)
+        self.couple_to_channel_on(ch_signal)
         self.set_amplitude_mVpp(ch_signal, amp_sig)
         self.set_amplitude_mVpp(ch_clock, amp_clock)
         for ch in [ch_signal, ch_clock]:

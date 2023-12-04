@@ -14,12 +14,7 @@ from .radiant_helper import (
 try:
     from .Keysight81160A import Keysight81160A
 except:
-    print("Could not import Keysight81160A (will not be available)")
-
-try:
-    from .AWG4022 import AWG4022
-except:
-    print("Could not import AWG4022 (will not be available)")
+    print("Could not import signal generator class Keysight81160A")
 
 try:
     from .ArduinoNano import ArduinoNano

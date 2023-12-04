@@ -1,9 +1,14 @@
-{   "expected_values": {},
+{   "expected_values": {
+        "slope_min": 1,
+        "slope_max": 1,
+        "intercept_min": -1,
+        "intercept_max": 1
+},
     "args": {
-        "waveform": "examples/three_sinus_pulses.json",
+        "waveform": "examples/template2_wo_hardwareResponse.json",
         "clock_amplitude": 700,
-        "threshold": 0.94,
+        "threshold": 0.9,
         "sg_trigger_rate": 10,
-        "run_length": 5
+        "run_length": 10
         }
 } 
