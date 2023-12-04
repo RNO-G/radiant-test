@@ -5,9 +5,41 @@ import matplotlib.pyplot as plt
 import colorama
 
 
+def get_measured_values(data):
+    measurements = get_measurements(data)
+
+    measured_val_dict = {'channel': [], 'result': [],
+                         'a_width': [], 'b_width': [],
+                         'a_mean': [], 'b_mean': [],
+                         "a_outliers": [], "b_outliers": []}
+
+    exp_v = data["config"]["expected_values"]
+    a_outlier = exp_v["a_outlier"]
+    b_outlier = exp_v["b_outlier"]
+
+    for ch in measurements:
+        measured_val_dict['channel'].append(ch)
+        measured_val_dict['result'].append(measurements[ch]['result'])
+
+        a, b = np.array(measurements[ch]['measured_value']["line_fit_para"])
+
+        measured_val_dict['a_width'].append(np.std(a))
+        measured_val_dict['b_width'].append(np.std(b))
+        measured_val_dict['a_mean'].append(np.mean(a))
+        measured_val_dict['b_mean'].append(np.mean(b))
+
+        n = np.sum(np.abs(np.mean(a) - a) > a_outlier * np.std(a))
+        measured_val_dict['a_outliers'].append(n)
+
+        n = np.sum(np.abs(np.mean(b) - b) > b_outlier * np.std(b))
+        measured_val_dict['b_outliers'].append(n)
+
+    return measured_val_dict
+
+
 def print_results(data):
-    channels = np.sort([int(ch) for ch in data["run"]["measurements"].keys()])
-    measurements = {ch:  data["run"]["measurements"][str(ch)] for ch in channels}
+    measurements = get_measurements(data)
+
     exp_v = data["config"]["expected_values"]
 
     add_color = lambda b: colorama.Fore.GREEN if b else colorama.Fore.RED
@@ -63,10 +95,11 @@ def print_results(data):
 def get_measurements(data):
     measurements = dict(sorted(data["run"]["measurements"].items(), key=lambda x: int(x[0])))
     for ch in measurements:
-        if np.any(measurements[ch]["measured_value"]["bias_adc"] > 2 ** 12 + 1):
+        if np.any(np.array(measurements[ch]["measured_value"]["bias_adc"]) > 2 ** 12 + 1):
             measurements[ch]["measured_value"]["bias_adc"] = \
                 np.array(measurements[ch]["measured_value"]["bias_adc"]) / 512
 
+    return measurements
 
 def plot_calibration_fits(data, args_input, args_web=False):
     nrows, ncols = 4, 6
@@ -219,6 +252,10 @@ def plot_rainbows(data, args_input, args_web=False):
         plt.savefig(file_name, transparent=False)
 
 
+def plot_all(data, args_input="", args_channel=None, args_web=False):
+    plot_rainbows(data, args_input, args_web=args_web)
+
+
 if __name__ == "__main__":
     import argparse
     import json
@@ -233,7 +270,8 @@ if __name__ == "__main__":
         data = json.load(f)
 
     print_results(data)
-
+    print(get_measured_values(data))
     plot_rainbows(data, args.input, args_web=args.web)
     plot_fit_parameter_distributions(data, args.input, args_web=args.web)
     plot_residuals(data, args.input, args_web=args.web)
+    plot_all(data, "", True)
