@@ -59,11 +59,20 @@ def print_results(data):
 
     print(result_str)
 
+
+def get_measurements(data):
+    measurements = dict(sorted(data["run"]["measurements"].items(), key=lambda x: int(x[0])))
+    for ch in measurements:
+        if np.any(measurements[ch]["measured_value"]["bias_adc"] > 2 ** 12 + 1):
+            measurements[ch]["measured_value"]["bias_adc"] = \
+                np.array(measurements[ch]["measured_value"]["bias_adc"]) / 512
+
+
 def plot_calibration_fits(data, args_input, args_web=False):
     nrows, ncols = 4, 6
     fig, axs = plt.subplots(nrows, ncols, figsize=(20, 10), sharex=True, sharey=True, layout="constrained")
 
-    measurements = dict(sorted(data["run"]["measurements"].items(), key=lambda x: int(x[0])))
+    measurements = get_measurements(data)
     dac_input = np.array(measurements["0"]["measured_value"]["bias_dac"])
 
 
@@ -91,7 +100,7 @@ def plot_calibration_fits(data, args_input, args_web=False):
 
 def plot_residuals(data, args_input, args_web=False):
 
-    measurements = dict(sorted(data["run"]["measurements"].items(), key=lambda x: int(x[0])))
+    measurements = get_measurements(data)
 
     dac_input = np.array(measurements["0"]["measured_value"]["bias_dac"])
     fig, axs = plt.subplots(4, 6, figsize=(16, 8), layout='constrained')
@@ -125,7 +134,7 @@ def plot_residuals(data, args_input, args_web=False):
 
 
 def plot_fit_parameter_distributions(data, args_input, args_web=False):
-    measurements = dict(sorted(data["run"]["measurements"].items(), key=lambda x: int(x[0])))
+    measurements = get_measurements(data)
     config = data["config"]
 
     fig, axs = plt.subplots(4, 6, figsize=(16, 8), #sharex=True, sharey=True,
@@ -180,19 +189,22 @@ def plot_fit_parameter_distributions(data, args_input, args_web=False):
 
 def plot_rainbows(data, args_input, args_web=False):
 
-    measurements = dict(sorted(data["run"]["measurements"].items(), key=lambda x: int(x[0])))
+    measurements = get_measurements(data)
 
     dac_input = np.array(measurements["0"]["measured_value"]["bias_dac"])
     #plot all pedestal samples with gradient
-    fig, axs = plt.subplots(4, 6, figsize=(20, 8), sharex=True, sharey=True, layout='constrained')
+    fig, axs = plt.subplots(4, 6, figsize=(18, 8), sharex=True, sharey=True, layout="constrained"
+                            # gridspec_kw={"wspace": 0.05, "hspace": 0.0005,
+                            #              "bottom": 0.05, "top": 1, "left": 0.06, "right": 1.05}
+                            )
 
     bias = range(dac_input[0], dac_input[-1], int((dac_input[-1] - dac_input[0]) / len(dac_input))) #y
 
     for idx, (ax, ch_measurements) in enumerate(zip(axs.flatten(), measurements.values())):
         pedestals = np.array(ch_measurements["measured_value"]["bias_adc"])
 
-        c = ax.imshow(pedestals, cmap ='plasma', vmin=0, vmax=4096,
-                    extent =[0, 4096, min(bias), max(bias)],
+        c = ax.imshow(pedestals, cmap ='gnuplot2_r', vmin=max(pedestals.min(), 0), vmax=min(pedestals.max(), 4096),
+                    extent =[0, 4096, min(bias), max(bias)], aspect="auto",
                     interpolation ='nearest', origin ='lower')
 
     cbr = fig.colorbar(c, ax=axs.ravel().tolist(), pad=0.02)

@@ -12,6 +12,6 @@
     "args": {
         "start": 1200,
         "stop": 2500,
-        "points": 20
+        "points": 10
     }
 }

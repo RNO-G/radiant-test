@@ -2,6 +2,9 @@ import json
 import argparse
 
 
+tests_with_large_output = ["BiasScan"]
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("files", type=str, nargs="*", help="Json files to add comments to")
 parser.add_argument("-c", "--comment", type=str, default=None, help="Comment")
@@ -44,5 +47,8 @@ for fn in args.files:
         data["comments"] = comment
 
         file.seek(0)  # rewind
-        json.dump(data, file, indent=4)
+        if data["test_name"] in tests_with_large_output:
+            json.dump(data, file)
+        else:
+            json.dump(data, file, indent=4)
         file.truncate()

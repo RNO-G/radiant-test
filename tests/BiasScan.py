@@ -28,8 +28,10 @@ class BiasScan(radiant_test.RADIANTTest):
             fit_param = np.array([fit(adc_list, ped[:, sample])[1:] for sample in range(4096)])
             data = {
                 "bias_dac": adc_list.tolist(),
-                "bias_adc": ped.tolist(),
-                "line_fit_para": [fit_param.T[0].tolist(), fit_param.T[1].tolist()]
+                # pedestals are the avererage of 512 int-pedestals. Convert back to minimize file size
+                "bias_adc": np.array(ped * 512, dtype=int).tolist(),
+                # Use np.around to minimize file size
+                "line_fit_para": [np.around(fit_param.T[0], 3).tolist(), np.around(fit_param.T[1], 1).tolist()]
             }
             self.add_measurement(f"{ch}", data, passed=self.check_line_fit(data))
 

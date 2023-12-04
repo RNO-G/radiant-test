@@ -7,6 +7,8 @@ import pathlib
 from radiant_test.radiant_helper import uid_to_name
 from .util import get_timestamp
 
+# Define tests here which have large ouput dicts (will not be stored with indent=4)
+tests_with_large_output = ["BiasScan"]
 
 class TestResult(enum.Enum):
     PASS = enum.auto()
@@ -129,6 +131,7 @@ class Test(object):
 
 
     def _save_result(self, result_dir):
+        global tests_with_large_output
         dir = pathlib.Path.cwd() / result_dir
         if not dir.exists():
             dir.mkdir(parents=True)
@@ -139,5 +142,9 @@ class Test(object):
 
         self.logger.info(f"Store test results in {fname}")
 
-        with open(fname, "w",) as f:
-            json.dump(self.result_dict, f, indent=4)
+        if self.name in tests_with_large_output:
+            with open(fname, "w",) as f:
+                json.dump(self.result_dict, f)
+        else:
+            with open(fname, "w",) as f:
+                json.dump(self.result_dict, f, indent=4)
