@@ -49,11 +49,18 @@ def get_fit_results_str(data, ch, with_color=False):
     result = data["run"]["measurements"][str(ch)]["result"]
     
     color_end = colorama.Style.RESET_ALL
+    if data_ch["slope"] is None:
+        str_slope =  get_color(data_ch["res_slope"]) + f'slope: no fit result {color_end}'
+    else:
+        str_slope = get_color(data_ch["res_slope"]) + f'slope: {data_ch["slope"]:.2f}{color_end}'
+    if data_ch["intercept"] is None:
+        str_intercept = get_color(data_ch["res_intercept"]) + f'intercept: no fit result {color_end}'
+    else:
+        str_intercept = get_color(data_ch["res_intercept"]) + f'intercept: {data_ch["intercept"]:.2f}{color_end}'
 
-    out = (
-        f" {get_color(result == 'PASS')} {result} {color_end} |"
-        + get_color(data_ch["res_slope"]) + f'slope: {data_ch["slope"]:.2f}{color_end}|'
-        + get_color(data_ch["res_intercept"]) + f'intercept: {data_ch["intercept"]:.2f}{color_end}')
+
+    out = f"{get_color(result == 'PASS')} {result} {color_end} | {str_slope} | {str_intercept}"
+
     
     return out
 
@@ -113,7 +120,8 @@ def plot_channel(fig, ax, data, ch):
         #ax.errorbar(float(amp), np.mean(vrms), yerr=np.std(vrms), fmt='x', color='k', label=f'Vrms {np.mean(vrms):.0f} mV')
     fit_params = data['run']['measurements'][f"{ch}"]['measured_value']['fit_parameter']
     popt = [fit_params['slope'], fit_params['intercept']]
-    ax.plot(x_arr, lin_func(x_arr, *popt), color='#6D8495')
+    if None not in popt:
+        ax.plot(x_arr, lin_func(x_arr, *popt), color='#6D8495')
     res = data['run']['measurements'][f"{ch}"]['result']
     print(res)
     get_axis_color(ax, res)

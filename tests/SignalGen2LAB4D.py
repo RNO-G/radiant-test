@@ -14,14 +14,14 @@ def lin_func(x, a, b):
 
 def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
     vpps = []
-    idices = []
+    indices = []
     h = window_size // 2
     for i in range(start_index, end_index):
         window = data[i-h:i+h]
         vpp = np.max(window) - np.min(window)
-        idices.append(i)
+        indices.append(i)
         vpps.append(vpp)
-    return vpps, idices
+    return vpps, indices
 
 class SignalGen2LAB4D(radiant_test.RADIANTTest):
     def __init__(self):
@@ -48,7 +48,6 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         else:
             raise ValueError("Invalid channel number")
         return sg_ch, sg_ch_clock, radiant_ch_clock
-            
 
     def initialize_config(self, channel_trigger, threshold, run_length):
         print('trigger set on channel', channel_trigger)
@@ -68,7 +67,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         run.run_conf.flower_device_required(False)
         run.run_conf.flower_trigger_enable(False)
         run.run_conf.run_length(run_length)
-        run.run_conf.comment("AUX Trigger Response Test")
+        run.run_conf.comment("Signal Gen 2 LAB4D Amplitude Test")
         self.data_dir = run.start(delete_src=True, rootify=True)
         print(f'start run stored at {self.data_dir}')
 
@@ -124,18 +123,32 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         return vpp_mean, vpp_err, vpps, vrms
 
     def fit_vpp_SG2LAB4D(self, amps_SG, vpp, vpp_err, dic):
+        amps_SG = np.array(amps_SG)
         try:
             popt, pcov = curve_fit(lin_func, amps_SG, vpp, sigma=vpp_err, absolute_sigma=True)
+            print('popt', popt)
             pcov = pcov.tolist()
+            print('pcov', pcov)
+            residuals = vpp - lin_func(amps_SG, *popt)
+            max_residual = np.max(np.abs(residuals))
+            print('max_residual', max_residual)
         except:
-            popt = None
+            popt = [None, None]
             pcov = None
-
-        dic_out = {'vpp_mean': vpp, 'vpp_mean_err': vpp_err, 'amp_SG': amps_SG.tolist(), 
-                'fit_parameter': {     
-                    "slope": popt[0],
-                    "intercept": popt[1],
-                    "pcov": pcov}, 'raw_data': dic}
+            max_residual = None
+#
+        dic_out = {
+            'vpp_mean': vpp,
+            'vpp_mean_err': vpp_err,
+            'amp_SG': list(amps_SG),
+            'fit_parameter': {
+                "slope": popt[0],
+                "intercept": popt[1],
+                "pcov": pcov,
+                "max_residual": max_residual
+            },
+            'raw_data': dic
+        }
         return dic_out
     
     def eval_fit_result(self, channel, data):
@@ -158,10 +171,10 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             data.tolist()
         self.add_measurement(f"{channel}", data, passed)
 
-    
     def run(self, use_arduino=True):
         super(SignalGen2LAB4D, self).run()
-        for ch_radiant in np.arange(0, 24, 1):
+        # for ch_radiant in np.arange(8, 11, 1):
+        for ch_radiant in self.conf["args"]["channels"]:
             logging.info(f"Testing channel {ch_radiant}")
             print(f"Testing channel {ch_radiant}")
             if use_arduino:
@@ -199,7 +212,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                         ch_dic[key_str]['vrms'] = None
                         ch_dic[key_str]['run'] = str(root_file)
                     else:
-                        vpp_mean, vpp_err, vpps, vrms, root_file = self.get_vpp_from_clock_trigger(root_file, ch_radiant, ch_radiant_clock, amp_pp, key_str)
+                        vpp_mean, vpp_err, vpps, vrms, root_file = self.get_vpp(root_file, ch_radiant, ch_radiant_clock, amp_pp, key_str)
                         measured_vpps.append(vpp_mean)
                         measured_errs.append(vpp_err)
                         ch_dic[key_str]['vpp_mean'] = vpp_mean
