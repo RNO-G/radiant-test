@@ -18,9 +18,14 @@ class ArduinoNano():
             print(p.device)
 
     def route_signal_to_channel(self, channel):
-        self.dev.write(bytes([channel]))
-        line = self.dev.readline().decode('ascii').strip()
-        logging.debug(f"Arduino is routing the signal to {channel}.")
+        line=None
+        line_counter = 0
+        while line != f'Use channel: {channel}' and line_counter<10:
+          self.dev.write(bytes([channel]))
+          line = self.dev.readline().decode('ascii').strip()
+          logging.debug(f"Arduino is routing the signal to {channel}.")
+          line_counter += 1
+        print(f'Tried {line_counter} times to reroute signal')
         return line
 
 

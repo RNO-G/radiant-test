@@ -6,8 +6,9 @@
         },
     "args": {
         "run_length": 30,
-        "waveform": "examples/template2_wo_hardwareResponse_2.5GSps.json",
-        "clock_amplitude": 700,
+        "channels": [8, 9, 10, 11],
+        "waveform": "examples/template2_wo_hardwareResponse.json",
+        "clock_amplitude": 800,
         "threshold": 0.92,
         "sg_trigger_rate": 10,
         "sg_start_amp": 500,

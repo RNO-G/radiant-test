@@ -162,6 +162,7 @@ class Keysight81160A(AbstractSignalGenerator):
     def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock, trigger_rate):
         for ch in [ch_signal, ch_clock]:
             self.output_off(ch)
+        self.instrument.write(f"FUNC{ch_signal} USER")
         self.set_waveform(ch_signal, waveform)
         self.set_waveform(ch_clock, waveform)  
         self.set_trigger_frequency_Hz(ch_signal, trigger_rate)
