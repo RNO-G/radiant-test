@@ -77,22 +77,23 @@ class Test(object):
         self._log_result()
         self._save_result(result_dir)
 
+
     @staticmethod
     def print_result(
-        name, result_dict, failed_only=False, verbose=False, print_func=print
+        name, result_dict, failed_only=False, verbose=False, print_func=print, verbose_func=None
     ):
         if not failed_only or result_dict["result"] == TestResult.FAIL.name:
             print_func(f"{Test._get_colored_result(result_dict['result'])} - {name}")
+
         if verbose:
-            for key in result_dict["run"]["measurements"].keys():
-                if (
-                    not failed_only
-                    or result_dict["run"]["measurements"][key]["result"]
-                    == TestResult.FAIL.name
-                ):
-                    print_func(
-                        f"   {Test._get_colored_result(result_dict['run']['measurements'][key]['result'])} - {key}"
-                    )
+            if verbose_func is not None:
+                verbose_func(result_dict)
+            else:
+                for key in result_dict["run"]["measurements"].keys():
+                    if (not failed_only or result_dict["run"]["measurements"][key]["result"]
+                        == TestResult.FAIL.name):
+                        print_func(
+                            f"   {Test._get_colored_result(result_dict['run']['measurements'][key]['result'])} - {key}")
 
     @staticmethod
     def _get_colored_result(result):
@@ -103,27 +104,29 @@ class Test(object):
             color = colorama.Fore.GREEN
         return color + result + colorama.Style.RESET_ALL
 
+    def get_verbose_func(self):
+        try:
+            m = __import__("scripts")
+            return getattr(m, self.name + "_print_results")
+        except:
+            return None
+
     def _log_result(self):
         if self.logger.getEffectiveLevel() <= logging.INFO:
             print_func = self.logger.info
         else:
             print_func = print
-        if self.result == TestResult.FAIL:
-            self.print_result(
-                self.name,
-                self.result_dict,
-                failed_only=True,
-                verbose=True,
-                print_func=print_func,
-            )
-        else:
-            self.print_result(
-                self.name,
-                self.result_dict,
-                failed_only=False,
-                verbose=False,
-                print_func=print_func,
-            )
+
+        failed = self.result == TestResult.FAIL
+        self.print_result(
+            self.name,
+            self.result_dict,
+            failed_only=failed,
+            verbose=failed,
+            print_func=print_func,
+            verbose_func=self.get_verbose_func()
+        )
+
 
     def _save_result(self, result_dir):
         dir = pathlib.Path.cwd() / result_dir
