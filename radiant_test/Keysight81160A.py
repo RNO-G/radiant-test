@@ -170,3 +170,20 @@ class Keysight81160A(AbstractSignalGenerator):
         self.set_amplitude_mVpp(ch_clock, amp_clock)
         for ch in [ch_signal, ch_clock]:
             self.output_on(ch)
+
+    def setup_sine_waves(self, frequency, amplitude):
+        for sig_gen_cha in [1,2]:
+            # make sure both outouts are off
+            self.output_off(sig_gen_cha)
+            # set the trigger source to continuous
+            self.instrument.write(f"ARM:SOUR{sig_gen_cha} IMM")
+            # set the signal gen to sine waves
+            self.instrument.write(f"FUNC{sig_gen_cha} SIN")
+            # set the sine amplitude
+            self.set_amplitude_mV(sig_gen_cha, amplitude)
+            self.set_offset(sig_gen_cha, 0)
+            # set the sine frequency
+            self.set_frequency_MHz(sig_gen_cha, frequency)
+
+            # turn the channel on
+            self.output_on(sig_gen_cha)

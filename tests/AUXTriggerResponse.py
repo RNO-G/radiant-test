@@ -229,12 +229,19 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         self.add_measurement(f"{channel}", data, passed)
 
 
-    def run(self):
+    def run(self, use_arduino=True):
         super(AUXTriggerResponse, self).run()
         self.device.radiant_calselect(quad=None) #make sure calibration is off
         for ch_radiant in np.arange(0, 24, 1):
             logging.info(f"Testing channel {ch_radiant}")
-            sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant)
+            if use_arduino:
+                print('using arduino to route signal')
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant)
+            else:
+                print('set channel settings manually')
+                sg_ch = 2
+                sg_ch_clock = 1
+                ch_radiant_clock = 4
             thresh = self.conf['args']['threshold']
             sg_current_amp = self.conf['args']['sg_start_amp']
             points_on_curve = 0

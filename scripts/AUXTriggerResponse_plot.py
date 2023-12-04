@@ -137,7 +137,7 @@ def plot_ana(data):
     ax1.set_ylabel('trigger efficiency')
 
 def adc_counts_to_m_volt(adc_counts):
-    return (adc_counts / ((2**12) -1)) * 2.5 * 1e3
+    return (adc_counts / ((2**12) -1)) * 2500 * 1e3
 
 def plot_ana(data):
     fig1, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))

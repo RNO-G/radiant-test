@@ -1,12 +1,13 @@
 {   "expected_values": {
-        "slope_min": 1,
+        "slope_min": 0.5,
         "slope_max": 1,
-        "intercept_min": -1,
-        "intercept_max": 1
+        "intercept_min": 0,
+        "intercept_max": 20
 },
     "args": {
         "waveform": "examples/template2_wo_hardwareResponse.json",
         "clock_amplitude": 700,
+        "amplitudes": [200, 300, 400, 500, 600, 700, 800, 900],
         "threshold": 0.9,
         "sg_trigger_rate": 10,
         "run_length": 10

@@ -7,14 +7,7 @@ import radiant_test
 class ExtSigGenSine(radiant_test.RADIANTChannelTest):
     def __init__(self):
         super(ExtSigGenSine, self).__init__()
-        if self.site_conf['test_site'] == 'ecap':
-            self.awg = radiant_test.AWG4022(self.site_conf['signal_gen_ip_address'])
-            print("Site: ecap")
-        elif self.site_conf['test_site'] == 'desy':
-            self.awg = radiant_test.Keysight81160A(self.site_conf['signal_gen_ip_address'])
-            print("Site: desy")
-        else:
-            raise ValueError("Invalid test_site, use desy or ecap")
+        self.awg = radiant_test.Keysight81160A(self.site_conf['signal_gen_ip_address'])
         try:
             self.arduino = radiant_test.ArduinoNano()
         except:
