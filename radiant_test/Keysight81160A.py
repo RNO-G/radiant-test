@@ -4,7 +4,7 @@ import vxi11
 import json
 import sys
 from .AbstractSignalGenerator import AbstractSignalGenerator
-
+import time
 
 def validate_channel(func):
     def inner(self, *args, **kwargs):
@@ -145,6 +145,17 @@ class Keysight81160A(AbstractSignalGenerator):
         binary_data = self.instrument.read_raw()
         with open('binary_data.bin', 'wb') as file:
             file.write(binary_data)
+
+    def software_trigger(self):
+        #self.instrument.write("TRIG")
+        self.instrument.write("*TRG")
+    
+    def send_n_software_triggers(self, n_trigger, delay_between_triggers=0.1):
+        for _ in range(n_trigger):
+            # Send software trigger command
+            self.instrument.write("*TRG")
+            # Wait for the specified delay
+            time.sleep(delay_between_triggers)
 
     def set_system_state_from_binary(self):
         with open('binary_data.bin', 'rb') as file:

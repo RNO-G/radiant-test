@@ -1,9 +1,7 @@
 import numpy as np
 import json
 import matplotlib.pyplot as plt
-import os
 import argparse
-import glob
 import colorama
 import matplotlib.ticker as ticker
 
