@@ -7,8 +7,21 @@ import datetime
 from scipy.optimize import curve_fit
 import radiant_test
 import stationrc
+import json
 import radiant_test.radiant_helper as rh
 
+def make_serializable(obj):
+    if isinstance(obj, dict):
+        return {key: make_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [make_serializable(item) for item in obj]
+    elif isinstance(obj, set):
+        return [make_serializable(item) for item in list(obj)]
+    elif isinstance(obj, (int, float, str, bool, type(None))):
+        return obj
+    else:
+        return str(obj)
+    
 def lin_func(x, a, b):
     return a * x + b
 
@@ -167,8 +180,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         data['fit_parameter']['res_slope'] = slope_passed
         data['fit_parameter']['res_intercept'] = intercept_passed
         print('Test passed:', passed)
-        if isinstance(data, np.ndarray):
-            data.tolist()
+        data = make_serializable(data)
         self.add_measurement(f"{channel}", data, passed)
 
     def run(self, use_arduino=True):

@@ -5,6 +5,7 @@ import os
 import argparse
 import glob
 import colorama
+import matplotlib.ticker as ticker
 
 def lin_func(x, a, b):
     return a * x + b
@@ -124,16 +125,17 @@ def plot_channel(fig, ax, data, ch):
         ax.plot(x_arr, lin_func(x_arr, *popt), color='#6D8495')
     res = data['run']['measurements'][f"{ch}"]['result']
     print(res)
-    get_axis_color(ax, res)
-    ax.set_ylim(0, 800)
+    ax.set_xlim(0, 1000)
+    ax.set_ylim(0, 700)
     ax_y2 = ax.twinx()
-    ax.set_title(f'channel: {ch}')
+    ax_y2.yaxis.set_major_locator(ticker.FixedLocator(ax_y2.get_yticks()))
     ax_y2.set_yticklabels([f'{adc_counts_to_m_volt(y):.0f}' for y in ax_y2.get_yticks()])
+    ax.set_title(f'channel: {ch}')
     fig.text(0.5, 0.01, 'Vpp at signal generator [mV]', ha='center', va='center')
     fig.text(0.01, 0.5, 'Vpp from LAB4D [adc counts]', ha='center', va='center', rotation='vertical')
     fig.text(0.99, 0.5, 'Vpp from LAB4D [mv]', ha='center', va='center', rotation='vertical')
-
-
+    get_axis_color(ax, res)
+    get_axis_color(ax_y2, res)
 
 
 if __name__ == "__main__":
