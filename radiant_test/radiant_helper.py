@@ -1,4 +1,6 @@
 import stationrc.remote_control
+from pymongo import MongoClient
+import logging
 
 
 RADIANT_NUM_CHANNELS = 24
@@ -36,20 +38,31 @@ def get_radiant():
         RADIANT = stationrc.remote_control.VirtualStation()
     return RADIANT
 
+def get_mongo_database():
+    mongo_conf = {
+        "hostname": "radio.zeuthen.desy.de",
+        "port": 27017,
+        "username": "read",
+        "password": "EseNbGVaCV4pBBrt",
+    }
+    mongo_uri = f"mongodb://{mongo_conf['username']}:{mongo_conf['password']}@{mongo_conf['hostname']}:{mongo_conf['port']}/admin?authSource=admin&directConnection=true&ssl=true"
+
+    mongo_client = MongoClient(mongo_uri)
+    mongo_db = mongo_client["RNOG_live"]
+    return mongo_db
 
 def uid_to_name(uid):
-    uid_to_names_dict = {
-        "e7e318ffb2ad88e350533357e0ea06e7": "ULB-003",
-        "e7e318ffb2ad88e35055334a2285c7bf": "ULB-005",
-        "e7e318ffb2ad88e35055334a96940be5": "ULB-007",
-        "e7e318ffb2ad88e35055334aa54b5690": "ULB-008",
-        "e7e318ffb2ad88e35055334ab599703d": "ULB-013",
-        "e7e318ffb2ad88e35055334abf07b869": "ULB-014",
-        "e7e318ffb2ad88e35053335737bcc1da": "ULB-015",
-    }
+    mongo_db = get_mongo_database()
 
-    if uid in uid_to_names_dict:
-        return uid_to_names_dict[uid]
-    else:
-        print(f"Name for {uid} unknown")
+    search_filter = [{'$match': {'dut_id': uid}}]
+    search_result = list(mongo_db['radiant_dut_id'].aggregate(search_filter))
+    
+    if len(search_result) == 0:
+        logging.error(f"Name for {uid} unknown")
         return uid
+    elif len(search_result) > 1:
+        logging.error(f"More than one name found for {uid}")
+        return uid
+    else:
+        return search_result[0]['ulb_id']
+        
