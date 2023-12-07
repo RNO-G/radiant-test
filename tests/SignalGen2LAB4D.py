@@ -9,7 +9,10 @@ import json
 
 import radiant_test
 import stationrc
+import pathlib
 import radiant_test.radiant_helper as rh
+import time
+
 
 
 def make_serializable(obj):
@@ -52,27 +55,49 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             logging.info("Arduino not connected")
 
     def get_channel_settings(self, radiant_ch):
-        """
-        connect signale generator channel 1 to radiant channel 0
-        and SG channel 2 to radiant channel 1-23
-        """
-        if radiant_ch > 0 and radiant_ch < 24:
-            sg_ch_clock = 1  # connected to radiant channel 0
-            radiant_ch_clock = 0
-            sg_ch = 2  # connected to radiant channel 1-23
+        """connect signale generator channel 1 directly to radiant
+            and SG channel 2 to the bridge"""
+
+        if radiant_ch != self.conf['args']['radiant_clock_channel']:
+            sg_ch_clock = self.conf['args']['sg_ch_direct_to_radiant']
+            radiant_ch_clock = self.conf['args']['radiant_clock_channel']
+            sg_ch = self.conf['args']['sg_ch_to_bridge']
             self.arduino.route_signal_to_channel(radiant_ch)
-        elif radiant_ch == 0:
-            sg_ch_clock = 2  # connected to radiant channel 1-23
-            radiant_ch_clock = 1
-            sg_ch = 1  # connected to radiant channel 0
+
+        elif radiant_ch == self.conf['args']['radiant_clock_channel']:
+            sg_ch_clock = self.conf['args']['sg_ch_to_bridge']
+            radiant_ch_clock = self.conf['args']['radiant_clock_channel_alternative']
+            sg_ch = self.conf['args']['sg_ch_direct_to_radiant']
             self.arduino.route_signal_to_channel(radiant_ch_clock)
         else:
             raise ValueError("Invalid channel number")
         return sg_ch, sg_ch_clock, radiant_ch_clock
+    
+    def start_run(self, station, run_conf, delete_src=False, rootify=False):
+        station.set_run_conf(run_conf)
+        res = station.daq_run_start()
 
-    def initialize_config(self, channel_trigger, threshold, run_length):
+        # start pulsing
+        time.sleep(1)
+        self.awg.send_n_software_triggers(n_trigger=self.conf["args"]["number_of_events"], trigger_rate=self.conf["args"]["sg_trigger_rate"])
+
+        station.daq_run_wait()
+        station.retrieve_data(res["data_dir"], delete_src=delete_src)
+        data_dir = (
+            pathlib.Path(station.station_conf["daq"]["data_directory"])
+            / pathlib.Path(res["data_dir"]).parts[-1]
+        )
+        if rootify:
+            stationrc.common.rootify(
+                data_dir,
+                station.station_conf["daq"]["mattak_directory"],
+            )
+        return data_dir
+
+    def initialize_config(self, channel_trigger, threshold):
         print('trigger set on channel', channel_trigger)
         run = stationrc.remote_control.Run(self.device)
+        station = self.device
         for ch in range(24):
             run.run_conf.radiant_threshold_initial(ch, threshold)
 
@@ -87,9 +112,12 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         run.run_conf.radiant_trigger_soft_enable(False)  # no forced trigger
         run.run_conf.flower_device_required(False)
         run.run_conf.flower_trigger_enable(False)
+        run_length = self.conf["args"]["number_of_events"] * 1/self.conf["args"]["sg_trigger_rate"] + 2 # 2 buffer seconds
         run.run_conf.run_length(run_length)
         run.run_conf.comment("Signal Gen 2 LAB4D Amplitude Test")
         self.data_dir = run.start(delete_src=True, rootify=True)
+        self.data_dir = self.start_run(station, run.run_conf, delete_src=True, rootify=True)
+
         print(f'start run stored at {self.data_dir}')
 
     def get_vpp(self, root_file, ch, ch_clock, amp, tag, plot=False):
@@ -172,7 +200,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             popt = [None, None]
             pcov = None
             max_residual = None
-#
+
         dic_out = {
             'vpp_mean': vpp,
             'vpp_mean_err': vpp_err,
@@ -211,7 +239,6 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
 
     def run(self, use_arduino=True):
         super(SignalGen2LAB4D, self).run()
-        # for ch_radiant in np.arange(8, 11, 1):
         for ch_radiant in self.conf["args"]["channels"]:
             logging.info(f"Testing channel {ch_radiant}")
             print(f"Testing channel {ch_radiant}")
@@ -220,10 +247,11 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                 sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
                     ch_radiant)
             else:
-                print('set channel settings manually')
-                sg_ch = 2
-                sg_ch_clock = 1
-                ch_radiant_clock = 0
+                print('channel settings without bridge')
+                sg_ch_clock = self.conf['args']['sg_ch_direct_to_radiant']
+                ch_radiant_clock = self.conf['args']['radiant_clock_channel']
+                sg_ch = self.conf['args']['sg_ch_to_bridge']
+
             measured_vpps = []
             measured_errs = []
             amps_SG = self.conf['args']['amplitudes']
@@ -232,15 +260,13 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                 print(f"Testing amplitude {amp_pp}")
                 key_str = f'{n}'
                 ch_dic[key_str] = {}
-                ch_dic[key_str]['amp'] = float(amp_pp)
-                self.awg.setup_aux_trigger_response_test(
-                    self.conf['args']['waveform'],
-                    sg_ch, sg_ch_clock, amp_pp,
-                    self.conf['args']['clock_amplitude'], self.conf['args']['sg_trigger_rate'])
-
-                self.initialize_config(
-                    ch_radiant_clock, self.conf['args']['threshold'], self.conf['args']['run_length'])
-
+                ch_dic[key_str]['amp'] = float(amp_pp)  
+                self.awg.setup_aux_trigger_response_test(self.conf['args']['waveform'], 
+                                            sg_ch, 
+                                            sg_ch_clock, 
+                                            amp_pp, 
+                                            self.conf['args']['clock_amplitude'], self.conf['args']['sg_trigger_rate'])
+                self.initialize_config(ch_radiant_clock, self.conf['args']['threshold'])
                 root_file = self.data_dir/"combined.root"
                 if os.path.exists(root_file):
                     file_size = os.path.getsize(root_file)
@@ -269,3 +295,4 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
 
 if __name__ == "__main__":
     radiant_test.run(SignalGen2LAB4D)
+

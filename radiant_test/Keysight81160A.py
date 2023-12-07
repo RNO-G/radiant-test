@@ -150,7 +150,8 @@ class Keysight81160A(AbstractSignalGenerator):
         #self.instrument.write("TRIG")
         self.instrument.write("*TRG")
     
-    def send_n_software_triggers(self, n_trigger, delay_between_triggers=0.1):
+    def send_n_software_triggers(self, n_trigger, trigger_rate):
+        delay_between_triggers=1/trigger_rate
         for _ in range(n_trigger):
             # Send software trigger command
             self.instrument.write("*TRG")
