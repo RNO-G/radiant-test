@@ -6,6 +6,7 @@ import logging
 import pathlib
 from radiant_test.radiant_helper import uid_to_name
 from .util import get_timestamp
+import copy
 
 # Define tests here which have large ouput dicts (will not be stored with indent=4)
 tests_with_large_output = ["BiasScan"]
@@ -89,7 +90,7 @@ class Test(object):
 
         if verbose:
             if verbose_func is not None:
-                verbose_func(result_dict)
+                verbose_func(copy.deepcopy(result_dict))
             else:
                 for key in result_dict["run"]["measurements"].keys():
                     if (not failed_only or result_dict["run"]["measurements"][key]["result"]
