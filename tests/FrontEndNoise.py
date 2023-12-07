@@ -6,8 +6,8 @@ from scipy.optimize import curve_fit
 
 
 class FrontEndNoise(radiant_test.RADIANTChannelTest):
-    def __init__(self):
-        super(FrontEndNoise, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(FrontEndNoise, self).__init__(*args, **kwargs)
 
     def run(self):
         super(FrontEndNoise, self).run()
