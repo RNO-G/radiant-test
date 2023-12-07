@@ -94,7 +94,7 @@ def plot_all(data, args_input="", args_channel=None, args_not_channel=[], args_w
     measurements = {ch:  data["run"]["measurements"][str(ch)] for ch in channels}
     config = data["config"]
 
-    frequencies = np.fft.rfftfreq(2048, 1 / 3.2e9)
+    frequencies = np.fft.rfftfreq(2048, 1 / (data["radiant_sample_rate"] * 1e6))
 
     if not args_web:
         # file_name = os.path.basename(args.input).replace(".json", "")

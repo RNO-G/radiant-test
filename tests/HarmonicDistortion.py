@@ -5,8 +5,8 @@ import radiant_test
 
 
 class HarmonicDistortion(radiant_test.RADIANTChannelTest):
-    def __init__(self):
-        super(HarmonicDistortion, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(HarmonicDistortion, self).__init__(*args, **kwargs)
 
     def run(self):
         super(HarmonicDistortion, self).run()
@@ -42,7 +42,7 @@ class HarmonicDistortion(radiant_test.RADIANTChannelTest):
         signal_frequency = self.conf["args"]["frequency"] * 1e6  # conversion to Hz
 
         spec = np.abs(np.fft.rfft(wfs))
-        frequencies = np.fft.rfftfreq(2048, 1 / 3.2e9)
+        frequencies = np.fft.rfftfreq(2048, 1 / (self.result_dict["radiant_sample_rate"] * 1e6))
 
         signal_bin = np.argmin(np.abs(frequencies - signal_frequency))
         if frequencies[signal_bin] > signal_frequency:
