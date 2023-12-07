@@ -56,7 +56,7 @@ def uid_to_name(uid):
 
     search_filter = [{'$match': {'dut_id': uid}}]
     search_result = list(mongo_db['radiant_dut_id'].aggregate(search_filter))
-    
+
     if len(search_result) == 0:
         logging.error(f"Name for {uid} unknown")
         return uid
@@ -65,4 +65,14 @@ def uid_to_name(uid):
         return uid
     else:
         return search_result[0]['ulb_id']
-        
+
+
+def get_key_for_sampling_rate(dic, key, sr):
+    radiant_sample_rate = "2G4" if self.result_dict["radiant_sample_rate"] == 2400 else "3G2"
+    key2 = f"{key}_{radiant_sample_rate}"
+    if key2 in dic:
+        return dic[key2]
+    elif key in dic:
+        return dic[key]
+    else:
+        raise KeyError(f"Could not find {key2} or {key}")

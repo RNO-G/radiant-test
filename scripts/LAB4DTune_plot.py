@@ -13,7 +13,7 @@ def get_result_str_plot(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
     return (
-       f"seam sample: {np.mean(data_ch['seam_sample']):6.1f} ps - "
+        f"seam sample: {np.mean(data_ch['seam_sample']):6.1f} ps - "
         + f"slow sample: {np.mean(data_ch['slow_sample']):6.1f} ps - "
         + f"rms: {np.mean(data_ch['rms']):6.2f} ps - "
         + f"result: {result}"
@@ -30,7 +30,11 @@ def get_color(passed):
 def get_result_str(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
-    n_recordings = data["config"]["args"].pop("n_recordings", 1)
+
+    if "n_recordings" in data["config"]["args"]:
+        n_recordings = data["config"]["args"]["n_recordings"]
+    else:
+        n_recordings = 1
 
     reset = colorama.Style.RESET_ALL
     slow = np.array(data_ch['slow_sample'])
@@ -38,10 +42,16 @@ def get_result_str(data, ch):
 
     expected_values = data["config"]["expected_values"]
 
-    seam_sample_min = expected_values["seam_sample_min"]
-    seam_sample_max = expected_values["seam_sample_max"]
-    slow_sample_min = expected_values["slow_sample_min"]
-    slow_sample_max = expected_values["slow_sample_max"]
+
+    sr_str = "_2G4" if data["radiant_sample_rate"] == 2400 else "_3G2"
+    if "seam_sample_min" in expected_values:
+        sr_str = ""  # old files, limits are for 3G2
+
+    seam_sample_min = expected_values[f"seam_sample_min{sr_str}"]
+    seam_sample_max = expected_values[f"seam_sample_max{sr_str}"]
+    slow_sample_min = expected_values[f"slow_sample_min{sr_str}"]
+    slow_sample_max = expected_values[f"slow_sample_max{sr_str}"]
+
     rms_max = expected_values["rms_max"]
     if n_recordings == 1:
         out = (
@@ -53,11 +63,11 @@ def get_result_str(data, ch):
         out = (
             f" {get_color(result == 'PASS')} {result}   {reset} |"
             + get_color(np.all([seam_sample_min < seam, seam < seam_sample_max]))
-            + f"{f'{np.mean(seam):6.1f} ps':^30}{reset} | "
+            + f"{f'{np.mean(seam):6.1f} +- {np.std(seam):6.1f} ps':^30}{reset} | "
             + get_color(np.all([slow_sample_min < slow, slow < slow_sample_max]))
-            + f"{f'{np.mean(slow):6.1f} ps':^30}{reset} | "
+            + f"{f'{np.mean(slow):6.1f} +- {np.std(slow):6.1f} ps':^30}{reset} | "
             + get_color(np.all(np.array(data_ch['rms']) < rms_max))
-            + f"{np.mean(data_ch['rms']):6.2f} ps{reset}")
+            + f"{np.mean(data_ch['rms']):6.2f} +- {np.std(data_ch['rms']):6.1f} ps{reset}")
 
     return out
 
@@ -166,10 +176,14 @@ def get_measured_values(data):
 def print_results(data):
     expected_values = data["config"]["expected_values"]
 
-    seam_sample_min = expected_values["seam_sample_min"]
-    seam_sample_max = expected_values["seam_sample_max"]
-    slow_sample_min = expected_values["slow_sample_min"]
-    slow_sample_max = expected_values["slow_sample_max"]
+    sr_str = "_2G4" if data["radiant_sample_rate"] == 2400 else "_3G2"
+    if "seam_sample_min" in expected_values:
+        sr_str = ""  # old files, limits are for 3G2
+
+    seam_sample_min = expected_values[f"seam_sample_min{sr_str}"]
+    seam_sample_max = expected_values[f"seam_sample_max{sr_str}"]
+    slow_sample_min = expected_values[f"slow_sample_min{sr_str}"]
+    slow_sample_max = expected_values[f"slow_sample_max{sr_str}"]
     rms_max = expected_values["rms_max"]
 
     print(f'{"CH":<5} | {"result":^9} | {f"{seam_sample_min} < seam sample < {seam_sample_max}":^29} | '

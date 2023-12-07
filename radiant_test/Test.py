@@ -61,6 +61,27 @@ class Test(object):
         self.result_dict["run"]["timestamp"] = get_timestamp()
         self.result_dict["run"]["measurements"] = dict()
 
+    def get_expected_value(self, key):
+        radiant_sample_rate = "2G4" if self.result_dict["radiant_sample_rate"] == 2400 else "3G2"
+        key2 = f"{key}_{radiant_sample_rate}"
+        if key2 in self.conf["expected_values"]:
+            return self.conf["expected_values"][key2]
+        elif key in self.conf["expected_values"]:
+            return self.conf["expected_values"][key]
+        else:
+            raise KeyError(f"Could not find {key2} nor {key} in expected_values.")
+
+    def get_args(self, key):
+        radiant_sample_rate = "2G4" if self.result_dict["radiant_sample_rate"] == 2400 else "3G2"
+        key2 = f"{key}_{radiant_sample_rate}"
+        if key2 in self.conf["args"]:
+            return self.conf["args"][key2]
+        elif key in self.conf["args"]:
+            return self.conf["args"][key]
+        else:
+            raise KeyError(f"Could not find {key2} nor {key} in args.")
+
+
     def finalize(self, result_dir="results"):
         self.result_dict["finalize"] = dict()
         self.result_dict["finalize"]["timestamp"] = get_timestamp()

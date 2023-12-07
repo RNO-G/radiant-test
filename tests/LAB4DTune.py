@@ -36,18 +36,19 @@ class LAB4DTune(radiant_test.RADIANTChannelTest):
         return data
 
     def _check_tune(self, data):
-        exp = self.conf["expected_values"]
         seam = np.array(data["seam_sample"])
         slow = np.array(data["slow_sample"])
         rms = np.array(data["rms"])
 
-        if np.any(seam < exp["seam_sample_min"]) or np.any(seam > exp["seam_sample_max"]):
+        if np.any(seam < self.get_expected_value("seam_sample_min")) or \
+            np.any(seam > self.get_expected_value("seam_sample_max")):
             return False
 
-        if np.any(slow < exp["slow_sample_min"]) or np.any(slow > exp["slow_sample_max"]):
+        if np.any(slow < self.get_expected_value("slow_sample_min")) or \
+            np.any(slow > self.get_expected_value("slow_sample_max")):
             return False
 
-        if np.any(rms > exp["rms_max"]):
+        if np.any(rms > self.get_expected_value("rms_max")):
             return False
 
         return True
