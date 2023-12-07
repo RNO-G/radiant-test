@@ -12,7 +12,7 @@ def get_channels(data):
 def get_fit_results_str(data, ch, with_color=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
-    
+
     color_start = ""
     color_end = ""
     if with_color:
@@ -20,9 +20,9 @@ def get_fit_results_str(data, ch, with_color=False):
             color_start = colorama.Fore.RED
         else:
             color_start = colorama.Fore.GREEN
-        
+
         color_end = colorama.Style.RESET_ALL
-    
+
     return (
         color_start
         + f"amp: {data_ch['fit_amplitude']:6.1f} - "
@@ -45,7 +45,7 @@ def get_rows_cols(n):
 
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):
-    # Plot to PDF    
+    # Plot to PDF
     if not args_web:
         config = data["config"]
         fname = args_input.replace(".json", "")
@@ -58,8 +58,8 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
                 ax.set_ylabel("Voltage (ADC counts)")
                 if 1:
                     for i in range(16):
-                        ax.axvline(128 * i / 3.2, color="k", lw=1, zorder=0)
-                
+                        ax.axvline(128 * i / (data["radiant_sample_rate"] / 1000), color="k", lw=1, zorder=0)
+
                 pdf.savefig()
                 plt.close()
 
@@ -75,7 +75,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
     for ch in get_channels(data):
         if args_channel is not None and ch not in args_channel:
             continue
-        
+
         if nrows == 1:
             ax = axs[idx % ncols]
         else:
@@ -86,7 +86,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
 
     for ax in axs.T:
         ax[-1].set_xlabel("time / ns")
-    
+
     fig2.tight_layout()
     if not args_web:
         if args_channel is not None:
@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
     with open(args.input, "r") as f:
         data = json.load(f)
-                
+
     # if args.channel == None:
     print_results(data)
     plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)

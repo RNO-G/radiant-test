@@ -21,7 +21,7 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
         print(os.path.join(search_dir, f"{radiant_name}_SignalGen2LAB4D_*.json"))
         files = glob.glob(os.path.join(search_dir, f"{radiant_name}_SignalGen2LAB4D_*.json"))
         files_sorted = sorted(files)
-        last_test = files_sorted[-1]    
+        last_test = files_sorted[-1]
         with open(last_test, "r") as f:
             data = json.load(f)
         vals = data['run']['measurements'][str(channel)]['measured_value']
@@ -34,7 +34,7 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
             root_dirs.append(root_dir)
             amps.append(amp)
         return root_dirs, amps
-    
+
     def get_truth_waveform(self, template):
         with open(template, "r") as f:
             data = json.load(f)
@@ -85,12 +85,12 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
         if return_time_difference:
             # calculate the time difference between the beginning of the template and data trace for the largest correlation value
             # time difference is given in ns
-            time_diff = (max_corr_i + (lower_bound_data - len(templateTrace))) / sampling_rate   
+            time_diff = (max_corr_i + (lower_bound_data - len(templateTrace))) / sampling_rate
         if return_time_difference:
             return max_correlation, time_diff
         else:
             return max_correlation
-    
+
     def eval_results(self, data, channel):
         passed = False
         all_passed = []
@@ -111,7 +111,7 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
                 data[key]['res_xcorr'] = passed_single
         if False in all_passed:
             passed = False
-        else:        
+        else:
             passed = True
         self.add_measurement(f"{channel}", data, passed)
 
@@ -133,7 +133,7 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
                     if i == 0:
                         data[key]['measured_waveform'] = wfs_measured[i,:].tolist()
                     wf_measured = wfs_measured[i,:]
-                    cc = self.calc_xcorr(wf_measured, wf_truth)
+                    cc = self.calc_xcorr(wf_measured, wf_truth, sampling_rate=self.result_dict["radiant_sample_rate"] * 1e6)
                     ccs.append(cc)
                 cc = np.mean(ccs)
                 data[key]['xcorr'] = cc
