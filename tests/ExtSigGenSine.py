@@ -28,10 +28,10 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
             print(cha)
             # direct the signal to the corresponding channel
             self.arduino.route_signal_to_channel(cha)
-            
+
             self.run_channel(cha)
 
-        # turn off the signal gen     
+        # turn off the signal gen
         self.awg.output_off(1)
         self.awg.output_off(2)
 
@@ -56,7 +56,7 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
             if hd["radiant_start_windows"][channel][0] >= 16 and not upper_buffer:
                 upper_buffer = True
                 waveforms[1] = evt["radiant_waveforms"][channel]
-        
+
         if waveforms[0] is None or waveforms[1] is None:
             print('Not events are taken to test both buffers.')
 
@@ -98,7 +98,7 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
             phase = 0
             popt, _ = scipy.optimize.curve_fit(
                 sine,
-                xdata=np.arange(len(wvf)) / radiant_test.RADIANT_SAMPLING_RATE,
+                xdata=np.arange(len(wvf)) / (self.result_dict["radiant_sample_rate"] / 1000),
                 ydata=wvf,
                 p0=[amplitude, frequency, phase, offset],
             )
@@ -128,7 +128,7 @@ class ExtSigGenSine(radiant_test.RADIANTChannelTest):
                 data[f"fit_phase_{window_label[iwvf]}"] -= 2 * np.pi
             data[f"fit_offset_{window_label[iwvf]}"] = popt[3]
             data[f"fit_avg_residual_{window_label[iwvf]}"] = avg_residual
-        
+
         return data
 
 

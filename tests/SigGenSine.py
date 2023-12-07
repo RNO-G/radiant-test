@@ -57,7 +57,7 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
             phase = 0
             popt, _ = scipy.optimize.curve_fit(
                 sine,
-                xdata=np.arange(len(wvf)) / radiant_test.RADIANT_SAMPLING_RATE,
+                xdata=np.arange(len(wvf)) / (self.result_dict["radiant_sample_rate"] / 1000),
                 ydata=wvf,
                 p0=[amplitude, frequency, phase, offset],
             )
