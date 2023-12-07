@@ -17,7 +17,7 @@ def get_rows_cols(n):
 def get_fit_results_str(data, ch, with_color=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
-    
+
     color_start = ""
     color_end = ""
     if with_color:
@@ -25,9 +25,9 @@ def get_fit_results_str(data, ch, with_color=False):
             color_start = colorama.Fore.RED
         else:
             color_start = colorama.Fore.GREEN
-        
+
         color_end = colorama.Style.RESET_ALL
-    
+
     return (
         color_start
         + f"slope: {data_ch['fit_slope']:6.1f} - "
@@ -61,12 +61,12 @@ def get_measured_values(data):
             measured_val_dict['max amplitude 25MHz'].append(None)
 
     return measured_val_dict
-    
+
 
 def print_results(data, channel=None):
     if channel is None:
         for ch in get_channels(data):
-            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")                
+            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
     else:
         print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
 
@@ -75,7 +75,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
-    fig = plt.figure(figsize=(15,15))
+    fig = plt.figure(figsize=(15, 15))
     axs = fig.subplots(nrows=nrows, ncols=ncols)
     for ch in get_channels(data):
         if nrows == 1:
@@ -87,6 +87,9 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
 
     if args_web:
         return fig
+    else:
+        fn = args_input.replace(".json", "_all.pdf")
+        plt.savefig(fn, transparent=False)
 
 
 def plot_channel(ax, data, ch):
@@ -99,12 +102,14 @@ def plot_channel(ax, data, ch):
     ax.set_title(f'channel: {ch}')
     ax.set_ylabel('amplitude [a.u.]')
     ax.set_xlabel('frequency [MHz]')
-    
+
 
 def plot_single(data, ch):
     fig = plt.figure()
     ax = fig.subplots()
     plot_channel(ax, data, ch)
+    fn = args_input.replace(".json", f"_{ch}.pdf")
+    plt.savefig(fn, transparent=False)
 
 
 
@@ -126,6 +131,3 @@ if __name__ == "__main__":
     else:
         plot_single(data, args.channel)
         print_results(data, args.channel)
-    plt.show()
-
-
