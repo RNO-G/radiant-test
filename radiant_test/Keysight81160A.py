@@ -103,6 +103,8 @@ class Keysight81160A(AbstractSignalGenerator):
             self.instrument.write(f"ARM:SOUR{channel} EXT")
         elif source == AbstractSignalGenerator.TriggerSource.INTERNAL:
             self.instrument.write(f"ARM:SOUR{channel} INT2")
+        elif source == AbstractSignalGenerator.TriggerSource.MANUAL:
+            self.instrument.write(f"ARM:SOUR MAN")
         else:
             raise ValueError(f"Unsupported trigger source: {source}.")
 
@@ -151,6 +153,7 @@ class Keysight81160A(AbstractSignalGenerator):
         self.instrument.write("*TRG")
     
     def send_n_software_triggers(self, n_trigger, trigger_rate):
+        self.instrument.write(f"ARM:SOUR MAN")
         delay_between_triggers=1/trigger_rate
         for _ in range(n_trigger):
             # Send software trigger command
@@ -171,13 +174,12 @@ class Keysight81160A(AbstractSignalGenerator):
         self.set_amplitude_mVpp(channel, 600)
         self.output_on(channel)
     
-    def setup_aux_trigger_response_test(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock, trigger_rate):
+    def set_arb_waveform_amplitude_couple(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock):
         for ch in [ch_signal, ch_clock]:
             self.output_off(ch)
         self.instrument.write(f"FUNC{ch_signal} USER")
         self.set_waveform(ch_signal, waveform)
         self.set_waveform(ch_clock, waveform)  
-        self.set_trigger_frequency_Hz(ch_signal, trigger_rate)
         self.couple_to_channel_on(ch_signal)
         self.set_amplitude_mVpp(ch_signal, amp_sig)
         self.set_amplitude_mVpp(ch_clock, amp_clock)

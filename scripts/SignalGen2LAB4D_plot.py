@@ -56,9 +56,12 @@ def get_fit_results_str(data, ch, with_color=False):
         str_intercept = get_color(data_ch["res_intercept"]) + f'intercept: no fit result {color_end}'
     else:
         str_intercept = get_color(data_ch["res_intercept"]) + f'intercept: {data_ch["intercept"]:.2f}{color_end}'
+    if data_ch["max_residual"] is None:
+        str_max_residual = get_color(data_ch["res_max_residual"]) + f'max residual: no fit result {color_end}'
+    else:
+        str_max_residual = get_color(data_ch["res_max_residual"]) + f'max residual: {data_ch["max_residual"]:.2f}{color_end}'
 
-
-    out = f"{get_color(result == 'PASS')} {result} {color_end} | {str_slope} | {str_intercept}"
+    out = f"{get_color(result == 'PASS')} {result} {color_end} | {str_slope} | {str_intercept} | {str_max_residual}"
 
     
     return out
@@ -109,31 +112,27 @@ def plot_channel(fig, ax, data, ch):
     for key in vals['raw_data']:
         vpp_mean = (vals['raw_data'][key]['vpp_mean'])
         vpp_err = (vals['raw_data'][key]['vpp_err'])
+        snr_mean = (vals['raw_data'][key]['snr_mean'])
+        snr_err = (vals['raw_data'][key]['snr_err'])
         amp = (vals['raw_data'][key]['amp'])
         vpps = (vals['raw_data'][key]['vpps'])
         vrms = (vals['raw_data'][key]['vrms'])
+        snrs = (vals['raw_data'][key]['snrs'])
         amps = np.ones(len(vpps)) * (amp)
-        ax.plot(amps, np.array(vpps), 'x', alpha=0.5, color='#2d5d7b')
-        #ax.plot(amps, np.array(vrms), 'x', alpha=0.5)
-        ax.errorbar(float(amp), vpp_mean, yerr=vpp_err, fmt='x', color='k', label=f'Vrms {np.mean(vrms):.0f} mV')
-        #ax.errorbar(float(amp), np.mean(vrms), yerr=np.std(vrms), fmt='x', color='k', label=f'Vrms {np.mean(vrms):.0f} mV')
+        ax.plot(amps, np.array(snrs), 'x', alpha=0.3, color='#2d5d7b')
+        ax.errorbar(float(amp), snr_mean, yerr=snr_err, fmt='x', color='k')
     fit_params = data['run']['measurements'][f"{ch}"]['measured_value']['fit_parameter']
     popt = [fit_params['slope'], fit_params['intercept']]
     if None not in popt:
         ax.plot(x_arr, lin_func(x_arr, *popt), color='#6D8495')
     res = data['run']['measurements'][f"{ch}"]['result']
     print(res)
-    ax.set_xlim(0, 1000)
-    ax.set_ylim(0, 700)
-    ax_y2 = ax.twinx()
-    ax_y2.yaxis.set_major_locator(ticker.FixedLocator(ax_y2.get_yticks()))
-    ax_y2.set_yticklabels([f'{adc_counts_to_m_volt(y):.0f}' for y in ax_y2.get_yticks()])
+    #ax.set_xlim(0, 1000)
+    #ax.set_ylim(0, 700)
     ax.set_title(f'channel: {ch}')
     fig.text(0.5, 0.01, 'Vpp at signal generator [mV]', ha='center', va='center')
-    fig.text(0.01, 0.5, 'Vpp from LAB4D [adc counts]', ha='center', va='center', rotation='vertical')
-    fig.text(0.99, 0.5, 'Vpp from LAB4D [mv]', ha='center', va='center', rotation='vertical')
+    fig.text(0.01, 0.5, 'SNR', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)
-    get_axis_color(ax_y2, res)
 
 
 if __name__ == "__main__":

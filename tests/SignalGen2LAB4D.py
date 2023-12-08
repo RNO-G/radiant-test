@@ -13,8 +13,6 @@ import pathlib
 import radiant_test.radiant_helper as rh
 import time
 
-
-
 def make_serializable(obj):
     if isinstance(obj, dict):
         return {key: make_serializable(value) for key, value in obj.items()}
@@ -27,10 +25,8 @@ def make_serializable(obj):
     else:
         return str(obj)
 
-
 def lin_func(x, a, b):
     return a * x + b
-
 
 def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
     vpps = []
@@ -78,7 +74,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         res = station.daq_run_start()
 
         # start pulsing
-        time.sleep(1)
+        time.sleep(10)
         self.awg.send_n_software_triggers(n_trigger=self.conf["args"]["number_of_events"], trigger_rate=self.conf["args"]["sg_trigger_rate"])
 
         station.daq_run_wait()
@@ -112,7 +108,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         run.run_conf.radiant_trigger_soft_enable(False)  # no forced trigger
         run.run_conf.flower_device_required(False)
         run.run_conf.flower_trigger_enable(False)
-        run_length = self.conf["args"]["number_of_events"] * 1/self.conf["args"]["sg_trigger_rate"] + 2 # 2 buffer seconds
+        run_length = (self.conf["args"]["number_of_events"] * (1/self.conf["args"]["sg_trigger_rate"])) + 30
         run.run_conf.run_length(run_length)
         run.run_conf.comment("Signal Gen 2 LAB4D Amplitude Test")
         self.data_dir = run.start(delete_src=True, rootify=True)
@@ -129,12 +125,14 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         wfs = np.array(data['waveforms/radiant_data[24][2048]'])
         vpps = []
         vrms = []
+        snrs = []
         for i, wf in enumerate(wfs[:, 0, 0]):
             all_pps, indices = calc_sliding_vpp(wfs[i, ch, :])
             max_vpp = np.max(all_pps)
             vpps.append(float(max_vpp))
-            vrm = np.sqrt(np.mean(np.square(wfs[i, ch, :50])))
+            vrm = np.std(wfs[i, ch, :800])
             vrms.append(vrm)
+            snrs.append(max_vpp/(2*vrm))
             if plot:
                 if i == 5:
                     fig, ax = plt.subplots()
@@ -159,13 +157,17 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
 
         vpp_mean = np.mean(vpps)
         vpp_err = np.std(vpps)
+        vrms_mean = np.mean(vrms)
+        snr_mean = np.mean(snrs)
+        snr_err = np.std(snrs)
+
         print(
             f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: '
             f'{vpp_mean:.2f} +- {vpp_err:.2f}')
 
-        return vpp_mean, vpp_err, vpps, vrms, root_file
+        return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, vpps, vrms, snrs, root_file
 
-    def get_vpp_from_clock_trigger_on_the_fly(self, ch, ch_clock, thresh, n_events, amp, tag):
+    def get_vpp_on_the_fly(self, ch, ch_clock, thresh, n_events, amp, tag):
         data = self.device.daq_record_data(num_events=n_events, trigger_channels=[
                                            ch_clock], trigger_threshold=thresh, force_trigger=False)
         waveforms = data["data"]["WAVEFORM"]
@@ -176,24 +178,24 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             max_vpp = np.max(all_pps)
             sample_index = indices[np.argmax(all_pps)]
             vpps.append(float(max_vpp))
-            vrm = np.sqrt(
-                np.mean(np.square(event['radiant_waveforms'][ch][:50])))
+            vrm = np.std(event['radiant_waveforms'][ch][:50])
             vrms.append(vrm)
         vpp_mean = np.mean(vpps)
         vpp_err = np.std(vpps)
+        vrms_mean = np.mean(vrms)
         print(
             f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: {vpp_mean:.2f} +- {vpp_err:.2f}')
-        return vpp_mean, vpp_err, vpps, vrms
+        return vpp_mean, vpp_err, vrms_mean, vpps, vrms
 
-    def fit_vpp_SG2LAB4D(self, amps_SG, vpp, vpp_err, dic):
+    def fit_vpp_SG2LAB4D(self, amps_SG, snr_mean, snr_err, vpp, vpp_err, vrms_mean, dic):
         amps_SG = np.array(amps_SG)
         try:
             popt, pcov = curve_fit(
-                lin_func, amps_SG, vpp, sigma=vpp_err, absolute_sigma=True)
+                lin_func, amps_SG, snr_mean, sigma=snr_err, p0=[0.1,5],  absolute_sigma=True)
             print('popt', popt)
             pcov = pcov.tolist()
             print('pcov', pcov)
-            residuals = vpp - lin_func(amps_SG, *popt)
+            residuals = snr_mean - lin_func(amps_SG, *popt)
             max_residual = np.max(np.abs(residuals))
             print('max_residual', max_residual)
         except:
@@ -202,9 +204,12 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             max_residual = None
 
         dic_out = {
+            'snr_mean': snr_mean,
+            'snr_err': snr_err,
             'vpp_mean': vpp,
             'vpp_mean_err': vpp_err,
             'amp_SG': list(amps_SG),
+            'vrms_mean': vrms_mean,
             'fit_parameter': {
                 "slope": popt[0],
                 "intercept": popt[1],
@@ -229,10 +234,13 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                                    ['slope_min'], self.conf['expected_values']['slope_max'])
         intercept_passed = check_param(data['fit_parameter']['intercept'], self.conf['expected_values']
                                        ['intercept_min'], self.conf['expected_values']['intercept_max'])
-        passed = slope_passed and intercept_passed
+        max_residual_passed = check_param(data['fit_parameter']['max_residual'], self.conf['expected_values']
+                                       ['max_residual_min'], self.conf['expected_values']['max_residual_max'])
+        passed = slope_passed and intercept_passed and max_residual_passed
 
         data['fit_parameter']['res_slope'] = slope_passed
         data['fit_parameter']['res_intercept'] = intercept_passed
+        data['fit_parameter']['res_max_residual'] = max_residual_passed
         print('Test passed:', passed)
         data = make_serializable(data)
         self.add_measurement(f"{channel}", data, passed)
@@ -254,6 +262,9 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
 
             measured_vpps = []
             measured_errs = []
+            measured_vrms = []
+            measured_snr = []
+            measured_snr_err = []
             amps_SG = self.conf['args']['amplitudes']
             ch_dic = {}
             for n, amp_pp in enumerate(amps_SG):
@@ -261,11 +272,12 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                 key_str = f'{n}'
                 ch_dic[key_str] = {}
                 ch_dic[key_str]['amp'] = float(amp_pp)  
-                self.awg.setup_aux_trigger_response_test(self.conf['args']['waveform'], 
+                self.awg.set_arb_waveform_amplitude_couple(self.conf['args']['waveform'], 
                                             sg_ch, 
                                             sg_ch_clock, 
                                             amp_pp, 
-                                            self.conf['args']['clock_amplitude'], self.conf['args']['sg_trigger_rate'])
+                                            self.conf['args']['clock_amplitude'])
+                #self.awg.set_frequency_MHz(sg_ch, self.conf['args']['sg_trigger_rate'])
                 self.initialize_config(ch_radiant_clock, self.conf['args']['threshold'])
                 root_file = self.data_dir/"combined.root"
                 if os.path.exists(root_file):
@@ -275,21 +287,32 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                         logging.warning('File too small, probably no trigger')
                         ch_dic[key_str]['vpp_mean'] = None
                         ch_dic[key_str]['vpp_err'] = None
+                        ch_dic[key_str]['vrms_mean'] = None
+                        ch_dic[key_str]['snr_mean'] = None
+                        ch_dic[key_str]['snr_err'] = None
                         ch_dic[key_str]['vpps'] = None
                         ch_dic[key_str]['vrms'] = None
+                        ch_dic[key_str]['snrs'] = None
                         ch_dic[key_str]['run'] = str(root_file)
                     else:
-                        vpp_mean, vpp_err, vpps, vrms, root_file = self.get_vpp(
+                        vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, vpps, vrms, snrs, root_file = self.get_vpp(
                             root_file, ch_radiant, ch_radiant_clock, amp_pp, key_str)
                         measured_vpps.append(vpp_mean)
                         measured_errs.append(vpp_err)
+                        measured_vrms.append(vrms_mean)
+                        measured_snr.append(snr_mean)
+                        measured_snr_err.append(snr_err)
                         ch_dic[key_str]['vpp_mean'] = vpp_mean
                         ch_dic[key_str]['vpp_err'] = vpp_err
+                        ch_dic[key_str]['vrms_mean'] = vrms_mean
+                        ch_dic[key_str]['snr_mean'] = snr_mean
+                        ch_dic[key_str]['snr_err'] = snr_err
+                        ch_dic[key_str]['snrs'] = snrs
                         ch_dic[key_str]['vpps'] = vpps
                         ch_dic[key_str]['vrms'] = vrms
                         ch_dic[key_str]['run'] = str(root_file)
             dic_out = self.fit_vpp_SG2LAB4D(
-                amps_SG, measured_vpps, measured_errs, ch_dic)
+                amps_SG, measured_snr, measured_snr_err, measured_vpps, measured_errs, measured_vrms, ch_dic)
             self.eval_fit_result(ch_radiant, dic_out)
 
 
