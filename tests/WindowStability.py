@@ -3,8 +3,8 @@ import numpy as np
 import scipy
 
 class WindowStability(radiant_test.RADIANTChannelTest):
-    def __init__(self):
-        super(WindowStability, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(WindowStability, self).__init__(*args, **kwargs)
 
 
     def run(self):
@@ -34,6 +34,7 @@ class WindowStability(radiant_test.RADIANTChannelTest):
         self.logger.info(f"Taking data for quad {quad} ...")
         data = self.device.daq_record_data(
             num_events=self.conf["args"]["num_events"], force_trigger=True, read_header=True,
+            force_trigger_interval=self.conf['args']['force_trigger_interval'],
             use_uart=self.conf["args"]["use_uart"])
         self.logger.info(f"... finished")
 

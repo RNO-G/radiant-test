@@ -8,7 +8,8 @@
         "band": 0,
         "frequency": 90,
         "upsampling": 0,
-        "num_events": 20,
-        "use_uart": false
+        "num_events": 100,
+        "force_trigger_interval": 0.1,
+        "use_uart": true
     }
 }
