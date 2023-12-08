@@ -270,8 +270,7 @@ if __name__ == "__main__":
         data = json.load(f)
 
     print_results(data)
-    print(get_measured_values(data))
+
     plot_rainbows(data, args.input, args_web=args.web)
     plot_fit_parameter_distributions(data, args.input, args_web=args.web)
     plot_residuals(data, args.input, args_web=args.web)
-    plot_all(data, "", True)

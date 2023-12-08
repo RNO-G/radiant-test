@@ -17,7 +17,7 @@ def get_rows_cols(n):
 def get_fit_results_str(data, ch, with_color=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
-    
+
     color_start = ""
     color_end = ""
     if with_color:
@@ -25,9 +25,9 @@ def get_fit_results_str(data, ch, with_color=False):
             color_start = colorama.Fore.RED
         else:
             color_start = colorama.Fore.GREEN
-        
+
         color_end = colorama.Style.RESET_ALL
-    
+
     return (
         color_start
         + f'control (mean +- std): {np.mean(data_ch["voltage_differences_control"]):6.1f} +-'
@@ -65,13 +65,13 @@ def print_results(data, channel=None):
             print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
     else:
         print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
-    
+
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
-    fig = plt.figure(figsize=(15,15))
+    fig = plt.figure(figsize=(15, 15))
     axs = fig.subplots(nrows=nrows, ncols=ncols)
     for ch in get_channels(data):
         if nrows == 1:
@@ -83,9 +83,12 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
 
     if args_web:
         return fig
+    else:
+        fn = args_input.replace(".json", "_all.pdf")
+        plt.savefig(fn, transparent=False)
 
 
-def plot_all_diff(data):
+def plot_all_diff(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
@@ -98,7 +101,8 @@ def plot_all_diff(data):
             ax = axs[ch // ncols][ch % ncols]
         plot_channel_difference(ax, data, ch)
     fig.tight_layout()
-
+    fn = args_input.replace(".json", "_all_diff.pdf")
+    plt.savefig(fn, transparent=False)
 
 def plot_channel_difference(ax, data, ch):
     ax.plot(data["run"]["measurements"][f"{ch}"]["measured_value"]['differences'])
@@ -114,7 +118,7 @@ def plot_channel(ax, data, ch):
     ax.set_title(f'channel: {ch}')
     ax.set_ylabel('$\delta$U [a.u.]')
     ax.set_xlabel('N block')
-    
+
     ax.legend(loc="upper right")
 
 
@@ -145,10 +149,9 @@ if __name__ == "__main__":
         data = json.load(f)
     if args.channel == None:
         plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
-        plot_all_diff(data)
+        plot_all_diff(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
         print_results(data)
     else:
         plot_single(data, args.channel)
         plot_single_diff(data, args.channel)
         print_results(data, args.channel)
-    plt.show()
