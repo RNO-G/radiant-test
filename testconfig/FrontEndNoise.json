@@ -10,6 +10,6 @@
     "args": {
         "number_of_used_events": 300,
         "force_trigger_interval": 0.1,
-        "use_uart": false
+        "use_uart": true
     }
 }

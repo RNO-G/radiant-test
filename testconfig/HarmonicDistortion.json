@@ -1,11 +1,11 @@
 {
     "expected_values": {
         "max_harmonic": 0.5,
-        "max_total": 2 
+        "max_total": 2
     },
     "args": {
         "band": 2,
         "frequency": 500,
-        "use_uart": false
+        "use_uart": true
     }
 }
