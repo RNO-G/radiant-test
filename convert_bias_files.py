@@ -5,7 +5,7 @@ import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument("files", type=str, nargs="*", help="Json files to add comments to")
-parser.add_argument("--stride", type=int, default=0, help="")
+parser.add_argument("-s", "--stride", type=int, default=0, help="")
 
 args = parser.parse_args()
 
