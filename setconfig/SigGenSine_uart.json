@@ -15,11 +15,11 @@
                 "frequency": 90
             }
         },
-        "SigGenSine_300MHz": {
+        "SigGenSine_240MHz": {
             "base": "SigGenSine",
             "args": {
                 "band": 1,
-                "frequency": 300
+                "frequency": 240
             }
         },
         "SigGenSine_510MHz": {
