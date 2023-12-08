@@ -1,9 +1,13 @@
 {
     "expected_values": {
-        "seam_sample_min": 287.5,
-        "seam_sample_max": 350.0,
-        "slow_sample_min": 250.0,
-        "slow_sample_max": 318.8,
+        "seam_sample_min_3G2": 287.5,
+        "seam_sample_max_3G2": 350.0,
+        "slow_sample_min_3G2": 250.0,
+        "slow_sample_max_3G2": 318.8,
+        "seam_sample_min_2G4": 404.0,
+        "seam_sample_max_2G4": 430.0,
+        "slow_sample_min_2G4": 395.0,
+        "slow_sample_max_2G4": 421.0,
         "rms_max": 20
     },
     "args": {
