@@ -108,10 +108,9 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         run.run_conf.radiant_trigger_soft_enable(False)  # no forced trigger
         run.run_conf.flower_device_required(False)
         run.run_conf.flower_trigger_enable(False)
-        run_length = (self.conf["args"]["number_of_events"] * (1/self.conf["args"]["sg_trigger_rate"])) + 30
+        run_length = (self.conf["args"]["number_of_events"] * (1/self.conf["args"]["sg_trigger_rate"])) + 10
         run.run_conf.run_length(run_length)
         run.run_conf.comment("Signal Gen 2 LAB4D Amplitude Test")
-        self.data_dir = run.start(delete_src=True, rootify=True)
         self.data_dir = self.start_run(station, run.run_conf, delete_src=True, rootify=True)
 
         print(f'start run stored at {self.data_dir}')
@@ -126,13 +125,17 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         vpps = []
         vrms = []
         snrs = []
+        snr_pure_noise = []
         for i, wf in enumerate(wfs[:, 0, 0]):
             all_pps, indices = calc_sliding_vpp(wfs[i, ch, :])
+            all_pps_noise, indices_noise = calc_sliding_vpp(wfs[i, ch, :800])
             max_vpp = np.max(all_pps)
+            max_vpp_noise = np.max(all_pps_noise)
             vpps.append(float(max_vpp))
             vrm = np.std(wfs[i, ch, :800])
             vrms.append(vrm)
             snrs.append(max_vpp/(2*vrm))
+            snr_pure_noise.append(max_vpp_noise/(2*vrm))
             if plot:
                 if i == 5:
                     fig, ax = plt.subplots()
@@ -160,12 +163,13 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         vrms_mean = np.mean(vrms)
         snr_mean = np.mean(snrs)
         snr_err = np.std(snrs)
+        snr_pure_noise_mean = np.mean(snr_pure_noise)
 
         print(
             f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: '
             f'{vpp_mean:.2f} +- {vpp_err:.2f}')
 
-        return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, vpps, vrms, snrs, root_file
+        return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, vpps, vrms, snrs, root_file
 
     def get_vpp_on_the_fly(self, ch, ch_clock, thresh, n_events, amp, tag):
         data = self.device.daq_record_data(num_events=n_events, trigger_channels=[
@@ -187,7 +191,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: {vpp_mean:.2f} +- {vpp_err:.2f}')
         return vpp_mean, vpp_err, vrms_mean, vpps, vrms
 
-    def fit_vpp_SG2LAB4D(self, amps_SG, snr_mean, snr_err, vpp, vpp_err, vrms_mean, dic):
+    def fit_vpp_SG2LAB4D(self, amps_SG, snr_mean, snr_err, vpp, vpp_err, vrms_mean, snr_pure_noise, dic):
         amps_SG = np.array(amps_SG)
         try:
             popt, pcov = curve_fit(
@@ -206,6 +210,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         dic_out = {
             'snr_mean': snr_mean,
             'snr_err': snr_err,
+            'snr_pure_noise_mean': snr_pure_noise,
             'vpp_mean': vpp,
             'vpp_mean_err': vpp_err,
             'amp_SG': list(amps_SG),
@@ -265,6 +270,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             measured_vrms = []
             measured_snr = []
             measured_snr_err = []
+            measured_snr_pure_noise = []
             amps_SG = self.conf['args']['amplitudes']
             ch_dic = {}
             for n, amp_pp in enumerate(amps_SG):
@@ -290,29 +296,32 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                         ch_dic[key_str]['vrms_mean'] = None
                         ch_dic[key_str]['snr_mean'] = None
                         ch_dic[key_str]['snr_err'] = None
+                        cg_dic[key_str]['snr_pure_noise_mean'] = None
                         ch_dic[key_str]['vpps'] = None
                         ch_dic[key_str]['vrms'] = None
                         ch_dic[key_str]['snrs'] = None
                         ch_dic[key_str]['run'] = str(root_file)
                     else:
-                        vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, vpps, vrms, snrs, root_file = self.get_vpp(
+                        vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, vpps, vrms, snrs, root_file = self.get_vpp(
                             root_file, ch_radiant, ch_radiant_clock, amp_pp, key_str)
                         measured_vpps.append(vpp_mean)
                         measured_errs.append(vpp_err)
                         measured_vrms.append(vrms_mean)
                         measured_snr.append(snr_mean)
                         measured_snr_err.append(snr_err)
+                        measured_snr_pure_noise.append(snr_pure_noise_mean)
                         ch_dic[key_str]['vpp_mean'] = vpp_mean
                         ch_dic[key_str]['vpp_err'] = vpp_err
                         ch_dic[key_str]['vrms_mean'] = vrms_mean
                         ch_dic[key_str]['snr_mean'] = snr_mean
                         ch_dic[key_str]['snr_err'] = snr_err
+                        cg_dic[key_str]['snr_pure_noise_mean'] = snr_pure_noise_mean
                         ch_dic[key_str]['snrs'] = snrs
                         ch_dic[key_str]['vpps'] = vpps
                         ch_dic[key_str]['vrms'] = vrms
                         ch_dic[key_str]['run'] = str(root_file)
             dic_out = self.fit_vpp_SG2LAB4D(
-                amps_SG, measured_snr, measured_snr_err, measured_vpps, measured_errs, measured_vrms, ch_dic)
+                amps_SG, measured_snr, measured_snr_err, measured_vpps, measured_errs, measured_vrms, measured_snr_pure_noise, ch_dic)
             self.eval_fit_result(ch_radiant, dic_out)
 
 

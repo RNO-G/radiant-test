@@ -16,8 +16,7 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
         super(FrontEndResponse, self).__init__()
 
     def get_root_files(self, search_dir, channel):
-        #radiant_name = rh.uid_to_name(self.result_dict["dut_uid"])
-        radiant_name = 'ULB-008'
+        radiant_name = rh.uid_to_name(self.result_dict["dut_uid"])
         print(os.path.join(search_dir, f"{radiant_name}_SignalGen2LAB4D_*.json"))
         files = glob.glob(os.path.join(search_dir, f"{radiant_name}_SignalGen2LAB4D_*.json"))
         files_sorted = sorted(files)

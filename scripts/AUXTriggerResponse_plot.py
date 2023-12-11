@@ -1,9 +1,6 @@
 import numpy as np
-from NuRadioReco.utilities import units
 import matplotlib.pyplot as plt
 import colorama
-import matplotlib.ticker as ticker
-from matplotlib.lines import Line2D
 import matplotlib.cm as cm
 from scipy.optimize import curve_fit
 
@@ -59,6 +56,12 @@ def tanh_func(x, b, c):
 def get_channels(data):
     return sorted([int(ch) for ch in data["run"]["measurements"].keys()])
 
+def get_surface_channels(data):
+    return sorted([int(ch) for ch in data["run"]["measurements"].keys() if int(ch) >= 12 and int(ch) <= 20])
+
+def get_deep_channels(data):
+    return sorted([int(ch) for ch in data["run"]["measurements"].keys() if int(ch) < 12 or int(ch) > 20])
+
 def get_measured_values(data):
     measured_val_dict = {'channel': [], 'result': [], 'halfway': [], 'steepness': []}
     for ch in get_channels(data):
@@ -69,6 +72,14 @@ def get_measured_values(data):
         measured_val_dict['steepness'].append(fit_params['steepness'])
 
     return measured_val_dict
+
+def get_max_spread(channels):
+    halfways = []
+    for ch in channels:
+        fit_params = data['run']['measurements'][f"{ch}"]['measured_value']['fit_parameter']
+        halfways.append(fit_params['halfway'])
+    return np.max(halfways) - np.min(halfways)
+
 
 def print_results(data, channel=None):
     if channel is None:
@@ -92,7 +103,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
         return fig
 
 def plot_channel(fig, ax, data, ch):
-    x_arr = np.linspace(40, 200, 100)
+    x_arr = np.linspace(2.5, 17.5, 100)
     amps = data['run']['measurements'][f"{ch}"]['measured_value']["Vpp"]
     trig_eff = data['run']['measurements'][f"{ch}"]['measured_value']['trigger_effs']
     trig_eff_err = data['run']['measurements'][f"{ch}"]['measured_value']['trigger_effs_err']
@@ -107,9 +118,7 @@ def plot_channel(fig, ax, data, ch):
     # ax.plot(x_arr, hill_eq(np.asarray(x_arr), *popt), color='#6D8495')
     ax.set_ylim(-0.05,1.05)
     ax.set_title(f'channel: {ch}')
-    #ax.set_ylabel('trigger efficiency')
-    #ax.set_xlabel('Vpp LAB4D [adc counts]')
-    fig.text(0.5, 0.01, 'Vpp LAB4D [adc counts]', ha='center', va='center')
+    fig.text(0.5, 0.01, 'SNR', ha='center', va='center')
     fig.text(0.01, 0.5, 'trigger efficiency', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)
 
@@ -118,64 +127,56 @@ def plot_single(data, ch):
     ax = fig.subplots()
     plot_channel(fig, ax, data, ch)
 
-def plot_ana(data):
-    fig1, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
-    x_arr = np.linspace(40, 200, 100)
-    num_colors = 24
-    cmap = cm.get_cmap('jet')
-    colors = [cmap(i / (num_colors - 1)) for i in range(num_colors)]
-    channels = get_channels(data)
-    for ch in channels:
-        amps_1 = data['run']['measurements'][str(ch)]['measured_value']['Vpp']
-        trig_effs_1 = data['run']['measurements'][str(ch)]['measured_value']['trigger_effs']
-        popt = [data['run']['measurements'][str(ch)]['measured_value']['fit_parameter']['halfway'], data['run']['measurements'][str(ch)]['measured_value']['fit_parameter']['steepness']]
-
-        measured_vpp_ch = []
-        input_vpp_ch = []
-        measured_vpp_err_ch = []
-        raw_data = data['run']['measurements'][str(ch)]['measured_value']['raw_data']
-        for key, value in raw_data.items():
-            measured_vpp_ch.append(float(key))
-            input_vpp_ch.append(value['sg_amp'])
-            measured_vpp_err_ch.append(value['vpp_err'])
-        ax2.errorbar(input_vpp_ch, measured_vpp_ch, yerr=measured_vpp_err_ch, marker='x', ls=':', color=colors[ch], label=str(ch))
-        y_fit = hill_eq(x_arr, *popt)
-        ax1.plot(x_arr, y_fit, alpha=0.5, color=colors[ch], label=f'{ch}')#, {popt[0]:.0f}, {popt[1]:.0f}' )
-        ax1.errorbar(amps_1, trig_effs_1, fmt='x', color=colors[ch])
-
-    ax2.legend(ncol=2)
-    ax2.set_xlabel('Vpp sig gen [mV]')
-    ax2.set_ylabel('Vpp LAB4D [adc counts]')
-    ax1.legend(ncol=2)
-    ax1.set_ylim(-0.05, 1.05)
-    ax1.set_xlabel('Vpp LAB4D [adc counts]')
-    ax1.set_ylabel('trigger efficiency')
-
 def adc_counts_to_m_volt(adc_counts):
     return (adc_counts / ((2**12) -1)) * 2500
 
 def plot_ana(data):
-    fig1, ax1 = plt.subplots(figsize=(8, 6))
-    x_arr = np.linspace(40, 200, 100)
-    num_colors = 24
-    cmap = cm.get_cmap('turbo')
-    colors = [cmap(i / (num_colors - 1)) for i in range(num_colors)]
-    channels = get_channels(data)
-    for ch in channels:
+    fig1, (ax1, ax2) = plt.subplots(ncols=2, nrows=1,figsize=(12, 6))
+    x_arr = np.linspace(2.5, 17.5, 100)
+    channels = np.array(get_channels(data))
+    deep_channels = np.array(get_deep_channels(data))
+    num_colors = len(deep_channels)
+    cmap = cm.get_cmap('plasma')
+    colors = [cmap(i / (num_colors-1)) for i in range(num_colors)]
+    for i, ch in enumerate(deep_channels):
         amps_1 = data['run']['measurements'][str(ch)]['measured_value']['Vpp']
         trig_effs_1 = data['run']['measurements'][str(ch)]['measured_value']['trigger_effs']
-        ax1.errorbar(amps_1, trig_effs_1, fmt='x', color=colors[ch], label=f'{ch}')
+        ax1.errorbar(amps_1, trig_effs_1, fmt='x', color=colors[i], label=f'{ch}')
         popt = [data['run']['measurements'][str(ch)]['measured_value']['fit_parameter']['halfway'], data['run']['measurements'][str(ch)]['measured_value']['fit_parameter']['steepness']]
-        print(popt)
         if popt[0] is None or popt[1] is None:
             pass
         else:
             y_fit = tanh_func(x_arr, *popt)
-            ax1.plot(x_arr, y_fit, alpha=0.5, color=colors[ch])#, {popt[0]:.0f}, {popt[1]:.0f}' )
+            ax1.plot(x_arr, y_fit, alpha=0.5, color=colors[i])#, {popt[0]:.0f}, {popt[1]:.0f}' )
+
     ax1.legend(ncol=2)
+    max_spread_text = f'deep channels max spread: {get_max_spread(deep_channels):.2f} SNR'
+    ax1.annotate(max_spread_text, xy=(0.5, 1.05), xycoords='axes fraction', ha='center', fontsize=12)
     ax1.set_ylim(-0.05, 1.05)
-    ax1.set_xlabel('Vpp LAB4D [adc counts]')
+    ax1.set_xlabel('SNR')
     ax1.set_ylabel('trigger efficiency')
+
+    surface_channels = np.array(get_surface_channels(data))
+    num_colors = len(surface_channels)
+    cmap = cm.get_cmap('viridis')
+    colors = [cmap(i / (num_colors-1)) for i in range(num_colors)]
+    for i, ch in enumerate(surface_channels):
+        amps_1 = data['run']['measurements'][str(ch)]['measured_value']['Vpp']
+        trig_effs_1 = data['run']['measurements'][str(ch)]['measured_value']['trigger_effs']
+        ax2.errorbar(amps_1, trig_effs_1, fmt='x', color=colors[i], label=f'{ch}')
+        popt = [data['run']['measurements'][str(ch)]['measured_value']['fit_parameter']['halfway'], data['run']['measurements'][str(ch)]['measured_value']['fit_parameter']['steepness']]
+        if popt[0] is None or popt[1] is None:
+            pass
+        else:
+            y_fit = tanh_func(x_arr, *popt)
+            ax2.plot(x_arr, y_fit, alpha=0.5, color=colors[i])#, {popt[0]:.0f}, {popt[1]:.0f}' )
+    
+    max_spread_text_surface = f'surface channels max spread: {get_max_spread(surface_channels):.2f} SNR'
+    ax2.annotate(max_spread_text_surface, xy=(0.5, 1.05), xycoords='axes fraction', ha='center', fontsize=12)
+    ax2.legend(ncol=2)    
+    ax2.set_ylim(-0.05, 1.05)
+    ax2.set_xlabel('SNR')
+    ax2.set_ylabel('trigger efficiency')
 
 if __name__ == "__main__":
     import argparse
@@ -190,7 +191,7 @@ if __name__ == "__main__":
     with open(args.input, "r") as f:
         data = json.load(f)
     if args.channel == None:
-        plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
+        #plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
         plot_ana(data)
         print_results(data)
     else:

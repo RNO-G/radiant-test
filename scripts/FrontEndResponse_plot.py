@@ -79,7 +79,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
             ax = axs[ch % ncols]
         else:
             ax = axs[ch // ncols][ch % ncols]
-        plot_channel(fig, ax, data, ch)
+        plot_channel(fig, ax, data, ch, args_web=True)
     fig.tight_layout()
     if args_web:
         return fig
@@ -89,9 +89,8 @@ def plot_single(data, ch):
     ax = fig.subplots()
     plot_channel(fig, ax, data, ch)
 
-def plot_channel(fig, ax, data, ch):
+def plot_channel(fig, ax, data, ch, args_web=False):
     vals = data['run']['measurements'][f"{ch}"]['measured_value']
-    print(vals.keys())
     truth_wf = np.array(vals['truth_waveform'])
 
     key_amps = get_key_amps(data, ch)
@@ -101,8 +100,12 @@ def plot_channel(fig, ax, data, ch):
         measured_wf = np.array(vals[amp_str]['measured_waveform'])
         i_max = np.argmax(measured_wf)
         wf = (measured_wf[i_max-200:i_max+300]/np.max(measured_wf))
-        ax.plot(wf, alpha=0.5, color=colors[i], label=f'{amp_str} mVpp')
-        ax.legend(loc='lower right')
+        if ch == 0:
+            ax.plot(wf, alpha=0.5, color=colors[i], label=f'{amp_str} mVpp')
+            if not args_web:
+                ax.legend(loc='lower right')
+        else:
+            ax.plot(wf, alpha=0.5, color=colors[i])
     ax.plot(truth_wf, color='red', ls=':')
     res = data['run']['measurements'][f"{ch}"]['result']
     ax.set_title(f'channel: {ch}')

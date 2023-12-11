@@ -75,7 +75,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         station.set_run_conf(run_conf)
         res = station.daq_run_start()
         # start pulsing
-        time.sleep(15)
+        time.sleep(20)
         self.awg.send_n_software_triggers(n_trigger=self.conf["args"]["number_of_events"], trigger_rate=self.conf["args"]["sg_trigger_rate"])
 
         station.daq_run_wait()
@@ -148,11 +148,11 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         mask = (0 < effs) & (effs < 1)
         n_lower = np.sum(((0 < effs) & (effs <= 0.5)))
         n_upper = np.sum(((0.5 < effs) & (effs < 1)))
-        print(f'{np.sum(mask)} good amps')
+        print(f'{np.sum(mask)} amps on slope')
         print(f'{len(sg_amps[effs == 0])} zeros, {len(sg_amps[effs == 1])} ones')
 
         if np.sum(mask) >= 2 and np.sum(mask) < self.conf['args']['points_on_slope']:
-            print('finetuning...')
+            print('fine tuning...')
             sorted_lst = sorted(sg_amps[mask])
             n = len(sorted_lst)
             if n % 2 == 0:
@@ -220,7 +220,6 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                     trig_eff = 1
                     trig_eff_err = 0.01
                 elif trig_eff == 0:
-                    # trig_eff_err = np.nan
                     trig_eff_err = 0.01
                 else:
                     trig_eff_err = np.sqrt(waveforms[rf0_pulse,ch_test,:].shape[0]) / (self.conf["args"]["number_of_events"])
@@ -300,17 +299,18 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
             self.dic_curve = {}
             # while True:
-            if ch_radiant == 0:
-                sig_gen_amplitudes = self.conf['args']['amplitudes0']
+            if ch_radiant == self.conf['args']['radiant_clock_channel']:
+                sig_gen_amplitudes = self.conf['args']['amplitudes_clock']
             else:
                 sig_gen_amplitudes = self.conf['args']['amplitudes']
             for sg_current_amp in sig_gen_amplitudes:
                 print(f'running with {sg_current_amp} mVpp at Signal Generator')
-                self.awg.setup_aux_trigger_response_test(self.conf['args']['waveform'], 
+                self.awg.set_arb_waveform_amplitude_couple(self.conf['args']['waveform'], 
                                             sg_ch, 
                                             sg_ch_clock, 
                                             sg_current_amp, 
-                                            self.conf['args']['clock_amplitude'], self.conf['args']['sg_trigger_rate'])
+                                            self.conf['args']['clock_amplitude'])
+                #self.awg.set_frequency_MHz(sg_ch, self.conf['args']['sg_trigger_rate'])
                 vpp = amplitude_conversion(sg_current_amp)
                 vpp_str = f"{vpp:.2f}"
                 self.dic_curve[vpp_str] = {}
