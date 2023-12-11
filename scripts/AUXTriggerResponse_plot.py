@@ -191,7 +191,7 @@ if __name__ == "__main__":
     with open(args.input, "r") as f:
         data = json.load(f)
     if args.channel == None:
-        #plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
+        plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
         plot_ana(data)
         print_results(data)
     else:

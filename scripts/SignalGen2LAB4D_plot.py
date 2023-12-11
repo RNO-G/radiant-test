@@ -126,7 +126,6 @@ def plot_channel(fig, ax, data, ch):
     if None not in popt:
         ax.plot(x_arr, lin_func(x_arr, *popt), color='#6D8495')
     res = data['run']['measurements'][f"{ch}"]['result']
-    print(res)
     #ax.set_xlim(0, 1000)
     #ax.set_ylim(0, 700)
     ax.set_title(f'channel: {ch}')
