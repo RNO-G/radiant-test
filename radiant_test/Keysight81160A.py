@@ -26,13 +26,13 @@ def validate_channel(func):
 class Keysight81160A(AbstractSignalGenerator):
     def __init__(self, ip_address):
         self.instrument = vxi11.Instrument(ip_address)
-        logging.debug(f"Connected to {self.get_id()} at address {ip_address}.")
+        logging.debug(f"Search for instrument with ip address {ip_address}.")
         id = self.get_id()
         if (id != "Agilent Technologies,81160A,MY51400292,1.0.3.0-2.6"):
             logging.debug("Wrong device",id)
             sys.exit()
         else :
-            print("Connected to", self.get_id())
+            print("Connected to", self.get_id(), 'at ip address', ip_address)
         self.set_offset(1,0)
         self.set_offset(2,0)
         self.instrument.write("OUTP1:IMP 50")

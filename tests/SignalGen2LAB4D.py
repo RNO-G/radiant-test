@@ -127,8 +127,8 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         snrs = []
         snr_pure_noise = []
         for i, wf in enumerate(wfs[:, 0, 0]):
-            all_pps, indices = calc_sliding_vpp(wfs[i, ch, :])
-            all_pps_noise, indices_noise = calc_sliding_vpp(wfs[i, ch, :800])
+            all_pps, indices = calc_sliding_vpp(wfs[i, ch, :], start_index=1400, end_index=1900)
+            all_pps_noise, indices_noise = calc_sliding_vpp(wfs[i, ch, :], start_index=50, end_index=800)
             max_vpp = np.max(all_pps)
             max_vpp_noise = np.max(all_pps_noise)
             vpps.append(float(max_vpp))
@@ -139,11 +139,13 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             if plot:
                 if i == 5:
                     fig, ax = plt.subplots()
-                    ax.plot(indices, all_pps, marker='*',
-                            label=f'Vpp: {np.max(all_pps):.2f} mV')
+                    ax.plot(indices_noise, indices_noise, marker='*',
+                            label=f'Vpp: {np.max(indices_noise):.2f} mV')
                     ax.plot(wfs[i, ch, :], marker='+',
                             label=f'Vrms: {vrm:.2f} mV')
                     # plt.vlines(sample_index, -max_vpp*0.5, max_vpp*0.5, color='r', label=f'index: {sample_index}')
+                    ax.plot(indices, all_pps, marker='*',
+                            label=f'Vpp: {np.max(all_pps):.2f} mV')
                     ax.set_title(f'input amp @SG {amp:.0f} mVpp')
                     # plt.xlim(1400, 1900)
                     # plt.ylim(-400, 400)
@@ -296,7 +298,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                         ch_dic[key_str]['vrms_mean'] = None
                         ch_dic[key_str]['snr_mean'] = None
                         ch_dic[key_str]['snr_err'] = None
-                        cg_dic[key_str]['snr_pure_noise_mean'] = None
+                        ch_dic[key_str]['snr_pure_noise_mean'] = None
                         ch_dic[key_str]['vpps'] = None
                         ch_dic[key_str]['vrms'] = None
                         ch_dic[key_str]['snrs'] = None
@@ -315,7 +317,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                         ch_dic[key_str]['vrms_mean'] = vrms_mean
                         ch_dic[key_str]['snr_mean'] = snr_mean
                         ch_dic[key_str]['snr_err'] = snr_err
-                        cg_dic[key_str]['snr_pure_noise_mean'] = snr_pure_noise_mean
+                        ch_dic[key_str]['snr_pure_noise_mean'] = snr_pure_noise_mean
                         ch_dic[key_str]['snrs'] = snrs
                         ch_dic[key_str]['vpps'] = vpps
                         ch_dic[key_str]['vrms'] = vrms
