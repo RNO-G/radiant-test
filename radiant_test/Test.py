@@ -21,6 +21,7 @@ class Test(object):
     def __init__(self, device=None, comment=None):
         self.device = device
         self.name = self.__class__.__name__
+        self.basename = self.__class__.__name__
         self.logger = logging.getLogger(self.name)
         self.result = TestResult.DID_NOT_RUN
         self.result_dict = {"dut_uid": None, "test_name": self.name, "comments": comment}
@@ -131,8 +132,11 @@ class Test(object):
     def get_verbose_func(self):
         try:
             m = __import__("scripts")
-            return getattr(m, self.name + "_print_results")
-        except:
+            func = getattr(m, self.basename + "_print_results")
+            self.logger.debug(f"Found print function for {self.basename}")
+            return func
+        except Exception as e:
+            self.logger.debug(f"Did not found print function for {self.basename}: {e}")
             return None
 
     def _log_result(self):
