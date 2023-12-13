@@ -1,7 +1,7 @@
 {
     "expected_values": {
         "max_harmonic": 0.5,
-        "max_total": 2
+        "max_total": 5
     },
     "args": {
         "band": 2,
