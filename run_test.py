@@ -1,6 +1,5 @@
 import argparse
 import logging
-logging.basicConfig(level=logging.DEBUG)
 
 import radiant_test
 
