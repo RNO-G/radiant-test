@@ -23,12 +23,14 @@ def plot_channel(ax, frequencies, measurement, ch):
 
     signal_bin = measurement['measured_value']["signal_bin"]
     harmonic_bins = measurement['measured_value']["harmonic_bins"]
-
-    ax.axvspan(frequencies[signal_bin] / 1e6, frequencies[signal_bin+1] / 1e6, color="r", alpha=0.3, label="signal")
+    df = np.diff(frequencies)[0] / 1e6
+    # print(frequencies[signal_bin] / 1e6, df)
+    ax.axvspan(frequencies[signal_bin] / 1e6 - df / 2, frequencies[signal_bin] / 1e6 + df / 2, color="r", alpha=0.3, label="signal")
 
     label = "harmonics"
     for b in harmonic_bins:
-        ax.axvspan(frequencies[b] / 1e6, frequencies[b+1] / 1e6, color="gray", alpha=0.3, label=label)
+        # print(frequencies[b] / 1e6)
+        ax.axvspan(frequencies[b] / 1e6 - df / 2, frequencies[b] / 1e6 + df / 2, color="gray", alpha=0.3, label=label)
         label = ""
 
     ax.legend(title=f"Channel {ch}")
@@ -106,6 +108,8 @@ def plot_all(data, args_input="", args_channel=None, args_not_channel=[], args_w
                 if int(ch) in args_not_channel:
                     continue
                 plot_channel(ax, frequencies, measurements[ch], ch)
+                ax.set_ylim(10, 500000)
+                ax.grid()
                 pdf.savefig()
                 plt.close()
 

@@ -12,16 +12,21 @@ class HarmonicDistortion(radiant_test.RADIANTChannelTest):
         super(HarmonicDistortion, self).run()
 
         self.device.radiant_sig_gen_off()
-        self.device.radiant_sig_gen_configure(
-            pulse=False, band=self.conf["args"]["band"]
-        )
-        self.device.radiant_sig_gen_on()
-        self.device.radiant_sig_gen_set_frequency(
-            frequency=self.conf["args"]["frequency"]
-        )
+        self.device.radiant_calselect(quad=None)
+
+        if not self.conf["args"]["external_signal"]:
+
+            self.device.radiant_sig_gen_configure(
+                pulse=False, band=self.conf["args"]["band"]
+            )
+            self.device.radiant_sig_gen_on()
+            self.device.radiant_sig_gen_set_frequency(
+                frequency=self.conf["args"]["frequency"]
+            )
 
         for quad in self.get_quads():
-            self.device.radiant_calselect(quad=quad)
+            if not self.conf["args"]["external_signal"]:
+                self.device.radiant_calselect(quad=quad)
             self._run_quad(quad)
 
         self.device.radiant_sig_gen_off()
@@ -45,8 +50,8 @@ class HarmonicDistortion(radiant_test.RADIANTChannelTest):
         frequencies = np.fft.rfftfreq(2048, 1 / (self.result_dict["radiant_sample_rate"] * 1e6))
 
         signal_bin = np.argmin(np.abs(frequencies - signal_frequency))
-        if frequencies[signal_bin] > signal_frequency:
-            signal_bin -= 1
+        signal_amplitude = np.amax(spec[signal_bin-2:signal_bin+2])
+        signal_bin = np.arange(len(frequencies))[spec == signal_amplitude]
 
         harmonics_sqared_sum = 0
         nth = 2
@@ -59,20 +64,21 @@ class HarmonicDistortion(radiant_test.RADIANTChannelTest):
             if nth_bin >= len(frequencies) - 1:
                 break
 
-            if frequencies[nth_bin] > nth_freq:
-                nth_bin -= 1
+            harmonic_ampl = np.amax(spec[nth_bin-2:nth_bin+2])
+            nth_bin = np.arange(len(frequencies))[spec == harmonic_ampl]
 
             harmonic_bins.append(int(nth_bin))
-            harmonics_sqared_sum += spec[nth_bin] ** 2
+            harmonics_sqared_sum += harmonic_ampl ** 2
 
-        harmonic_distortion = np.sqrt(harmonics_sqared_sum) / spec[signal_bin]
-        harmonic_distortion2 = np.sqrt(np.sum(spec ** 2) - spec[signal_bin] ** 2) / spec[signal_bin]
+        harmonic_distortion = np.sqrt(harmonics_sqared_sum) / signal_amplitude
+        harmonic_distortion2 = np.sqrt(np.sum(spec ** 2) - signal_amplitude ** 2) / signal_amplitude
 
         data = {
             "waveform": list(wfs),
             "spectrum": list(spec),
             # "frequencies": list(frequencies),  # same for each channel
             "signal_bin": int(signal_bin),
+            "signal_amplitude": signal_amplitude,
             "harmonic_bins": harmonic_bins,
             "harmonic_distortion": float(harmonic_distortion),
             "harmonic_distortion2": float(harmonic_distortion2)
