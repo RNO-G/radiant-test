@@ -103,7 +103,6 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
         return fig
 
 def plot_channel(fig, ax, data, ch):
-    x_arr = np.linspace(2.5, 17.5, 100)
     amps = data['run']['measurements'][f"{ch}"]['measured_value']["Vpp"]
     trig_eff = data['run']['measurements'][f"{ch}"]['measured_value']['trigger_effs']
     trig_eff_err = data['run']['measurements'][f"{ch}"]['measured_value']['trigger_effs_err']
@@ -114,11 +113,14 @@ def plot_channel(fig, ax, data, ch):
     if popt[0] is None or popt[1] is None:
         pass
     else:
+        x_arr = np.linspace(np.min(amps)-0.1*np.min(amps), np.max(amps)+0.1*np.max(amps), 100)
         ax.plot(x_arr, tanh_func(np.asarray(x_arr), *popt), color='#6D8495')
-    # ax.plot(x_arr, hill_eq(np.asarray(x_arr), *popt), color='#6D8495')
     ax.set_ylim(-0.05,1.05)
     ax.set_title(f'channel: {ch}')
-    fig.text(0.5, 0.01, 'SNR', ha='center', va='center')
+    if np.max(amps) < 50:
+        fig.text(0.5, 0.01, 'SNR', ha='center', va='center')
+    else:
+        fig.text(0.5, 0.01, 'amplitude [ADC]', ha='center', va='center')
     fig.text(0.01, 0.5, 'trigger efficiency', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)
 

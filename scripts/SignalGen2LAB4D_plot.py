@@ -109,28 +109,34 @@ def plot_single(data, ch):
 def plot_channel(fig, ax, data, ch):
     x_arr = np.linspace(0, 1000, 100)
     vals = data['run']['measurements'][str(ch)]['measured_value']
-    for key in vals['raw_data']:
-        vpp_mean = (vals['raw_data'][key]['vpp_mean'])
-        vpp_err = (vals['raw_data'][key]['vpp_err'])
-        snr_mean = (vals['raw_data'][key]['snr_mean'])
-        snr_err = (vals['raw_data'][key]['snr_err'])
-        amp = (vals['raw_data'][key]['amp'])
-        vpps = (vals['raw_data'][key]['vpps'])
-        vrms = (vals['raw_data'][key]['vrms'])
-        snrs = (vals['raw_data'][key]['snrs'])
-        amps = np.ones(len(vpps)) * (amp)
-        ax.plot(amps, np.array(snrs), 'x', alpha=0.3, color='#2d5d7b')
-        ax.errorbar(float(amp), snr_mean, yerr=snr_err, fmt='x', color='k')
+    if 'snrs' in vals['raw_data'][list(vals['raw_data'].keys())[0]].keys():    
+        for key in vals['raw_data']:
+            snr_mean = (vals['raw_data'][key]['snr_mean'])
+            snr_err = (vals['raw_data'][key]['snr_err'])
+            amp = (vals['raw_data'][key]['amp'])
+            vpps = (vals['raw_data'][key]['vpps'])
+            snrs = (vals['raw_data'][key]['snrs'])
+            amps = np.ones(len(vpps)) * (amp)
+            ax.plot(amps, np.array(snrs), 'x', alpha=0.3, color='#2d5d7b')
+            ax.errorbar(float(amp), snr_mean, yerr=snr_err, fmt='x', color='k')
+        fig.text(0.01, 0.5, 'SNR', ha='center', va='center', rotation='vertical')
+    else:
+        for key in vals['raw_data']:
+            vpp_mean = (vals['raw_data'][key]['vpp_mean'])
+            vpp_err = (vals['raw_data'][key]['vpp_err'])
+            amp = (vals['raw_data'][key]['amp'])
+            vpps = (vals['raw_data'][key]['vpps'])
+            amps = np.ones(len(vpps)) * (amp)
+            ax.plot(amps, np.array(vpps), 'x', alpha=0.3, color='#2d5d7b')
+            ax.errorbar(float(amp), vpp_mean, yerr=vpp_err, fmt='x', color='k')
+        fig.text(0.01, 0.5, 'Vpp [ADC]', ha='center', va='center', rotation='vertical')
     fit_params = data['run']['measurements'][f"{ch}"]['measured_value']['fit_parameter']
     popt = [fit_params['slope'], fit_params['intercept']]
     if None not in popt:
         ax.plot(x_arr, lin_func(x_arr, *popt), color='#6D8495')
     res = data['run']['measurements'][f"{ch}"]['result']
-    #ax.set_xlim(0, 1000)
-    #ax.set_ylim(0, 700)
     ax.set_title(f'channel: {ch}')
     fig.text(0.5, 0.01, 'Vpp at signal generator [mV]', ha='center', va='center')
-    fig.text(0.01, 0.5, 'SNR', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)
 
 

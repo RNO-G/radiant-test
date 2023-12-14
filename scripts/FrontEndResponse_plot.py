@@ -55,12 +55,15 @@ def get_key_amps(data, ch):
     return amps        
 
 def get_measured_values(data):
-    measured_val_dict = {'channel': [], 'result': [], 'xcorr': []}
+    measured_val_dict = {'channel': [], 'result': []}
+    for key in get_key_amps(data, 0):
+        measured_val_dict[f'xcorr {key}'] = []
     for ch in get_channels(data):
-        fit_params = data['run']['measurements'][f"{ch}"]['measured_value']['fit_parameter']
         measured_val_dict['channel'].append(ch)
         measured_val_dict['result'].append(data['run']['measurements'][f"{ch}"]['result'])
-        measured_val_dict['xcorr'].append(fit_params['xcorr'])
+        for amp in get_key_amps(data, ch):
+            measured_val_dict[f'xcorr {amp}'].append(data['run']['measurements'][f"{ch}"]['measured_value'][f'{amp}']['xcorr'])
+    
     return measured_val_dict
 
 def print_results(data, channel=None):
