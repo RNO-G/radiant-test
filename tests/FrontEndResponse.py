@@ -5,10 +5,10 @@ import numpy as np
 import uproot
 import numpy as np
 from numpy import linalg as LA
-import glob
 import os
-import radiant_test.radiant_helper as rh
 import logging
+from radiant_test.radiant_helper import uid_to_name
+import re
 
 
 class FrontEndResponse(radiant_test.RADIANTChannelTest):
@@ -16,15 +16,20 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
         super(FrontEndResponse, self).__init__()
 
     def get_root_files(self, search_dir, channel):
-        radiant_name = rh.uid_to_name(self.result_dict["dut_uid"])
-        print(os.path.join(search_dir, f"{radiant_name}_SignalGen2LAB4D_*.json"))
-        files = glob.glob(os.path.join(search_dir, f"{radiant_name}_SignalGen2LAB4D_*.json"))
-        files_sorted = sorted(files)
-        last_test = files_sorted[-1]
-        with open(last_test, "r") as f:
-            data = json.load(f)
+        # ulb_id = 'ULB-005'
+
+        ulb_id = uid_to_name(self.result_dict['dut_uid'])
+        files = [os.path.join(search_dir, file) for file in os.listdir(search_dir) if re.search('SignalGen2LAB4D', file) and file.endswith('.json') and re.search(ulb_id, file)]
+        sorted_files = sorted(files, key=os.path.getmtime, reverse=True)
+        print(sorted_files)
+        for file in sorted_files:
+            if os.path.isfile(file):
+                with open(file, 'r') as f:
+                    data = json.load(f)
+                break
+       
         vals = data['run']['measurements'][str(channel)]['measured_value']
-        logging.warning(f"evaluate FrontEndResponse for channel {channel} based on {last_test}")
+        logging.warning(f"evaluate FrontEndResponse for channel {channel} based on {file}")
         root_dirs = []
         amps = []
         for key in vals['raw_data']:
@@ -94,18 +99,15 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
         passed = False
         all_passed = []
         for key in data:
-            if key in ['truth_waveform', 'xcorr_mean']:
+            print(key)
+            if key in ['truth_waveform']:
                 continue
             else:
                 val = data[key]['xcorr']
-                if (
-                    val >= self.conf["expected_values"]["xcorr_min"]
-                    and val < self.conf["expected_values"]["xcorr_max"]
-                ):
+                if val >= self.conf["expected_values"][f"xcorr_{key}_min"]:
                     passed_single = True
                 else:
                     passed_single = False
-
                 all_passed.append(passed_single)
                 data[key]['res_xcorr'] = passed_single
         if False in all_passed:
@@ -121,7 +123,6 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
             wf_truth = self.get_truth_waveform(self.conf['args']['template'])
             data['truth_waveform'] = wf_truth.tolist()
             root_files, amps = self.get_root_files(self.conf['args']['search_dir'], ch)
-            ccs = []
             for (root_file, amp) in zip(root_files, amps):
                 key = f'{amp:.0f}'
                 data[key] = {}
@@ -134,10 +135,8 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
                     wf_measured = wfs_measured[i,:]
                     cc = self.calc_xcorr(wf_measured, wf_truth, sampling_rate=self.result_dict["radiant_sample_rate"] * 1e6)
                     ccs.append(cc)
-                cc = np.mean(ccs)
-                data[key]['xcorr'] = cc
-                ccs.append(cc)
-            data['xcorr_mean'] = np.mean(ccs)
+                cc_per_amp = np.mean(ccs)
+                data[key]['xcorr'] = cc_per_amp
             self.eval_results(data, ch)
 
 if __name__ == "__main__":

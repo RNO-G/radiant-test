@@ -1,10 +1,12 @@
 {
     "expected_values": {
-        "xcorr_min": 0.9,
-        "xcorr_max": 1
+        "xcorr_200_min": 0.7,
+        "xcorr_300_min": 0.8,
+        "xcorr_500_min": 0.9,
+        "xcorr_900_min": 0.95
         },
     "args": {
-        "template": "examples/truth_template_2_average_ch_1.json",
+        "template": "examples/truth_template_2_mean_ch_19_2.4GHz.json",
         "search_dir": "results",
         "channels": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
         }

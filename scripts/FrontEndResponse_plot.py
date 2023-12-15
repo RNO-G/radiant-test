@@ -33,15 +33,14 @@ def get_axis_color(ax, passed):
     ax.spines['right'].set_color(color)
 
 def get_results_str(data, ch, with_color=False):
-    data_ch = data["run"]["measurements"][str(ch)]["measured_value"]["xcorr_mean"]
     result = data["run"]["measurements"][str(ch)]["result"]
     color_end = colorama.Style.RESET_ALL
-    str_xcorr = get_color(result) + f'xcorr mean: {data_ch:.2f}{color_end}'
+    str_xcorr = ''
     for amp_str in get_key_amps(data, ch):
         xcorr = data["run"]["measurements"][str(ch)]["measured_value"][amp_str]["xcorr"]
         res_amp = data["run"]["measurements"][str(ch)]["measured_value"][amp_str]["res_xcorr"]
         str_xcorr += f'{get_color(res_amp)} | {amp_str} mVpp: {xcorr:.2f} {color_end}'
-    out = f"{get_color(result == 'PASS')} {result} {color_end} | {str_xcorr}"    
+    out = f"{get_color(result == 'PASS')} {result} {color_end} {str_xcorr}"    
     return out
 
 def get_channels(data):
@@ -104,7 +103,7 @@ def plot_channel(fig, ax, data, ch, args_web=False):
         i_max = np.argmax(measured_wf)
         wf = (measured_wf[i_max-200:i_max+300]/np.max(measured_wf))
         if ch == 0:
-            ax.plot(wf, alpha=0.5, color=colors[i], label=f'{amp_str} mVpp')
+            ax.plot(wf, alpha=0.5, linewidth=1, color=colors[i], label=f'{amp_str} mVpp')
             if not args_web:
                 ax.legend(loc='lower right')
         else:

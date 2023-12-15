@@ -22,17 +22,24 @@ def validate_channel(func):
 
     return inner
 
+def scale_waveform_to_integers(waveform, target_resolution=8191):
+    max_abs_value = np.max(np.abs(waveform))
+    scale_factor = max_abs_value / target_resolution
+    scaled_waveform = np.round(waveform / scale_factor).astype(int)
+    return scaled_waveform
 
 class Keysight81160A(AbstractSignalGenerator):
     def __init__(self, ip_address):
         self.instrument = vxi11.Instrument(ip_address)
-        logging.debug(f"Search for instrument with ip address {ip_address}.")
+        print(f"Search for instrument with ip address {ip_address}.")
         id = self.get_id()
-        if (id != "Agilent Technologies,81160A,MY51400292,1.0.3.0-2.6"):
-            logging.debug("Wrong device",id)
-            sys.exit()
-        else :
+        if id in ["Agilent Technologies,81160A,MY51400292,1.0.3.0-2.6", 
+        "Agilent Technologies,81160A,MY60410533,2.0.0.0-2.6"]:
             print("Connected to", self.get_id(), 'at ip address', ip_address)
+        else:
+            print("Wrong device",id)
+            sys.exit()
+
         self.set_offset(1,0)
         self.set_offset(2,0)
         self.instrument.write("OUTP1:IMP 50")
@@ -93,6 +100,8 @@ class Keysight81160A(AbstractSignalGenerator):
 
     @validate_channel
     def set_trigger_frequency_Hz(self, channel, frequency):
+         #    self.instrument.write(f"SOUR{channel}:BURS:MODE TRIG")
+        self.instrument.write(f"ARM:SOUR{channel} INT2")
         self.instrument.write(f"ARM:FREQ{channel} {frequency} HZ")
 
     @validate_channel
@@ -110,36 +119,16 @@ class Keysight81160A(AbstractSignalGenerator):
 
     @validate_channel
     def set_waveform(self, channel, waveform_dic):
-        WAVEFORM_AMP_MIN = -1
-        WAVEFORM_AMP_MAX = 1
-        WAVEFORM_LENGTH_MAX = 131072
-
         with open(waveform_dic, "r") as f:
             dic = json.load(f)
         waveform = dic["wf"]
         freq=dic['freq_wf']
-
-        if np.min(waveform) < WAVEFORM_AMP_MIN or np.max(waveform) > WAVEFORM_AMP_MAX:
-            raise ValueError(
-                f"Only accepting waveforms with {WAVEFORM_AMP_MIN} <= amplitude <= {WAVEFORM_AMP_MAX}."
-            )
-        if len(waveform) > WAVEFORM_LENGTH_MAX:
-            raise ValueError(
-                f"Maximum waveform length is {WAVEFORM_LENGTH_MAX} samples."
-            )
-        
-        bit_range = 1
-        voltage_max = np.max(np.abs(waveform))
-        # works only for template 2 and 5
-        scale = voltage_max/bit_range
-        voltage_bit = (waveform / scale)
-
+        voltage_bit = scale_waveform_to_integers(waveform)
         out = ''
         for i in voltage_bit:
-            out += str(i.round(4)) + ','
-
-        self.instrument.write(f"DATA{channel} VOLATILE, {waveform[:-1]}")
-        self.instrument.write(f"SOUR{channel}:BURS:MODE TRIG")
+            out += str(i) + ','
+        self.instrument.write(f"FUNC{channel} USER")
+        self.instrument.write(f":DATA{channel}:DAC VOLATILE, {out[:-1]}")
         self.set_frequency_MHz(channel, freq) 
 
     def get_system_state(self):

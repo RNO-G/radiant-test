@@ -25,7 +25,7 @@ class ArduinoNano():
           line = self.dev.readline().decode('ascii').strip()
           logging.debug(f"Arduino is routing the signal to {channel}.")
           line_counter += 1
-        print(f'Tried {line_counter} times to reroute signal')
+        print(f'Tried {line_counter} times to reroute signal; result: {line}')
         return line
 
 

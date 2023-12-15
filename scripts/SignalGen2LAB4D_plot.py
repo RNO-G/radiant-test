@@ -117,8 +117,10 @@ def plot_channel(fig, ax, data, ch):
             vpps = (vals['raw_data'][key]['vpps'])
             snrs = (vals['raw_data'][key]['snrs'])
             amps = np.ones(len(vpps)) * (amp)
-            ax.plot(amps, np.array(snrs), 'x', alpha=0.3, color='#2d5d7b')
-            ax.errorbar(float(amp), snr_mean, yerr=snr_err, fmt='x', color='k')
+            if vpps is not None:
+                amps = np.ones(len(vpps)) * (amp)
+                ax.plot(amps, np.array(snrs), 'x', alpha=0.3, color='#2d5d7b')
+                ax.errorbar(float(amp), snr_mean, yerr=snr_err, fmt='x', color='k')
         fig.text(0.01, 0.5, 'SNR', ha='center', va='center', rotation='vertical')
     else:
         for key in vals['raw_data']:
@@ -126,9 +128,10 @@ def plot_channel(fig, ax, data, ch):
             vpp_err = (vals['raw_data'][key]['vpp_err'])
             amp = (vals['raw_data'][key]['amp'])
             vpps = (vals['raw_data'][key]['vpps'])
-            amps = np.ones(len(vpps)) * (amp)
-            ax.plot(amps, np.array(vpps), 'x', alpha=0.3, color='#2d5d7b')
-            ax.errorbar(float(amp), vpp_mean, yerr=vpp_err, fmt='x', color='k')
+            if vpps is not None:
+                amps = np.ones(len(vpps)) * (amp)
+                ax.plot(amps, np.array(vpps), 'x', alpha=0.3, color='#2d5d7b')
+                ax.errorbar(float(amp), vpp_mean, yerr=vpp_err, fmt='x', color='k')
         fig.text(0.01, 0.5, 'Vpp [ADC]', ha='center', va='center', rotation='vertical')
     fit_params = data['run']['measurements'][f"{ch}"]['measured_value']['fit_parameter']
     popt = [fit_params['slope'], fit_params['intercept']]

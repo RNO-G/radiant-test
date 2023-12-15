@@ -194,7 +194,7 @@ if __name__ == "__main__":
         data = json.load(f)
     if args.channel == None:
         plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
-        plot_ana(data)
+        # plot_ana(data)
         print_results(data)
     else:
         plot_single(data, args.channel)

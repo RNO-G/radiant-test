@@ -5,13 +5,13 @@
     "steepness_max": 2
     },
 "args": {
-    "channels": [20],
+    "channels": [12,13,14,15,16,17,18,19,20],
     "waveform": "examples/template2_wo_hardwareResponse.json",
     "clock_amplitude": 900,
     "threshold": 0.92,
     "number_of_events": 100,
     "sg_trigger_rate": 10,
-    "amplitudes": [250, 275, 300, 325, 350, 400, 500],
+    "amplitudes": [100,200,250,275,300,350,400],
     "amplitudes_clock": [150, 200, 250, 300, 400],
     "initial_guess_fit": [8, 1.2],
     "radiant_clock_channel": 0,

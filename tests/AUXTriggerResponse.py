@@ -75,7 +75,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         station.set_run_conf(run_conf)
         res = station.daq_run_start()
         # start pulsing
-        time.sleep(20)
+        time.sleep(15)
         self.awg.send_n_software_triggers(n_trigger=self.conf["args"]["number_of_events"], trigger_rate=self.conf["args"]["sg_trigger_rate"])
 
         station.daq_run_wait()
@@ -209,7 +209,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 rf0_true = has_surface & mask_rf0
 
                 index_max_amp_test = np.argmax(np.abs(waveforms[:, ch_clock, :]), axis=1)
-                pulse_test_correct = (1500 < index_max_amp_test) & (index_max_amp_test < 1700)
+                pulse_test_correct = (1500 < index_max_amp_test) & (index_max_amp_test < 1800)
                 clock_amp = (np.max(np.abs(waveforms[:, ch_clock, :]), axis=1)) > 50
                 rf0_pulse = rf0_true & pulse_test_correct & clock_amp
 
@@ -279,6 +279,10 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
     def run(self, use_arduino=True):
         super(AUXTriggerResponse, self).run()
         self.device.radiant_calselect(quad=None) #make sure calibration is off
+
+        # turn on the surface amp
+        self.device.surface_amps_power_on()
+
         for ch_radiant in self.conf["args"]["channels"]:
             logging.info(f"Testing channel {ch_radiant}")
             if use_arduino:
@@ -339,6 +343,9 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
         self.awg.output_off(sg_ch)
         self.awg.output_off(sg_ch_clock)
+
+        # turn off the surface amp
+        self.device.surface_amps_power_off()
 
 if __name__ == "__main__":
     radiant_test.run(AUXTriggerResponse)

@@ -254,6 +254,10 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
 
     def run(self, use_arduino=True):
         super(SignalGen2LAB4D, self).run()
+
+        # turn on the surface amp
+        self.device.surface_amps_power_on()
+
         for ch_radiant in self.conf["args"]["channels"]:
             logging.info(f"Testing channel {ch_radiant}")
             print(f"Testing channel {ch_radiant}")
@@ -325,6 +329,9 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             dic_out = self.fit_vpp_SG2LAB4D(
                 amps_SG, measured_snr, measured_snr_err, measured_vpps, measured_errs, measured_vrms, measured_snr_pure_noise, ch_dic)
             self.eval_fit_result(ch_radiant, dic_out)
+        
+        # turn off the surface amp
+        self.device.surface_amps_power_off()
 
 
 if __name__ == "__main__":
