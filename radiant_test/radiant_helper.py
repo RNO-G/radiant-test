@@ -52,8 +52,11 @@ def get_mongo_database():
     return mongo_db
 
 def uid_to_name(uid):
-    mongo_db = get_mongo_database()
-
+    try:
+        mongo_db = get_mongo_database()
+    except:
+        return uid
+    
     search_filter = [{'$match': {'dut_id': uid}}]
     search_result = list(mongo_db['radiant_dut_id'].aggregate(search_filter))
 
