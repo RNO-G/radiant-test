@@ -253,6 +253,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         print('Test passed:', passed)
         data = make_serializable(data)
         self.add_measurement(f"{channel}", data, passed)
+        return data
 
     def run(self):
         super(SignalGen2LAB4D, self).run()
@@ -334,9 +335,14 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
                         ch_dic[key_str]['vpps'] = vpps
                         ch_dic[key_str]['vrms'] = vrms
                         ch_dic[key_str]['run'] = str(root_file)
+            
             dic_out = self.fit_vpp_SG2LAB4D(
                 amps_SG, measured_snr, measured_snr_err, measured_vpps, measured_errs, measured_vrms, measured_snr_pure_noise, ch_dic)
-            self.eval_fit_result(ch_radiant, dic_out)
+            data_per_ch = self.eval_fit_result(ch_radiant, dic_out)
+            
+            with open(f'{self.data_dir}/SignalGen2LAB4D_buffer_{ch_radiant}.json', 'w') as f:
+                json.dump(data_per_ch, f, indent=4)
+
         
         # turn off the surface amp
         self.device.surface_amps_power_off()
