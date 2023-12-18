@@ -12,6 +12,7 @@ import json
 import time
 import pathlib
 from radiant_test.radiant_helper import uid_to_name
+import sys
 
 def hill_eq(x, x0, p):
     return 1 / (1 + (x0 / x)**p)
@@ -55,18 +56,20 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
         return amplitude_conversion
 
-    def get_channel_settings(self, radiant_ch):
+    def get_channel_settings(self, radiant_ch, use_arduino=True):
         if radiant_ch != self.conf['args']['radiant_clock_channel']:
             sg_ch_clock = self.conf['args']['sg_ch_direct_to_radiant']
             radiant_ch_clock = self.conf['args']['radiant_clock_channel']
             sg_ch = self.conf['args']['sg_ch_to_bridge']
-            self.arduino.route_signal_to_channel(radiant_ch)
+            if use_arduino:
+                self.arduino.route_signal_to_channel(radiant_ch)
 
         elif radiant_ch == self.conf['args']['radiant_clock_channel']:
             sg_ch_clock = self.conf['args']['sg_ch_to_bridge']
             radiant_ch_clock = self.conf['args']['radiant_clock_channel_alternative']
             sg_ch = self.conf['args']['sg_ch_direct_to_radiant']
-            self.arduino.route_signal_to_channel(radiant_ch_clock)
+            if use_arduino:
+                self.arduino.route_signal_to_channel(radiant_ch_clock)
         else:
             raise ValueError("Invalid channel number")
         return sg_ch, sg_ch_clock, radiant_ch_clock
@@ -275,6 +278,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         data['fit_parameter']['res_steepness'] = steep_passed
         # print('Test passed:', passed)
         self.add_measurement(f"{channel}", data, passed)
+        return data
 
     def run(self, use_arduino=True):
         super(AUXTriggerResponse, self).run()
@@ -285,14 +289,34 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
         for ch_radiant in self.conf["args"]["channels"]:
             logging.info(f"Testing channel {ch_radiant}")
-            if use_arduino:
-                print('using arduino to route signal')
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant)
+
+            if self.conf["args"]["channel_setting_manual"]:
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=False)
+                
+                print(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
+                confirmation_signal = None
+                while confirmation_signal != "":
+                    try:
+                        confirmation_signal = input("Press Enter to confirm: ")
+                    except KeyboardInterrupt:
+                        print("Keyboard interrupt. Exiting...")
+                        sys.exit(1)
+
+                print("Confirmed! Signal channel connected.")
+                
+                print(f'SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
+                confirmation_clock = None
+                while confirmation_clock != "":
+                    try:
+                        confirmation_clock = input("Press Enter to confirm: ")
+                    except KeyboardInterrupt:
+                        print("Keyboard interrupt. Exiting...")
+                        sys.exit(1)
+
+                print("Confirmed! Clock channel connected.")
+                
             else:
-                print('channel settings without bridge')
-                sg_ch_clock = self.conf['args']['sg_ch_direct_to_radiant']
-                ch_radiant_clock = self.conf['args']['radiant_clock_channel']
-                sg_ch = self.conf['args']['sg_ch_to_bridge']
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=True)
 
             thresh = self.conf['args']['threshold']
             # sg_current_amp = self.conf['args']['sg_start_amp']
@@ -339,7 +363,9 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 #     break
 
             dic_out = self.fit_trigger_curve(self.dic_curve)
-            self.eval_curve_results(ch_radiant, dic_out)
+            data_buffer = self.eval_curve_results(ch_radiant, dic_out)
+            with open(f'/scratch/rno-g/radiant_data/AUXTrigger_Response_buffer.json', 'w') as f:
+                json.dump(data_buffer, f)
 
         self.awg.output_off(sg_ch)
         self.awg.output_off(sg_ch_clock)

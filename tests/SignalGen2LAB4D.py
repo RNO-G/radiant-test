@@ -12,6 +12,7 @@ import stationrc
 import pathlib
 import radiant_test.radiant_helper as rh
 import time
+import sys
 
 def make_serializable(obj):
     if isinstance(obj, dict):
@@ -265,18 +266,28 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             print(f"Testing channel {ch_radiant}")
             if self.conf["args"]["channel_setting_manual"]:
                 sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=False)
+                
                 print(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
-                confirmation_signal = input("Press Enter to confirm: ")
-                if confirmation_signal == "":
-                    print("Confirmed! Signal channel connected.")
-                else:
-                    print("Confirmation not received. Exiting...")
-                print(f'SigGem channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
-                confirmation_clock = input("Press Enter to confirm: ")
-                if confirmation_clock == "":
-                    print("Confirmed! Clock channel connected.")
-                else:
-                    print("Confirmation not received. Exiting...")
+                confirmation_signal = None
+                while confirmation_signal != "":
+                    try:
+                        confirmation_signal = input("Press Enter to confirm: ")
+                    except KeyboardInterrupt:
+                        print("Keyboard interrupt. Exiting...")
+                        sys.exit(1)
+
+                print("Confirmed! Signal channel connected.")
+                
+                print(f'SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
+                confirmation_clock = None
+                while confirmation_clock != "":
+                    try:
+                        confirmation_clock = input("Press Enter to confirm: ")
+                    except KeyboardInterrupt:
+                        print("Keyboard interrupt. Exiting...")
+                        sys.exit(1)
+
+                print("Confirmed! Clock channel connected.")
             else:
                 sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=True)
 
@@ -338,12 +349,10 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             
             dic_out = self.fit_vpp_SG2LAB4D(
                 amps_SG, measured_snr, measured_snr_err, measured_vpps, measured_errs, measured_vrms, measured_snr_pure_noise, ch_dic)
-            data_per_ch = self.eval_fit_result(ch_radiant, dic_out)
-            
-            with open(f'{self.data_dir}/SignalGen2LAB4D_buffer_{ch_radiant}.json', 'w') as f:
-                json.dump(data_per_ch, f, indent=4)
+            data_buffer = self.eval_fit_result(ch_radiant, dic_out)
+            with open(f'/scratch/rno-g/radiant_data/SignalGen2LAB4D_buffer.json', 'w') as f:
+                json.dump(data_buffer, f)
 
-        
         # turn off the surface amp
         self.device.surface_amps_power_off()
 

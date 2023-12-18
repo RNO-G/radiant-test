@@ -13,6 +13,7 @@
     "sg_trigger_rate": 10,
     "amplitudes": [100,200,250,275,300,350,400],
     "amplitudes_clock": [150, 200, 250, 300, 400],
+    "channel_setting_manual": true,
     "initial_guess_fit": [8, 1.2],
     "radiant_clock_channel": 0,
     "radiant_clock_channel_alternative": 3,
