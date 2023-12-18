@@ -50,7 +50,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         except:
             logging.info("Arduino not connected")
 
-    def get_channel_settings(self, radiant_ch):
+    def get_channel_settings(self, radiant_ch, arduino=True):
         """connect signale generator channel 1 directly to radiant
             and SG channel 2 to the bridge"""
 
@@ -58,13 +58,15 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
             sg_ch_clock = self.conf['args']['sg_ch_direct_to_radiant']
             radiant_ch_clock = self.conf['args']['radiant_clock_channel']
             sg_ch = self.conf['args']['sg_ch_to_bridge']
-            self.arduino.route_signal_to_channel(radiant_ch)
+            if arduino:
+                self.arduino.route_signal_to_channel(radiant_ch)
 
         elif radiant_ch == self.conf['args']['radiant_clock_channel']:
             sg_ch_clock = self.conf['args']['sg_ch_to_bridge']
             radiant_ch_clock = self.conf['args']['radiant_clock_channel_alternative']
             sg_ch = self.conf['args']['sg_ch_direct_to_radiant']
-            self.arduino.route_signal_to_channel(radiant_ch_clock)
+            if arduino:
+                self.arduino.route_signal_to_channel(radiant_ch_clock)
         else:
             raise ValueError("Invalid channel number")
         return sg_ch, sg_ch_clock, radiant_ch_clock
@@ -252,24 +254,30 @@ class SignalGen2LAB4D(radiant_test.RADIANTTest):
         data = make_serializable(data)
         self.add_measurement(f"{channel}", data, passed)
 
-    def run(self, use_arduino=True):
+    def run(self):
         super(SignalGen2LAB4D, self).run()
-
         # turn on the surface amp
         self.device.surface_amps_power_on()
 
-        for ch_radiant in self.conf["args"]["channels"]:
+        for i_ch,  ch_radiant in enumerate(self.conf["args"]["channels"]):
             logging.info(f"Testing channel {ch_radiant}")
             print(f"Testing channel {ch_radiant}")
-            if use_arduino:
-                print('use arduino to route signal')
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
-                    ch_radiant)
+            if self.conf["args"]["channel_setting_manual"]:
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=False)
+                print(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
+                confirmation_signal = input("Press Enter to confirm: ")
+                if confirmation_signal == "":
+                    print("Confirmed! Signal channel connected.")
+                else:
+                    print("Confirmation not received. Exiting...")
+                print(f'SigGem channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
+                confirmation_clock = input("Press Enter to confirm: ")
+                if confirmation_clock == "":
+                    print("Confirmed! Clock channel connected.")
+                else:
+                    print("Confirmation not received. Exiting...")
             else:
-                print('channel settings without bridge')
-                sg_ch_clock = self.conf['args']['sg_ch_direct_to_radiant']
-                ch_radiant_clock = self.conf['args']['radiant_clock_channel']
-                sg_ch = self.conf['args']['sg_ch_to_bridge']
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=True)
 
             measured_vpps = []
             measured_errs = []
