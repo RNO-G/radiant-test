@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
-
+import os
 import colorama
 
 
@@ -25,6 +25,22 @@ def get_color(passed):
         return colorama.Fore.GREEN
     else:
         return colorama.Fore.RED
+
+
+def get_channel_data(data, ch):
+    data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
+    if "n_recordings" in data["config"]["args"]:
+        n_recordings = data["config"]["args"]["n_recordings"]
+    else:
+        n_recordings = 1
+
+    slow = np.array(data_ch['slow_sample'])
+    seam = np.array(data_ch['seam_sample'])
+
+    if n_recordings == 1:
+        return seam, None, slow, None
+    else:
+        return np.mean(seam), np.std(seam), np.mean(slow), np.std(slow)
 
 
 def get_result_str(data, ch):
@@ -192,21 +208,81 @@ def print_results(data):
         print(f"{ch:<5} | {get_result_str(data, ch)}")
 
 
+def plot_time_dev(input_files):
+    import datetime
+    import matplotlib.dates as mdates
+
+    plot_data = np.empty((len(input_files), 24, 4))
+    times = []
+    board = None
+    for fdx, fn in enumerate(input_files):
+        board_str, date_str = os.path.basename(fn).split("_LAB4DTune_")
+        date_str = date_str.replace(".json", "")
+        if board is not None and board != board_str:
+            raise ValueError("You compare two boards")
+
+        board = board_str
+
+        time = datetime.datetime.strptime(date_str, "%Y%m%dT%H%M%S")
+        times.append(time)
+
+        with open(fn, "r") as f:
+            data = json.load(f)
+
+            for ch in range(24):
+                seam_mean, seam_std, slow_mean, slow_std = get_channel_data(data, ch)
+                plot_data[fdx, ch] = [seam_mean, seam_std, slow_mean, slow_std]
+
+            expected_values = data["config"]["expected_values"]
+
+
+            sr_str = "_2G4" if data["radiant_sample_rate"] == 2400 else "_3G2"
+            if "seam_sample_min" in expected_values:
+                sr_str = ""  # old files, limits are for 3G2
+
+            seam_sample_min = expected_values[f"seam_sample_min{sr_str}"]
+            seam_sample_max = expected_values[f"seam_sample_max{sr_str}"]
+            slow_sample_min = expected_values[f"slow_sample_min{sr_str}"]
+            slow_sample_max = expected_values[f"slow_sample_max{sr_str}"]
+
+
+    fig, axs = plt.subplots(nrows=4, ncols=6, figsize=(3 * 6, 2 * 4), sharex=True, sharey=True, gridspec_kw=dict(hspace=0, wspace=0))
+    for ch, ax in enumerate(axs.flatten()):
+        ax.errorbar(times, plot_data[:, ch, 0], plot_data[:, ch, 1], label="seam")
+        ax.errorbar(times, plot_data[:, ch, 2], plot_data[:, ch, 3], label="slow")
+        ax.grid()
+        ax.axhspan(seam_sample_min, seam_sample_max, color="C0", alpha=0.2)
+        ax.axhspan(slow_sample_min, slow_sample_max, color="C1", alpha=0.2)
+        ax.tick_params(axis='x', labelrotation=45)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=12))
+
+    ax.legend(ncols=2)
+    fig.supylabel("Time / ps", x=0.01, weight="bold")
+    fig.supxlabel("measurements", x=0.55, y=0.03, weight="bold")
+    fig.tight_layout()
+
+    plt.savefig(f"time_calibration_{board_str}.png", transparent=False)
+
 if __name__ == "__main__":
     import argparse
     import json
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", help="input JSON file")
+    parser.add_argument("input", nargs="+", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, help="only plot single channel")
     parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
     args = parser.parse_args()
 
-    with open(args.input, "r") as f:
-        data = json.load(f)
-    if args.channel == None:
-        print_results(data)
-        plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
+
+    if len(args.input) == 1:
+        with open(args.input[0], "r") as f:
+            data = json.load(f)
+        if args.channel == None:
+            print_results(data)
+            plot_all(data, args_input=args.input[0], args_channel=args.channel, args_web=args.web)
+        else:
+            plot_single(data, args.channel)
+        # plt.show()
     else:
-        plot_single(data, args.channel)
-    # plt.show()
+        plot_time_dev(args.input)
