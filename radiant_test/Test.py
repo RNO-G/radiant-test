@@ -24,7 +24,7 @@ class Test(object):
         self.basename = self.__class__.__name__
         self.logger = logging.getLogger(self.name)
         self.result = TestResult.DID_NOT_RUN
-        self.result_dict = {"dut_uid": None, "test_name": self.name, "comments": comment}
+        self.result_dict = {"dut_uid": None, "test_name": self.name, "comments": comment, "testset": None}
 
         with open(pathlib.Path.cwd() / "testconfig" / f"{self.name}.json", "r") as f:
             self.conf = json.load(f)

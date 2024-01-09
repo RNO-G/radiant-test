@@ -14,10 +14,9 @@ class TestSet(object):
             default_args = self.conf["default_args"]
 
         self.name = self.conf["name"]
-        self.result_dir = (
-            pathlib.Path("results")
-            / f"{self.name}_{datetime.datetime.now().strftime('%Y%m%dT%H%M%S')}"
-        )
+        self._result_dir_name = f"{self.name}_{datetime.datetime.now().strftime('%Y%m%dT%H%M%S')}"
+        self.result_dir = pathlib.Path("results") / self._result_dir_name
+
         self.tests = list()
 
         module = __import__("tests")
@@ -29,7 +28,7 @@ class TestSet(object):
 
                     self.conf["tests"][key][key2].update(default_args[key2])
 
-            if not "base" in self.conf["tests"][key]:
+            if "base" not in self.conf["tests"][key]:
                 self.add_test(getattr(module, key)(), self.conf["tests"][key])
             else:
                 self.add_test(
@@ -41,6 +40,8 @@ class TestSet(object):
 
             if comment is not None:
                 self.tests[-1].result_dict["comments"] = comment
+
+            self.tests[-1].result_dict["testset"] = self._result_dir_name
 
     def add_test(self, test, alt_conf):
         if alt_conf:
