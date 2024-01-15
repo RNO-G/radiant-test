@@ -8,10 +8,9 @@
     },
     "args": {
         "band": 0,
-        "channels": [1],
-        "frequency": 240,
+        "frequency": 90,
         "use_uart": true,
-        "read_header": true,
-        "external_signal": true
+        "read_header": false,
+        "external_signal": false
     }
 }
