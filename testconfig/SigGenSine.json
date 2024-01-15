@@ -9,6 +9,8 @@
     "args": {
         "band": 0,
         "frequency": 90,
-        "use_uart": true
+        "use_uart": true,
+        "read_header": false,
+        "external_signal": false
     }
 }

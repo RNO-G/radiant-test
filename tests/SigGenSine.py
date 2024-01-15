@@ -12,21 +12,24 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
         super(SigGenSine, self).run()
 
         self.device.radiant_sig_gen_off()
-        self.device.radiant_sig_gen_configure(
-            pulse=False, band=self.conf["args"]["band"]
-        )
-        self.device.radiant_sig_gen_on()
-        self.device.radiant_sig_gen_set_frequency(
-            frequency=self.conf["args"]["frequency"]
-        )
+        self.device.radiant_calselect(quad=None)
 
+        if not self.conf["args"]["external_signal"]:
+            self.device.radiant_sig_gen_configure(
+                pulse=False, band=self.conf["args"]["band"]
+            )
+            self.device.radiant_sig_gen_on()
+            self.device.radiant_sig_gen_set_frequency(
+                frequency=self.conf["args"]["frequency"]
+            )
+            
         for quad in self.get_quads():
-            self.device.radiant_calselect(quad=quad)
+            if not self.conf["args"]["external_signal"]:
+                self.device.radiant_calselect(quad=quad)
             self._run_quad(quad)
 
         self.device.radiant_sig_gen_off()
         self.device.radiant_calselect(quad=None)
-
     def _check_fit(self, data):
         if (
             data["fit_amplitude"] < self.conf["expected_values"]["amplitude_min"]
@@ -90,7 +93,7 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
 
     def _run_quad(self, quad):
         data = self.device.daq_record_data(
-            num_events=1, force_trigger=True, use_uart=self.conf["args"]["use_uart"]
+            num_events=1, force_trigger=True, use_uart=self.conf["args"]["use_uart"], read_header=self.conf["args"]["read_header"]
         )
         event = data["data"]["WAVEFORM"][0]
         for ch in radiant_test.get_channels_for_quad(quad):
@@ -98,7 +101,9 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
                 continue
 
             if ch in self.conf["args"]["channels"]:
+                starting_windows = np.array([ele['radiant_start_windows'][ch] for ele in data["data"]["HEADER"]])[:, 0]
                 data = self._fit_waveform(event["radiant_waveforms"][ch])
+                data["starting_windows"] = starting_windows.tolist()
                 self.add_measurement(f"{ch}", data, passed=self._check_fit(data))
 
 
