@@ -10,3 +10,4 @@ def run(test_class, kwargs={}):
     test.initialize()
     test.run()
     test.finalize()
+    return test

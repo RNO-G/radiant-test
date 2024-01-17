@@ -162,15 +162,15 @@ class Test(object):
         if not dir.exists():
             dir.mkdir(parents=True)
 
-        fname = (dir /
+        self.fname = (dir /
             f'{uid_to_name(self.result_dict["dut_uid"])}_{self.name}_'
             f'{datetime.datetime.fromtimestamp(self.result_dict["initialize"]["timestamp"]).strftime("%Y%m%dT%H%M%S")}.json')
 
-        self.logger.info(f"Store test results in {fname}")
+        self.logger.info(f"Store test results in {self.fname}")
 
         if self.name in tests_with_large_output:
-            with open(fname, "w",) as f:
+            with open(self.fname, "w",) as f:
                 json.dump(self.result_dict, f)
         else:
-            with open(fname, "w",) as f:
+            with open(self.fname, "w",) as f:
                 json.dump(self.result_dict, f, indent=4)
