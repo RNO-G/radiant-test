@@ -22,7 +22,7 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
             self.device.radiant_sig_gen_set_frequency(
                 frequency=self.conf["args"]["frequency"]
             )
-            
+
         for quad in self.get_quads():
             if not self.conf["args"]["external_signal"]:
                 self.device.radiant_calselect(quad=quad)
@@ -60,7 +60,7 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
             phase = 0
             popt, _ = scipy.optimize.curve_fit(
                 sine,
-                xdata=np.arange(len(wvf)) / (self.result_dict["radiant_sample_rate"] / 1000),
+                xdata=np.arange(len(wvf)) / (self.result_dict.get("radiant_sample_rate", 3200) / 1000),
                 ydata=wvf,
                 p0=[amplitude, frequency, phase, offset],
             )
@@ -93,7 +93,8 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
 
     def _run_quad(self, quad):
         data = self.device.daq_record_data(
-            num_events=1, force_trigger=True, use_uart=self.conf["args"]["use_uart"], read_header=self.conf["args"]["read_header"]
+            num_events=1, force_trigger=True, use_uart=self.conf["args"]["use_uart"],
+            read_header=self.conf["args"]["read_header"]
         )
         event = data["data"]["WAVEFORM"][0]
         for ch in radiant_test.get_channels_for_quad(quad):
@@ -101,9 +102,12 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
                 continue
 
             if ch in self.conf["args"]["channels"]:
-                starting_windows = np.array([ele['radiant_start_windows'][ch] for ele in data["data"]["HEADER"]])[:, 0]
                 data = self._fit_waveform(event["radiant_waveforms"][ch])
-                data["starting_windows"] = starting_windows.tolist()
+                if self.conf["args"]["read_header"]:
+                    starting_windows = np.array(
+                        [ele['radiant_start_windows'][ch] for ele in data["data"]["HEADER"]])[:, 0]
+                    data["starting_windows"] = starting_windows.tolist()
+
                 self.add_measurement(f"{ch}", data, passed=self._check_fit(data))
 
 
