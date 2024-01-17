@@ -58,7 +58,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
                 ax.set_ylabel("Voltage (ADC counts)")
                 if 1:
                     for i in range(16):
-                        ax.axvline(128 * i / (data["radiant_sample_rate"] / 1000), color="k", lw=1, zorder=0)
+                        ax.axvline(128 * i / (data.get("radiant_sample_rate", 3200) / 1000), color="k", lw=1, zorder=0)
 
                 pdf.savefig()
                 plt.close()
@@ -100,7 +100,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
 def plot_channel(ax, data, ch, print_fit=False):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     y = np.asarray(data_ch["waveform"])
-    x = np.arange(len(y)) / (data['radiant_sample_rate']/1000)
+    x = np.arange(len(y)) / (data.get("radiant_sample_rate", 3200) / 1000)
     ax.plot(x, y, label=f"ch {ch}", lw=1)
     ax.plot(
         x,
