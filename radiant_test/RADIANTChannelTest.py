@@ -18,12 +18,11 @@ class RADIANTChannelTest(RADIANTTest):
     def finalize(self, result_dir="results"):
         super(RADIANTChannelTest, self).finalize(result_dir)
 
-
     def get_quads(self):
         channel_ids = self.conf["args"]["channels"]
         already_had = []
         for channel_id in channel_ids:
             quad =  quad_for_channel(channel_id)
-            if not quad in already_had:
+            if quad not in already_had:
                 already_had.append(quad)
                 yield quad
