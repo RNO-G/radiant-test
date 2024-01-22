@@ -3,7 +3,6 @@ import logging
 import matplotlib.pyplot as plt
 import uproot
 import os
-import datetime
 from scipy.optimize import curve_fit
 import json
 
@@ -14,7 +13,7 @@ import radiant_test.radiant_helper as rh
 import time
 import sys
 from collections import defaultdict
-
+import glob
 
 def confirm_or_abort():
     confirmation_signal = None
@@ -60,8 +59,8 @@ def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
 
 
 class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
-    def __init__(self):
-        super(SignalGen2LAB4D, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(SignalGen2LAB4D, self).__init__(*args, **kwargs)
         self.awg = radiant_test.Keysight81160A(
             self.site_conf['signal_gen_ip_address'])
         try:
@@ -110,7 +109,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
         return data_dir
 
     def initialize_config(self, channel_trigger, threshold):
-        self.logger.info('trigger set on channel', channel_trigger)
+        self.logger.info(f'trigger set on channel {channel_trigger}')
         run = stationrc.remote_control.Run(self.device)
         for ch in range(24):
             run.run_conf.radiant_threshold_initial(ch, threshold)
@@ -147,8 +146,9 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
             # events, channels, samples
             wfs = np.array(data['waveforms/radiant_data[24][2048]'])
         else:
+            wfs_file = self.data_dir / "waveforms/000000.wf.dat.gz"
             data = stationrc.common.dump_binary(
-                wfs_file=self.device.station_conf["daq"]["radiant-try-event_wfs_file"],
+                wfs_file=wfs_file,
                 read_header=False, read_pedestal=False)
             wfs = np.array([ele['radiant_waveforms'] for ele in data["data"]['WAVEFORM']])
 
@@ -184,8 +184,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
                     ax.legend()
                     dir = (f'/home/rnog/radiant-test/scripts/plots/'
                         f'{rh.uid_to_name(self.result_dict["dut_uid"])}_'
-                        f'{self.name}_{datetime.datetime.fromtimestamp(
-                            self.result_dict["initialize"]["timestamp"]).strftime("%Y%m%dT%H%M%S")}')
+                        f'{self.name}_{self.result_dict["initialize"]["timestamp"]}')
 
                     if not os.path.exists(dir):
                         os.makedirs(dir)
@@ -257,7 +256,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
         data['fit_parameter']['res_slope'] = slope_passed
         data['fit_parameter']['res_intercept'] = intercept_passed
         data['fit_parameter']['res_max_residual'] = max_residual_passed
-        self.logger.info('Test passed:', passed)
+        self.logger.info(f'Test passed: {passed}')
 
         return passed
 
@@ -302,7 +301,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
                 self.data_dir = self.start_run(run.run_conf, delete_src=True)
                 self.logger.info(f'Stored run at {self.data_dir}')
 
-                wfs_file = self.data_dir / "wfs.dat"
+                wfs_file = self.data_dir / "waveforms/000000.wf.dat.gz"
                 if os.path.exists(wfs_file):
 
                     if os.path.getsize(wfs_file) / 1024 < 5:  # kB
