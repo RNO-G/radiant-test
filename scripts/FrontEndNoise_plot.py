@@ -32,8 +32,8 @@ def get_fit_results_str(data, ch, with_color=False):
         color_start
         + f"slope: {data_ch['fit_slope']:6.1f} - "
         + f"offset: {data_ch['fit_offset']:6.1f} - "
-        + f"average residual: {data_ch['fit_average_residual']} - "
-        + f"max amplitude 25MHz: {data_ch['maximal_25MHz_amplitude']} - "
+        + f"average residual: {data_ch['fit_average_residual']:.2f} - "
+        + f"max amplitude 25MHz: {data_ch['maximal_25MHz_amplitude']:.2f} - "
         + f"result: {result}" + color_end
     )
 
