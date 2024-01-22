@@ -148,7 +148,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
         else:
             wfs_file = self.data_dir / "waveforms/000000.wf.dat.gz"
             data = stationrc.common.dump_binary(
-                wfs_file=wfs_file,
+                wfs_file=str(wfs_file),
                 read_header=False, read_pedestal=False)
             wfs = np.array([ele['radiant_waveforms'] for ele in data["data"]['WAVEFORM']])
 
