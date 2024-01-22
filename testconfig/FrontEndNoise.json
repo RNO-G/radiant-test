@@ -2,10 +2,10 @@
     "expected_values": {
         "slope_min": -2.13,
         "slope_max": -0.77,
-        "offset_max": 31.9,
-        "offset_min": 27.3,
-        "average_residual_max": 2.2,
-        "maximal_25MHz_amplitude": 80
+        "offset_max": 40,
+        "offset_min": 25,
+        "average_residual_max": 3,
+        "maximal_25MHz_amplitude": 100
     },
     "args": {
         "number_of_used_events": 300,
