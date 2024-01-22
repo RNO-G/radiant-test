@@ -29,10 +29,10 @@ def get_rows_cols(n=24):
 
 def get_color(passed):
     if passed:
-        return colorama.Fore.GREEN 
+        return colorama.Fore.GREEN
     else:
         return colorama.Fore.RED
-    
+
 def get_axis_color(ax, passed):
     if passed == 'PASS':
         color = '#6da34d'
@@ -46,7 +46,7 @@ def get_axis_color(ax, passed):
 def get_fit_results_str(data, ch, with_color=False):
     data_ch = data["run"]["measurements"][str(ch)]["measured_value"]["fit_parameter"]
     result = data["run"]["measurements"][str(ch)]["result"]
-    
+
     color_end = colorama.Style.RESET_ALL
     if data_ch["slope"] is None:
         str_slope =  get_color(data_ch["res_slope"]) + f'slope: no fit result {color_end}'
@@ -63,7 +63,7 @@ def get_fit_results_str(data, ch, with_color=False):
 
     out = f"{get_color(result == 'PASS')} {result} {color_end} | {str_slope} | {str_intercept} | {str_max_residual}"
 
-    
+
     return out
 
 def get_channels(data):
@@ -83,14 +83,14 @@ def get_measured_values(data):
 def print_results(data, channel=None):
     if channel is None:
         for ch in get_channels(data):
-            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")                
+            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
     else:
         print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols()
-    fig = plt.figure(figsize=(12,6))
-    axs = fig.subplots(nrows=nrows, ncols=ncols)
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12, 6), sharex=True, sharey=True,
+                            gridspec_kw=dict(wspace=0.1, hspace=0.06, left=0.1, bottom=0.1))
     for ch in get_channels(data):
         if nrows == 1:
             ax = axs[ch % ncols]
@@ -109,7 +109,8 @@ def plot_single(data, ch):
 def plot_channel(fig, ax, data, ch):
     x_arr = np.linspace(0, 1000, 100)
     vals = data['run']['measurements'][str(ch)]['measured_value']
-    if 'snrs' in vals['raw_data'][list(vals['raw_data'].keys())[0]].keys():    
+    label = f'channel: {ch}'
+    if 'snrs' in vals['raw_data'][list(vals['raw_data'].keys())[0]].keys():
         for key in vals['raw_data']:
             snr_mean = (vals['raw_data'][key]['snr_mean'])
             snr_err = (vals['raw_data'][key]['snr_err'])
@@ -119,9 +120,11 @@ def plot_channel(fig, ax, data, ch):
             amps = np.ones(len(vpps)) * (amp)
             if vpps is not None:
                 amps = np.ones(len(vpps)) * (amp)
-                ax.plot(amps, np.array(snrs), 'x', alpha=0.3, color='#2d5d7b')
+                ax.plot(amps, np.array(snrs), 'x', alpha=0.3, color='#2d5d7b', label=label)
                 ax.errorbar(float(amp), snr_mean, yerr=snr_err, fmt='x', color='k')
-        fig.text(0.01, 0.5, 'SNR', ha='center', va='center', rotation='vertical')
+            label = ""
+        # fig.text(0.01, 0.5, 'SNR', ha='center', va='center', rotation='vertical')
+        fig.supylabel("SNR")
     else:
         for key in vals['raw_data']:
             vpp_mean = (vals['raw_data'][key]['vpp_mean'])
@@ -138,8 +141,11 @@ def plot_channel(fig, ax, data, ch):
     if None not in popt:
         ax.plot(x_arr, lin_func(x_arr, *popt), color='#6D8495')
     res = data['run']['measurements'][f"{ch}"]['result']
-    ax.set_title(f'channel: {ch}')
-    fig.text(0.5, 0.01, 'Vpp at signal generator [mV]', ha='center', va='center')
+    # ax.set_title(f'channel: {ch}')
+    ax.legend(fontsize=5)
+    # fig.text(0.5, 0.01, 'Vpp at signal generator [mV]', ha='center', va='center')
+    fig.supxlabel("Vpp at signal generator [mV]")
+
     get_axis_color(ax, res)
 
 
