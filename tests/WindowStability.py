@@ -10,7 +10,7 @@ class WindowStability(radiant_test.RADIANTChannelTest):
     def run(self):
         super(WindowStability, self).run()
 
-        self.logger.info(f"Start signal generator ...")
+        self.logger.info("Start signal generator ...")
 
         self.device.radiant_sig_gen_off()
         self.device.radiant_sig_gen_configure(
@@ -26,7 +26,7 @@ class WindowStability(radiant_test.RADIANTChannelTest):
             self._run_quad(quad)
 
         self.device.radiant_sig_gen_off()
-        self.logger.info(f"Finish run!")
+        self.logger.info("Finish run!")
 
 
     def _run_quad(self, quad):
@@ -36,7 +36,7 @@ class WindowStability(radiant_test.RADIANTChannelTest):
             num_events=self.conf["args"]["num_events"], force_trigger=True, read_header=True,
             force_trigger_interval=self.conf['args']['force_trigger_interval'],
             use_uart=self.conf["args"]["use_uart"])
-        self.logger.info(f"... finished")
+        self.logger.info("... finished")
 
         for ch in radiant_test.get_channels_for_quad(quad):
             if ch not in self.conf["args"]["channels"]:

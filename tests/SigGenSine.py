@@ -30,22 +30,26 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
 
         self.device.radiant_sig_gen_off()
         self.device.radiant_calselect(quad=None)
+
     def _check_fit(self, data):
-        if (
-            data["fit_amplitude"] < self.conf["expected_values"]["amplitude_min"]
-            or data["fit_amplitude"] > self.conf["expected_values"]["amplitude_max"]
-        ):
+        exp_v = self.conf["expected_values"]
+        if not exp_v["amplitude_min"] < data["fit_amplitude"] < exp_v["amplitude_max"]:
             return False
+
         frequency_deviation = (
             np.abs(data["fit_frequency"] - self.conf["args"]["frequency"])
             / self.conf["args"]["frequency"]
         )
-        if frequency_deviation > self.conf["expected_values"]["frequency_deviation"]:
+
+        if frequency_deviation > exp_v["frequency_deviation"]:
             return False
-        if np.abs(data["fit_offset"]) > self.conf["expected_values"]["offset_max"]:
+
+        if np.abs(data["fit_offset"]) > exp_v["offset_max"]:
             return False
-        if data["fit_avg_residual"] > self.conf["expected_values"]["avg_residual_max"]:
+
+        if data["fit_avg_residual"] > exp_v["avg_residual_max"]:
             return False
+
         return True
 
     def _fit_waveform(self, wvf):
@@ -83,12 +87,16 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
             popt[2] if popt[0] >= 0 else popt[2] + np.pi
         )  # correct phase by pi if amplitude was fit negative
         # Normalize phase to [0, 2pi)
+
         while data["fit_phase"] < 0:
             data["fit_phase"] += 2 * np.pi
+
         while data["fit_phase"] >= 2 * np.pi:
             data["fit_phase"] -= 2 * np.pi
+
         data["fit_offset"] = popt[3]
         data["fit_avg_residual"] = avg_residual
+
         return data
 
     def _run_quad(self, quad):

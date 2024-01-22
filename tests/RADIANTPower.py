@@ -2,8 +2,8 @@ import radiant_test
 
 
 class RADIANTPower(radiant_test.RADIANTTest):
-    def __init__(self):
-        super(RADIANTPower, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(RADIANTPower, self).__init__(*args, **kwargs)
 
     def run(self):
         super(RADIANTPower, self).run()

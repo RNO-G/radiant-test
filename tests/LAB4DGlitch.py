@@ -28,7 +28,7 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
 
         # disconnect the quads from the signal generator
         self.device.radiant_calselect(quad=None)
-        
+
         # self._run_channels()
 
         self.device.radiant_sig_gen_off()
@@ -69,7 +69,7 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
 
         save_data['voltage_differences_control'] = list(distribution_widths[0][0])
         save_data['voltage_differences_glitch'] = list(distribution_widths[1][0])
-        
+
         # calculate the difference
         save_data['differences'] = list(np.asarray(save_data['voltage_differences_glitch']) - np.asarray(save_data['voltage_differences_control']))
 
@@ -85,16 +85,16 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
     def _compare_voltage_differences(self, data):
         if data['points_above_threshold'] > self.conf['expected_values']['min_points_above_threshold']:
             return False
-        
+
         return True
 
     def _run_channels(self):
         self.logger.info(f"Start data taking")
         data = self.device.daq_record_data(
-            num_events=self.conf['args']['number_of_used_events'], 
+            num_events=self.conf['args']['number_of_used_events'],
             force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'],
             use_uart=self.conf['args']['use_uart'])
-        
+
         waveforms = data["data"]["WAVEFORM"]
         self.logger.info(f"Data taking done")
         for ich, ch in enumerate(self.conf['args']['channels']):
@@ -107,8 +107,8 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
         self.logger.info(f"Start data taking with quad {quad} ...")
 
         data = self.device.daq_record_data(
-            num_events=self.conf['args']['number_of_used_events'], force_trigger=True, 
-            force_trigger_interval=self.conf['args']['force_trigger_interval'], 
+            num_events=self.conf['args']['number_of_used_events'], force_trigger=True,
+            force_trigger_interval=self.conf['args']['force_trigger_interval'],
             use_uart=self.conf["args"]["use_uart"])
         self.logger.info(f" ... finished")
 
@@ -117,7 +117,7 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
 
             if ch not in self.conf["args"]["channels"]:
                 continue
-            
+
             if ch in self.conf["args"]["channels"]:
                 channel_data = [event['radiant_waveforms'][ch] for event in waveforms]
                 data = self._calculate_voltage_differences(channel_data, ch)

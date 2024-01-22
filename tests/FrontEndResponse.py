@@ -27,7 +27,7 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
                 with open(file, 'r') as f:
                     data = json.load(f)
                 break
-       
+
         vals = data['run']['measurements'][str(channel)]['measured_value']
         logging.warning(f"evaluate FrontEndResponse for channel {channel} based on {file}")
         root_dirs = []

@@ -58,6 +58,7 @@ class LAB4DTune(radiant_test.RADIANTChannelTest):
         for ch in self.conf["args"]["channels"]:
             if ch in radiant_test.get_channels_for_quad(quad=quad):
                 channels.append(ch)
+
         if len(channels) == 0:
             return
 
