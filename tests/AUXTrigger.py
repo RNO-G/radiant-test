@@ -32,7 +32,6 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
         quad = rh.quad_for_channel(channel)
         self.device.radiant_calselect(quad=quad)
 
-
     def initialize_config(self, channel, threshold, run_length):
         run = stationrc.remote_control.Run(self.device)
         for ch in range(24):
@@ -57,13 +56,13 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
         f = uproot.open(root_file)
         data = f["combined"]
 
-        has_surface = data['header/trigger_info/trigger_info.radiant_trigger'].array() == True
+        has_surface = data['header/trigger_info/trigger_info.radiant_trigger'].array() is True
         mask_rf0 = data['header/trigger_info/trigger_info.which_radiant_trigger'].array() == 0
         rf0_true = has_surface & mask_rf0
 
         waveforms = np.array(data['waveforms/radiant_data[24][2048]'])  #events, channels, samples
         thresholds = np.array(data['daqstatus/radiant_thresholds[24]'])
-        thresh = np.round(thresholds[0, channel]*2.5/(2**24-1),2) # select threshold of first event and test channel 
+        thresh = np.round(thresholds[0, channel]*2.5/(2**24-1),2) # select threshold of first event and test channel
 
         index_max_amp = np.argmax(np.abs(waveforms[:,channel,:]), axis=1)
         print(f'{waveforms[rf0_true,channel,:].shape[0]} total trigger in {run_length} seconds')
@@ -77,7 +76,7 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
         self.dic['ref_freq'] = ref_freq
         self.dic['root_dir'] = str(root_file)
         return self.dic
-    
+
     def eval_results(self, channel, data):
         passed = False
 
@@ -92,9 +91,9 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
                     trig_rate >= self.conf["expected_values"][thresh][ref_freq]["num_min"]
                     and trig_rate < self.conf["expected_values"][thresh][ref_freq]["num_max"]
                 ):
-                    passed = True   
+                    passed = True
                 else:
-                    passed = False     
+                    passed = False
 
                 data[thresh][ref_freq]['trig_eff']['passed'] = passed
                 passed_list.append(passed)
@@ -102,9 +101,8 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
         if all(passed_list):
             passed_all_points = True
         else:
-            passed_all_points = False 
+            passed_all_points = False
         self.add_measurement(f"AUXTrigger_ch_{channel}", data, passed_all_points)
-
 
     def run(self):
         super(AUXTrigger, self).run()
@@ -123,7 +121,7 @@ class AUXTrigger(radiant_test.RADIANTChannelTest):
                     self.dic_curve[f"{thresh:.2f}"][f"{freq:.0f}"] = data
             self.eval_results(ch, self.dic_curve)
         self.device.radiant_sig_gen_off()
-        self.device.radiant_calselect(quad=None)      
+        self.device.radiant_calselect(quad=None)
 
 if __name__ == "__main__":
     radiant_test.run(AUXTrigger)
