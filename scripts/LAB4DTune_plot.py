@@ -43,6 +43,24 @@ def get_channel_data(data, ch):
         return np.mean(seam), np.std(seam), np.mean(slow), np.std(slow)
 
 
+def get_channel_rms(data, ch):
+    data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
+    if "n_recordings" in data["config"]["args"]:
+        n_recordings = data["config"]["args"]["n_recordings"]
+    else:
+        n_recordings = 1
+
+
+    times = np.array(data_ch['times'])
+    rms_all = np.std(times, axis=-1)
+    rms = np.std(times[1:], axis=-1)
+
+    if n_recordings == 1:
+        return rms_all, None, rms, None
+    else:
+        return np.mean(rms_all), np.std(rms_all), np.mean(rms), np.std(rms)
+
+
 def get_result_str(data, ch):
     data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
     result = data["run"]["measurements"][f"{ch}"]["result"]
@@ -152,7 +170,7 @@ def plot_channel(ax, data, ch, print_data=False):
                     marker="o", ls="", label=f"ch {ch}")
 
     ax.axhline(
-        1e3 / (data['radiant_sample_rate'] / 1000),
+        1e3 / (data.get("radiant_sample_rate", 3200) / 1000),
         color="red",
         linestyle="dashed",
     )
@@ -212,7 +230,7 @@ def plot_time_dev(input_files):
     import datetime
     import matplotlib.dates as mdates
 
-    plot_data = np.empty((len(input_files), 24, 4))
+    plot_data = np.empty((len(input_files), 24, 8))
     times = []
     board = None
     for fdx, fn in enumerate(input_files):
@@ -231,10 +249,11 @@ def plot_time_dev(input_files):
 
             for ch in range(24):
                 seam_mean, seam_std, slow_mean, slow_std = get_channel_data(data, ch)
-                plot_data[fdx, ch] = [seam_mean, seam_std, slow_mean, slow_std]
+                rms_all_mean, rms_all_std, rms_mean, rms_std = get_channel_rms(data, ch)
+                # print(seam_mean, seam_std, slow_mean, slow_std, rms_all_mean, rms_all_std, rms_mean, rms_std)
+                plot_data[fdx, ch] = [seam_mean, seam_std, slow_mean, slow_std, rms_all_mean, rms_all_std, rms_mean, rms_std]
 
             expected_values = data["config"]["expected_values"]
-
 
             sr_str = "_2G4" if data["radiant_sample_rate"] == 2400 else "_3G2"
             if "seam_sample_min" in expected_values:
@@ -246,16 +265,24 @@ def plot_time_dev(input_files):
             slow_sample_max = expected_values[f"slow_sample_max{sr_str}"]
 
 
-    fig, axs = plt.subplots(nrows=4, ncols=6, figsize=(3 * 6, 2 * 4), sharex=True, sharey=True, gridspec_kw=dict(hspace=0, wspace=0))
+    fig, axs = plt.subplots(nrows=4, ncols=6, figsize=(3 * 6, 2 * 4), sharex=True, sharey=True,
+                            gridspec_kw=dict(hspace=0, wspace=0))
     for ch, ax in enumerate(axs.flatten()):
-        ax.errorbar(times, plot_data[:, ch, 0], plot_data[:, ch, 1], label="seam")
-        ax.errorbar(times, plot_data[:, ch, 2], plot_data[:, ch, 3], label="slow")
+        mask = ~np.isnan(plot_data[:, ch, 1])
+
+        ax.errorbar(np.array(times)[mask], plot_data[mask, ch, 0], plot_data[mask, ch, 1], label="seam")
+        ax.errorbar(np.array(times)[mask], plot_data[mask, ch, 2], plot_data[mask, ch, 3], label="slow")
         ax.grid()
         ax.axhspan(seam_sample_min, seam_sample_max, color="C0", alpha=0.2)
         ax.axhspan(slow_sample_min, slow_sample_max, color="C1", alpha=0.2)
         ax.tick_params(axis='x', labelrotation=45)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-        ax.xaxis.set_major_locator(mdates.HourLocator(interval=12))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m.%d %H:%M'))
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=24))
+        for d in [datetime.datetime(2024, 1, 8, 16, 30), datetime.datetime(2024, 1, 9, 9, 30)]:
+            ax.axvline(d, color="k", ls="--", lw=1)
+        ax.axvspan(datetime.datetime(2024, 1, 11, 6), datetime.datetime(2024, 1, 11, 12, 15), color="k", alpha=0.3)
+
+    ax.axvline(d, color="k", ls="--", lw=1, label="Power cycle")
 
     ax.legend(ncols=2)
     fig.supylabel("Time / ps", x=0.01, weight="bold")
@@ -263,6 +290,31 @@ def plot_time_dev(input_files):
     fig.tight_layout()
 
     plt.savefig(f"time_calibration_{board_str}.png", transparent=False)
+
+    fig, axs = plt.subplots(nrows=4, ncols=6, figsize=(3 * 6, 2 * 4), sharex=True, sharey=True,
+                            gridspec_kw=dict(hspace=0, wspace=0))
+    for ch, ax in enumerate(axs.flatten()):
+        mask = ~np.isnan(plot_data[:, ch, 1])
+
+        ax.errorbar(np.array(times)[mask], plot_data[mask, ch, 4], plot_data[mask, ch, 5], label="all")
+        ax.errorbar(np.array(times)[mask], plot_data[mask, ch, 6], plot_data[mask, ch, 7], label="/wo seam")
+        ax.grid()
+        ax.tick_params(axis='x', labelrotation=45)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m.%d %H:%M'))
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=24))
+
+        for d in [datetime.datetime(2024, 1, 8, 16, 30), datetime.datetime(2024, 1, 9, 9, 30)]:
+            ax.axvline(d, color="k", ls="--", lw=1)
+        ax.axvspan(datetime.datetime(2024, 1, 11, 6), datetime.datetime(2024, 1, 11, 12, 15), color="k", alpha=0.3)
+
+    ax.axvline(d, color="k", ls="--", lw=1, label="Power cycle")
+
+    ax.legend(ncols=2)
+    fig.supylabel("RMS Time / ps", x=0.01, weight="bold")
+    fig.supxlabel("measurements", x=0.55, y=0.03, weight="bold")
+    fig.tight_layout()
+
+    plt.savefig(f"time_calibration_{board_str}_rms.png", transparent=False)
 
 if __name__ == "__main__":
     import argparse
