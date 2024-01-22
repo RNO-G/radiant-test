@@ -131,7 +131,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
 
         return run
 
-    def get_vpp(self, root_file, ch, ch_clock, amp, tag, plot=False):
+    def get_vpp(self, ch, ch_clock, amp, tag="", plot=False):
         """ Calculate vpp/snr from measured data """
 
         if self.conf['args']['rootify']:
