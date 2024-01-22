@@ -150,7 +150,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
             data = stationrc.common.dump_binary(
                 wfs_file=str(wfs_file),
                 read_header=False, read_pedestal=False)
-            wfs = np.array([ele['radiant_waveforms'] for ele in data["data"]['WAVEFORM']])
+            wfs = np.array([ele['radiant_waveforms'] for ele in data['WAVEFORM']])
 
         self.dic_run = {}
 
@@ -202,7 +202,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
         print(f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: '
               f'{vpp_mean:.2f} +- {vpp_err:.2f}')
 
-        return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, vpps, vrms, snrs, root_file
+        return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, vpps, vrms, snrs
 
 
     def fit_vpp_SG2LAB4D(self, amps_SG, dic):
@@ -310,7 +310,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
                     else:
 
                         vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, \
-                            vpps, vrms, snrs, file_name = self.get_vpp(
+                            vpps, vrms, snrs = self.get_vpp(
                                 ch_radiant, ch_radiant_clock, amp_pp, key_str)
 
                         ch_dic[key_str]['vpp_mean'] = vpp_mean
@@ -322,7 +322,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
                         ch_dic[key_str]['snrs'] = snrs
                         ch_dic[key_str]['vpps'] = vpps
                         ch_dic[key_str]['vrms'] = vrms
-                        ch_dic[key_str]['run'] = str(file_name)
+                        ch_dic[key_str]['run'] = str(wfs_file)
 
             dic_out = self.fit_vpp_SG2LAB4D(
                 amps_SG, ch_dic)
