@@ -73,7 +73,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         else:
             raise ValueError("Invalid channel number")
         return sg_ch, sg_ch_clock, radiant_ch_clock
-    
+
     def start_run(self, station, run_conf, delete_src=False, rootify=False):
         station.set_run_conf(run_conf)
         res = station.daq_run_start()
@@ -182,7 +182,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                     out = np.min(sg_amps) - 100
                 elif count_ones < 3:
                     out = np.max(sg_amps) + 100
-                else:            
+                else:
                     amps_zero = sg_amps[effs == 0]
                     amps_one = sg_amps[effs == 1]
                     out = (np.max(amps_zero) + np.min(amps_one)) / 2
@@ -193,7 +193,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
         print('next amp is:', int(out))
         return int(out)
 
-    def calc_trigger_eff_points(self, root_file, ch_test, ch_clock): #, run_length, sg_trigger_rate):
+    def calc_trigger_eff_points(self, root_file, ch_test, ch_clock):  #, run_length, sg_trigger_rate):
         self.dic_run = {}
         if os.path.exists(root_file):
             file_size = os.path.getsize(root_file)
@@ -217,7 +217,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 rf0_pulse = rf0_true & pulse_test_correct & clock_amp
 
                 print(f'{waveforms[rf0_pulse,ch_test,:].shape[0]} of approx. {self.conf["args"]["number_of_events"]} pulses triggered')
-                
+
                 trig_eff = waveforms[rf0_pulse,ch_test,:].shape[0] / (self.conf["args"]["number_of_events"])
                 if trig_eff > 1:
                     trig_eff = 1
@@ -226,10 +226,10 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                     trig_eff_err = 0.01
                 else:
                     trig_eff_err = np.sqrt(waveforms[rf0_pulse,ch_test,:].shape[0]) / (self.conf["args"]["number_of_events"])
-                
+
             print(f'trigger efficiency: {trig_eff:.2f} +- {trig_eff_err:.2f}')
             return trig_eff, trig_eff_err
-    
+
     def fit_trigger_curve(self, curve_dic):
         sorted_curve_dic = {k: v for k, v in sorted(curve_dic.items(), key=lambda item: float(item[0]))}
         dic_out = {}
@@ -249,7 +249,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
             popt = [None, None, None]
             pcov = None
 
-        dic_out = {'Vpp': vpp, 'trigger_effs': trig_effs, 'trigger_effs_err': trig_effs_err, 'fit_parameter': {                
+        dic_out = {'Vpp': vpp, 'trigger_effs': trig_effs, 'trigger_effs_err': trig_effs_err, 'fit_parameter': {
                 "halfway": popt[0],
                 "steepness": popt[1],
                 # "scaling": popt[0],
@@ -292,7 +292,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
 
             if self.conf["args"]["channel_setting_manual"]:
                 sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=False)
-                
+
                 print(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
                 confirmation_signal = None
                 while confirmation_signal != "":
@@ -303,7 +303,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                         sys.exit(1)
 
                 print("Confirmed! Signal channel connected.")
-                
+
                 print(f'SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
                 confirmation_clock = None
                 while confirmation_clock != "":
@@ -314,7 +314,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                         sys.exit(1)
 
                 print("Confirmed! Clock channel connected.")
-                
+
             else:
                 sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=True)
 
@@ -333,10 +333,10 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 sig_gen_amplitudes = self.conf['args']['amplitudes']
             for sg_current_amp in sig_gen_amplitudes:
                 print(f'running with {sg_current_amp} mVpp at Signal Generator')
-                self.awg.set_arb_waveform_amplitude_couple(self.conf['args']['waveform'], 
-                                            sg_ch, 
-                                            sg_ch_clock, 
-                                            sg_current_amp, 
+                self.awg.set_arb_waveform_amplitude_couple(self.conf['args']['waveform'],
+                                            sg_ch,
+                                            sg_ch_clock,
+                                            sg_current_amp,
                                             self.conf['args']['clock_amplitude'])
                 #self.awg.set_frequency_MHz(sg_ch, self.conf['args']['sg_trigger_rate'])
                 vpp = amplitude_conversion(sg_current_amp)
