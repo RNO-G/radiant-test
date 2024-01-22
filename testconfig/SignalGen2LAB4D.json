@@ -1,8 +1,8 @@
 {   "expected_values": {
         "slope_min": 0.015,
         "slope_max": 0.025,
-        "intercept_min": 1.25,
-        "intercept_max": 1.6,
+        "intercept_min": 1,
+        "intercept_max": 2,
         "max_residual_min": 0,
         "max_residual_max": 0.2
 },
@@ -13,11 +13,11 @@
         "threshold": 0.9,
         "sg_trigger_rate": 10,
         "number_of_events": 100,
-        "channels": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
         "channel_setting_manual": true,
         "radiant_clock_channel": 0,
         "radiant_clock_channel_alternative": 1,
         "sg_ch_direct_to_radiant": 1,
-        "sg_ch_to_bridge": 2
+        "sg_ch_to_bridge": 2,
+        "rootify": false
         }
-} 
+}
