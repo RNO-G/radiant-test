@@ -1,4 +1,4 @@
-{   
+{
 "expected_values": {
     "halfway_min": 5,
     "halfway_max": 10,
@@ -21,4 +21,4 @@
     "sg_ch_direct_to_radiant": 1,
     "sg_ch_to_bridge": 2
     }
-} 
+}
