@@ -59,8 +59,8 @@ def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
 
 
 class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
-    def __init__(self, *args, **kwargs):
-        super(SignalGen2LAB4D, self).__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super(SignalGen2LAB4D, self).__init__(**kwargs)
         self.awg = radiant_test.Keysight81160A(
             self.site_conf['signal_gen_ip_address'])
         try:
@@ -210,6 +210,7 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
         snr_mean = np.array([dic[key]["snr_mean"] for key in dic], dtype=float)
 
         mask = ~np.isnan(snr_mean)  # None in float array is a nan
+        snr_mean = snr_mean[mask]
         snr_err = np.array([dic[key]["snr_err"] for key in dic])[mask]
 
         try:
@@ -307,6 +308,8 @@ class SignalGen2LAB4D(radiant_test.RADIANTChannelTest):
                     if os.path.getsize(wfs_file) / 1024 < 5:  # kB
                         logging.warning('File too small, probably no trigger')
                         ch_dic[key_str]['run'] = str(wfs_file)
+                        ch_dic[key_str]["snr_mean"] = None
+                        ch_dic[key_str]["snr_err"] = None
                     else:
 
                         vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, \

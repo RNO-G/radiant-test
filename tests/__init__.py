@@ -67,3 +67,13 @@ try:
     from .SignalGen2LAB4D import SignalGen2LAB4D
 except ImportError as e:
     print(f"SignalGen2LAB4D not available. {e}")
+
+try:
+    from .AUXTriggerResponse import AUXTriggerResponse
+except ImportError as e:
+    print(f"AUXTriggerResponse not available. {e}")
+
+try:
+    from .FrontEndResponse import FrontEndResponse
+except ImportError as e:
+    print(f"FrontEndResponse not available. {e}")

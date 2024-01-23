@@ -12,8 +12,8 @@ import re
 
 
 class FrontEndResponse(radiant_test.RADIANTChannelTest):
-    def __init__(self):
-        super(FrontEndResponse, self).__init__()
+    def __init__(self, **kwargs):
+        super(FrontEndResponse, self).__init__(**kwargs)
 
     def get_root_files(self, search_dir, channel):
         # ulb_id = 'ULB-005'

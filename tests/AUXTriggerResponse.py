@@ -31,9 +31,9 @@ def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
         vpps.append(vpp)
     return vpps, indices
 
-class AUXTriggerResponse(radiant_test.RADIANTTest):
-    def __init__(self):
-        super(AUXTriggerResponse, self).__init__()
+class AUXTriggerResponse(radiant_test.RADIANTChannelTest):
+    def __init__(self, **kwargs):
+        super(AUXTriggerResponse, self).__init__(**kwargs)
         self.awg = radiant_test.Keysight81160A(self.site_conf['signal_gen_ip_address'])
         try:
             self.arduino = radiant_test.ArduinoNano()
@@ -291,7 +291,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
             logging.info(f"Testing channel {ch_radiant}")
 
             if self.conf["args"]["channel_setting_manual"]:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=False)
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=False)
 
                 print(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
                 confirmation_signal = None
@@ -316,7 +316,7 @@ class AUXTriggerResponse(radiant_test.RADIANTTest):
                 print("Confirmed! Clock channel connected.")
 
             else:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, arduino=True)
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=True)
 
             thresh = self.conf['args']['threshold']
             # sg_current_amp = self.conf['args']['sg_start_amp']
