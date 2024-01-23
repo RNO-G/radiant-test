@@ -29,16 +29,16 @@ class SigGenTest(RADIANTChannelTest):
     def finalize(self, result_dir="results"):
         super(SigGenTest, self).finalize(result_dir)
 
-    def route_signal_to_channel(self, ch):
-        n = 0
-        while True:
-            try:
-                self.arduino.route_signal_to_channel(ch)
-            except serial.serialutil.SerialException as e:
-                if n > 5:
-                    raise serial.serialutil.SerialException(e)
+    # def route_signal_to_channel(self, ch):
+    #     n = 0
+    #     while True:
+    #         try:
+    #             self.arduino.route_signal_to_channel(ch)
+    #         except serial.serialutil.SerialException as e:
+    #             if n > 5:
+    #                 raise serial.serialutil.SerialException(e)
 
-            n += 1
+    #         n += 1
 
     def get_channel_settings(self, radiant_ch, use_arduino=True):
         """
@@ -51,14 +51,14 @@ class SigGenTest(RADIANTChannelTest):
             radiant_ch_clock = self.conf['args']['radiant_clock_channel']
             sg_ch = self.conf['args']['sg_ch_to_bridge']
             if use_arduino:
-                self.route_signal_to_channel(radiant_ch)
+                self.arduino.route_signal_to_channel(radiant_ch)
 
         elif radiant_ch == self.conf['args']['radiant_clock_channel']:
             sg_ch_clock = self.conf['args']['sg_ch_to_bridge']
             radiant_ch_clock = self.conf['args']['radiant_clock_channel_alternative']
             sg_ch = self.conf['args']['sg_ch_direct_to_radiant']
             if use_arduino:
-                self.route_signal_to_channel(radiant_ch_clock)
+                self.arduino.route_signal_to_channel(radiant_ch_clock)
         else:
             raise ValueError("Invalid channel number")
 
