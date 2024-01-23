@@ -13,6 +13,7 @@ import time
 import pathlib
 from radiant_test.radiant_helper import uid_to_name
 import sys
+from radiant_test.util import confirm_or_abort
 
 def hill_eq(x, x0, p):
     return 1 / (1 + (x0 / x)**p)
@@ -31,14 +32,9 @@ def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
         vpps.append(vpp)
     return vpps, indices
 
-class AUXTriggerResponse(radiant_test.RADIANTChannelTest):
+class AUXTriggerResponse(radiant_test.SigGenTest):
     def __init__(self, **kwargs):
         super(AUXTriggerResponse, self).__init__(**kwargs)
-        self.awg = radiant_test.Keysight81160A(self.site_conf['signal_gen_ip_address'])
-        try:
-            self.arduino = radiant_test.ArduinoNano()
-        except:
-            logging.info("Arduino not connected")
 
     def load_amplitude_conversion(self, channel):
         result_path = 'results/'
@@ -55,69 +51,6 @@ class AUXTriggerResponse(radiant_test.RADIANTChannelTest):
             return x*result_dict['run']['measurements'][str(channel)]['measured_value']['fit_parameter']['slope'] + result_dict['run']['measurements'][str(channel)]['measured_value']['fit_parameter']['intercept']
 
         return amplitude_conversion
-
-    def get_channel_settings(self, radiant_ch, use_arduino=True):
-        if radiant_ch != self.conf['args']['radiant_clock_channel']:
-            sg_ch_clock = self.conf['args']['sg_ch_direct_to_radiant']
-            radiant_ch_clock = self.conf['args']['radiant_clock_channel']
-            sg_ch = self.conf['args']['sg_ch_to_bridge']
-            if use_arduino:
-                self.arduino.route_signal_to_channel(radiant_ch)
-
-        elif radiant_ch == self.conf['args']['radiant_clock_channel']:
-            sg_ch_clock = self.conf['args']['sg_ch_to_bridge']
-            radiant_ch_clock = self.conf['args']['radiant_clock_channel_alternative']
-            sg_ch = self.conf['args']['sg_ch_direct_to_radiant']
-            if use_arduino:
-                self.arduino.route_signal_to_channel(radiant_ch_clock)
-        else:
-            raise ValueError("Invalid channel number")
-        return sg_ch, sg_ch_clock, radiant_ch_clock
-
-    def start_run(self, station, run_conf, delete_src=False, rootify=False):
-        station.set_run_conf(run_conf)
-        res = station.daq_run_start()
-        # start pulsing
-        time.sleep(15)
-        self.awg.send_n_software_triggers(n_trigger=self.conf["args"]["number_of_events"], trigger_rate=self.conf["args"]["sg_trigger_rate"])
-
-        station.daq_run_wait()
-        station.retrieve_data(res["data_dir"], delete_src=delete_src)
-        data_dir = (
-            pathlib.Path(station.station_conf["daq"]["data_directory"])
-            / pathlib.Path(res["data_dir"]).parts[-1]
-        )
-        if rootify:
-            stationrc.common.rootify(
-                data_dir,
-                station.station_conf["daq"]["mattak_directory"],
-            )
-        return data_dir
-
-    def initialize_config(self, channel_test, threshold):
-        print('trigger set on channel', channel_test)
-        run = stationrc.remote_control.Run(self.device)
-        station = self.device
-        for ch in range(24):
-            run.run_conf.radiant_threshold_initial(ch, threshold)
-
-        run.run_conf.radiant_load_thresholds_from_file(False)
-        run.run_conf.radiant_servo_enable(False)
-
-        run.run_conf.radiant_trigger_rf0_mask([int(channel_test)])
-        run.run_conf.radiant_trigger_rf0_num_coincidences(1)
-        run.run_conf.radiant_trigger_rf0_enable(True)
-
-        run.run_conf.radiant_trigger_rf1_enable(False)
-        run.run_conf.radiant_trigger_soft_enable(False)  # no forced trigger
-        run.run_conf.flower_device_required(False)
-        run.run_conf.flower_trigger_enable(False)
-        run_length = self.conf["args"]["number_of_events"] * 1/self.conf["args"]["sg_trigger_rate"] + 20 # 2 buffer seconds
-        run.run_conf.run_length(run_length)
-        run.run_conf.comment("AUX Trigger Response Test")
-        # self.data_dir = run.start(delete_src=True, rootify=True)
-        self.data_dir = self.start_run(station, run.run_conf, delete_src=True, rootify=True)
-        print(f'start run stored at {self.data_dir}')
 
     def get_vpp_from_clock_trigger(self, root_file, ch, ch_clock):
             self.dic_run = {}
@@ -294,24 +227,11 @@ class AUXTriggerResponse(radiant_test.RADIANTChannelTest):
                 sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=False)
 
                 print(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
-                confirmation_signal = None
-                while confirmation_signal != "":
-                    try:
-                        confirmation_signal = input("Press Enter to confirm: ")
-                    except KeyboardInterrupt:
-                        print("Keyboard interrupt. Exiting...")
-                        sys.exit(1)
-
+                confirm_or_abort()
                 print("Confirmed! Signal channel connected.")
 
                 print(f'SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
-                confirmation_clock = None
-                while confirmation_clock != "":
-                    try:
-                        confirmation_clock = input("Press Enter to confirm: ")
-                    except KeyboardInterrupt:
-                        print("Keyboard interrupt. Exiting...")
-                        sys.exit(1)
+                confirm_or_abort()
 
                 print("Confirmed! Clock channel connected.")
 
@@ -320,51 +240,57 @@ class AUXTriggerResponse(radiant_test.RADIANTChannelTest):
 
             thresh = self.conf['args']['threshold']
             # sg_current_amp = self.conf['args']['sg_start_amp']
-            points_on_curve = 0
-            total_points = 0
 
             amplitude_conversion = self.load_amplitude_conversion(ch_radiant)
 
             self.dic_curve = {}
-            # while True:
+
             if ch_radiant == self.conf['args']['radiant_clock_channel']:
                 sig_gen_amplitudes = self.conf['args']['amplitudes_clock']
             else:
                 sig_gen_amplitudes = self.conf['args']['amplitudes']
+
             for sg_current_amp in sig_gen_amplitudes:
-                print(f'running with {sg_current_amp} mVpp at Signal Generator')
-                self.awg.set_arb_waveform_amplitude_couple(self.conf['args']['waveform'],
-                                            sg_ch,
-                                            sg_ch_clock,
-                                            sg_current_amp,
-                                            self.conf['args']['clock_amplitude'])
-                #self.awg.set_frequency_MHz(sg_ch, self.conf['args']['sg_trigger_rate'])
+                print(f'Running with {sg_current_amp} mVpp at Signal Generator')
+                self.awg.set_arb_waveform_amplitude_couple(
+                    self.conf['args']['waveform'], sg_ch, sg_ch_clock, sg_current_amp,
+                    self.conf['args']['clock_amplitude'])
+
                 vpp = amplitude_conversion(sg_current_amp)
                 vpp_str = f"{vpp:.2f}"
                 self.dic_curve[vpp_str] = {}
-                self.initialize_config(ch_radiant, thresh)
-                root_file_channel_trigger = self.data_dir/"combined.root"
-                trig_eff_point, trig_eff_err = self.calc_trigger_eff_points(root_file_channel_trigger, ch_radiant, ch_radiant_clock)
+
+                run_length = self.conf["args"]["number_of_events"] * 1/self.conf["args"]["sg_trigger_rate"] + 20 # 2 buffer seconds
+
+                run = self.initialize_config(ch_radiant, thresh,
+                                             run_length=run_length,
+                                             comment="AUX Trigger Response Test")
+
+                self.logger.info('Start run ....')
+                daq_run = self.start_run(run.run_conf, start_up_time=15)
+
+                self.logger.info('Send triggers ....')
+                self.awg.send_n_software_triggers(
+                    n_trigger=self.conf["args"]["number_of_events"], trigger_rate=self.conf["args"]["sg_trigger_rate"])
+
+                self.data_dir = self.finish_run(daq_run, delete_src=True)
+                self.logger.info(f'Stored run at {self.data_dir}')
+
+                stationrc.common.rootify(
+                    self.data_dir, self.device.station_conf["daq"]["mattak_directory"])
+
+
+                root_file_channel_trigger = self.data_dir / "combined.root"
+                trig_eff_point, trig_eff_err = self.calc_trigger_eff_points(
+                    root_file_channel_trigger, ch_radiant, ch_radiant_clock)
+
                 self.dic_curve[vpp_str]['trig_eff'] = round(trig_eff_point, 2)
                 self.dic_curve[vpp_str]['trig_eff_err'] = round(trig_eff_err, 2)
                 self.dic_curve[vpp_str]['sg_amp'] = sg_current_amp
-                # if 0 < trig_eff_point < 1:
-                #     points_on_curve += 1
-                # total_points += 1
-
-                # if points_on_curve >= self.conf['args']['points_on_slope'] and total_points > 4:
-                #     break
-
-                # if total_points > 10:
-                #     break
-
-                # sg_current_amp = self.get_next_amp(self.dic_curve)
-                # if sg_current_amp > 1400:
-                #     break
 
             dic_out = self.fit_trigger_curve(self.dic_curve)
             data_buffer = self.eval_curve_results(ch_radiant, dic_out)
-            with open(f'/scratch/rno-g/radiant_data/AUXTrigger_Response_buffer.json', 'w') as f:
+            with open('/scratch/rno-g/radiant_data/AUXTrigger_Response_buffer.json', 'w') as f:
                 json.dump(data_buffer, f)
 
         self.awg.output_off(sg_ch)
