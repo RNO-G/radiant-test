@@ -4,21 +4,21 @@
     "halfway_max": 10,
     "steepness_min": 0.1,
     "steepness_max": 2
-    },
+},
 "args": {
+    "channels": [12, 13, 14, 15, 16, 17, 18, 19, 20],
     "waveform": "examples/template2_wo_hardwareResponse.json",
     "clock_amplitude": 900,
     "threshold": 0.92,
     "number_of_events": 100,
     "sg_trigger_rate": 10,
-    "amplitudes": [100, 150, 175, 200, 250, 300, 400],
+    "amplitudes": [100, 200, 250, 275, 300, 350, 400],
     "amplitudes_clock": [150, 200, 250, 300, 400],
-    "initial_guess_fit": [8, 1.2],
     "channel_setting_manual": false,
-    "use_arduino": true,
+    "initial_guess_fit": [8, 1.2],
     "radiant_clock_channel": 1,
     "radiant_clock_channel_alternative": 3,
     "sg_ch_direct_to_radiant": 1,
     "sg_ch_to_bridge": 2
-    }
 }
+} 
