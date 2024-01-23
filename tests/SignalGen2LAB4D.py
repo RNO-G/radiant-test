@@ -59,7 +59,8 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
             wfs = np.array([ele['radiant_waveforms'] for ele in data['WAVEFORM']])
 
         self.dic_run = {}
-
+        n_events = len(wfs)
+        self.logger.info(f"Found {n_events} events")
         vpps = []
         vrms = []
         snrs = []
@@ -108,7 +109,7 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
         print(f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: '
               f'{vpp_mean:.2f} +- {vpp_err:.2f}')
 
-        return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, vpps, vrms, snrs
+        return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, vpps, vrms, snrs, n_events
 
 
     def fit_vpp_SG2LAB4D(self, amps_SG, dic):
@@ -228,7 +229,7 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                     else:
 
                         vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, \
-                            vpps, vrms, snrs = self.get_vpp(
+                            vpps, vrms, snrs, n_events = self.get_vpp(
                                 ch_radiant, ch_radiant_clock, amp_pp, key_str)
 
                         ch_dic[key_str]['vpp_mean'] = vpp_mean
@@ -240,6 +241,7 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                         ch_dic[key_str]['snrs'] = snrs
                         ch_dic[key_str]['vpps'] = vpps
                         ch_dic[key_str]['vrms'] = vrms
+                        ch_dic[key_str]['n_events'] = n_events
                         ch_dic[key_str]['run'] = str(wfs_file)
 
             dic_out = self.fit_vpp_SG2LAB4D(
