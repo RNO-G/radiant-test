@@ -54,9 +54,9 @@ class SignalGen2LAB4Dv2(radiant_test.SigGenTest):
         vrms = []
         snrs = []
         snr_pure_noise = []
-        for i, wf in enumerate(wfs[:, 0, 0]):
-            all_pps, indices = calc_sliding_vpp(wfs[i, ch, :], start_index=1400, end_index=1900)
-            all_pps_noise, indices_noise = calc_sliding_vpp(wfs[i, ch, :], start_index=50, end_index=800)
+        for i, wf in enumerate(wfs):
+            all_pps, indices = calc_sliding_vpp(wf[ch], start_index=1400, end_index=1900)
+            all_pps_noise, indices_noise = calc_sliding_vpp(wf[ch], start_index=50, end_index=800)
             max_vpp = np.max(all_pps)
             max_vpp_noise = np.max(all_pps_noise)
             vpps.append(float(max_vpp))
@@ -69,7 +69,7 @@ class SignalGen2LAB4Dv2(radiant_test.SigGenTest):
                     fig, ax = plt.subplots()
                     ax.plot(indices_noise, indices_noise, marker='*',
                             label=f'Vpp: {np.max(indices_noise):.2f} mV')
-                    ax.plot(wfs[i, ch, :], marker='+',
+                    ax.plot(wf[ch], marker='+',
                             label=f'Vrms: {vrm:.2f} mV')
                     # plt.vlines(sample_index, -max_vpp*0.5, max_vpp*0.5, color='r', label=f'index: {sample_index}')
                     ax.plot(indices, all_pps, marker='*',
@@ -180,8 +180,8 @@ class SignalGen2LAB4Dv2(radiant_test.SigGenTest):
                 sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=True)
 
             amps_SG = self.conf['args']['amplitudes']
-            start_up_time = 15
-            time_between_amps = 2
+            start_up_time = 10
+            time_between_amps = 1
 
             run_length = start_up_time + (self.conf["args"]["number_of_events"] * \
                 (1 / self.conf["args"]["sg_trigger_rate"]) + \
@@ -228,32 +228,52 @@ class SignalGen2LAB4Dv2(radiant_test.SigGenTest):
                 # events, channels, samples
                 wfs_all_amps = np.array(data['waveforms/radiant_data[24][2048]'])
                 t = np.array(data['header/readout_time'])
+                t_trig = np.array(data['header/trigger_time'])
                 evt_n = np.array(data['header/event_number'])
 
                 sort = np.argsort(t)
                 wfs_all_amps = wfs_all_amps[sort]
                 t = t[sort]
+                t_trig = t_trig[sort]
                 evt_n = evt_n[sort]
+                t_diff = np.diff(t)
 
                 if not np.all(np.diff(evt_n) == 1):
                     self.logger.error("Events seem to be not ordered in time correctly")
                     print(evt_n)
                     print(t)
-                    print(np.diff(t))
+                    print(t_diff)
 
-                if np.sum(np.diff(t) > 1) >= len(amps_SG):
-                    self.logger.error(f"Found to many large delta T {np.sum(np.diff(t) > 1)}")
-                    print(np.diff(t))
+                dt_break = 2 / self.conf["args"]["sg_trigger_rate"]
+
+                if np.sum(t_diff > dt_break) != len(amps_SG):
+                    self.logger.error(f"Found to few/many large delta T {np.sum(t_diff > dt_break)}")
+                    print(np.arange(len(t_diff))[t_diff > dt_break])
+                    print(t_diff[t_diff > dt_break])
 
                 wfs_per_amp = [[] for _ in range(len(amps_SG))]
+
+                # Some time the first events seems to have triggered much before the others
+                if t_diff[0] > dt_break:
+                    self.logger.warn(f"Drop the first waveform. t_diff = {t_diff[0]:.2f}s")
+                    wfs_all_amps = wfs_all_amps[1:]
+                    t = t[1:]
+                    t_diff = t_diff[1:]
+
                 wfs_per_amp[0].append(wfs_all_amps[0])
+
                 idx = 0
-                for wf, dt in zip(wfs_all_amps[1:], np.diff(t)):
-                    if dt > 1:
+                for wf, dt in zip(wfs_all_amps[1:], t_diff):
+                    if dt > dt_break:
                         idx += 1
                         if idx >= len(amps_SG):
-                            self.logger.error(f"Found to many large delta T ({np.sum(np.diff(t) > 1)}): {np.diff(t)}")
-                    wfs_per_amp[idx].append(wf)
+                            continue
+
+                    elif dt < 1 / 2 / self.conf["args"]["sg_trigger_rate"]:
+                        self.logger.warning("dt pretty small")
+
+                    if idx < len(amps_SG):
+                        wfs_per_amp[idx].append(wf)
             else:
                 wfs_files = glob.glob(str(self.data_dir / "waveforms/*wf.dat*"))
                 hdr_files = glob.glob(str(self.data_dir / "header/*hd.dat*"))
