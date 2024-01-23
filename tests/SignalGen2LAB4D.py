@@ -223,7 +223,7 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                     if os.path.getsize(wfs_file) / 1024 < 5:  # kB
                         logging.warning('File too small, probably no trigger')
 
-                        ch_dic[key_str]['run'] = str(wfs_file)
+                        ch_dic[key_str]['run'] = str(self.data_dir)
                         ch_dic[key_str]["snr_mean"] = None
                         ch_dic[key_str]["snr_err"] = None
                     else:
@@ -242,18 +242,16 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                         ch_dic[key_str]['vpps'] = vpps
                         ch_dic[key_str]['vrms'] = vrms
                         ch_dic[key_str]['n_events'] = n_events
-                        ch_dic[key_str]['run'] = str(wfs_file)
+                        ch_dic[key_str]['run'] = str(self.data_dir)
 
-            dic_out = self.fit_vpp_SG2LAB4D(
-                amps_SG, ch_dic)
-
+            dic_out = self.fit_vpp_SG2LAB4D(amps_SG, ch_dic)
             passed = self.eval_fit_result(ch_radiant, dic_out)
             data_buffer = make_serializable(dic_out)
             self.add_measurement(f"{ch_radiant}", data_buffer, passed=passed)
 
-            # This is necessary that some following tests (AUXTriggerResponse) can use the data!
-            with open(f'{self.device.station_conf["daq"]["data_directory"]}/SignalGen2LAB4D_buffer.json', 'w') as f:
-                json.dump(data_buffer, f)
+            # This is necessary that some following tests can use the data!
+            # with open(f'{self.device.station_conf["daq"]["data_directory"]}/SignalGen2LAB4D_buffer.json', 'w') as f:
+            #     json.dump(data_buffer, f)
 
         # turn off the surface amp
         self.device.surface_amps_power_off()
