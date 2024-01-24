@@ -4,10 +4,11 @@ import sys
 import radiant_test
 import matplotlib.pyplot as plt
 from radiant_test.radiant_helper import uid_to_name
+from radiant_test.util import confirm_or_abort
 
 class Switch24(radiant_test.SigGenTest):
-    def __init__(self):
-        super(Switch24, self).__init__()
+    def __init__(self, **kwargs):
+        super(Switch24, self).__init__(**kwargs)
 
     def run(self):
         super(Switch24, self).run()
@@ -19,49 +20,38 @@ class Switch24(radiant_test.SigGenTest):
 
         # loop over all channels
         for ch_radiant in self.conf["args"]["channels"]:
-            print(f"Testing channel {ch_radiant}")
+            self.logger.info(f"Testing channel {ch_radiant}")
             if self.conf["args"]["channel_setting_manual"]:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=self.conf['args']['use_arduino'])
-                
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
+                    ch_radiant, use_arduino=self.conf['args']['use_arduino'])
+
                 print(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
-                confirmation_signal = None
-                while confirmation_signal != "":
-                    try:
-                        confirmation_signal = input("Press Enter to confirm: ")
-                    except KeyboardInterrupt:
-                        print("Keyboard interrupt. Exiting...")
-                        sys.exit(1)
+                confirm_or_abort()
 
-                print("Confirmed! Signal channel connected.")
-                
-                print(f'SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
-                confirmation_clock = None
-                while confirmation_clock != "":
-                    try:
-                        confirmation_clock = input("Press Enter to confirm: ")
-                    except KeyboardInterrupt:
-                        print("Keyboard interrupt. Exiting...")
-                        sys.exit(1)
+                print(f'Clock: SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
+                confirm_or_abort()
 
-                print("Confirmed! Clock channel connected.")
-                
             else:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=self.conf['args']['use_arduino'])
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
+                    ch_radiant, use_arduino=self.conf['args']['use_arduino'])
 
             self.run_channel(ch_radiant)
 
         # turn off the signal gen
         self.awg.output_off(1)
         self.awg.output_off(2)
-                
+
         self.plot_all(self.result_dict)
         plt.show()
 
     def run_channel(self, channel):
         # take some sine waves -> fit the sine waves
         data = self.device.daq_record_data(
-            num_events=self.conf['args']['number_of_events'], force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'], read_header=True, use_uart=self.conf["args"]["use_uart"]
+            num_events=self.conf['args']['number_of_events'],
+            force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'],
+            read_header=True, use_uart=self.conf["args"]["use_uart"]
         )
+
         events = data["data"]["WAVEFORM"]
         headers = data["data"]["HEADER"]
 
@@ -79,11 +69,15 @@ class Switch24(radiant_test.SigGenTest):
                 upper_buffer = True
                 waveforms[1] = evt["radiant_waveforms"][channel]
 
+            if lower_buffer and upper_buffer:
+                break
+
         if waveforms[0] is None or waveforms[1] is None:
             print('Not events are taken to test both buffers.')
 
         # fit both events in the same fit_waveforms function
         data = self._fit_waveforms(wvfs=waveforms)
+
         # data = self._fit_waveforms(wvf=events[0]["radiant_waveforms"][channel])
         self.add_measurement(f"{channel}", data, passed=self._check_fit(data))
 
@@ -151,8 +145,8 @@ class Switch24(radiant_test.SigGenTest):
             data[f"fit_offset_{window_label[iwvf]}"] = popt[3]
             data[f"fit_avg_residual_{window_label[iwvf]}"] = avg_residual
 
-        return 
-    
+        return
+
     def plot_channel(self, ax, data, ch, window_label):
         data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
         y = np.asarray(data_ch[f"waveform_{window_label}"])
@@ -173,7 +167,7 @@ class Switch24(radiant_test.SigGenTest):
         ax.legend(loc="upper right")
 
     def plot_all(self, data):
-        # Plot to PDF    
+        # Plot to PDF
         ulb_id = uid_to_name(self.result_dict['dut_uid'])
         fname += f'{ulb_id}_Switch24_{self.config["args"]["frequency"]}MHz.pdf'
 
@@ -191,7 +185,7 @@ class Switch24(radiant_test.SigGenTest):
                 ax.set_ylabel("voltage / ADC counts")
             for ax in axs.T:
                 ax[-1].set_xlabel("time / ns")
-            
+
         fig2.tight_layout()
         plt.savefig(fname.replace(".pdf", "_all_channels.pdf"))
         return fig2
