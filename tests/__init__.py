@@ -64,6 +64,11 @@ except ImportError as e:
     print(f"BiasScan not available. {e}")
 
 try:
+    from .Switch24 import Switch24
+except ImportError as e:
+    print(f"Switch24 not available. {e}")
+
+try:
     from .SignalGen2LAB4D import SignalGen2LAB4D
 except ImportError as e:
     print(f"SignalGen2LAB4D not available. {e}")
@@ -72,7 +77,6 @@ try:
     from .SignalGen2LAB4Dv2 import SignalGen2LAB4Dv2
 except ImportError as e:
     print(f"SignalGen2LAB4D not available. {e}")
-
 
 try:
     from .AUXTriggerResponse import AUXTriggerResponse
