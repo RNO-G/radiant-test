@@ -172,7 +172,7 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
         if passed:
             self.logger.info(f' ----> Channel {channel} passed!')
         else:
-            self.logger.warning()(f' ----> Channel {channel} failed!')
+            self.logger.warning(f' ----> Channel {channel} failed!')
 
         return passed
 
