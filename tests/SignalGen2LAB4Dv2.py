@@ -170,7 +170,7 @@ class SignalGen2LAB4Dv2(radiant_test.SigGenTest):
                 channel_setting_manual=self.conf["args"]["channel_setting_manual"])
 
             amps_SG = self.conf['args']['amplitudes']
-            start_up_time = 10
+            start_up_time = 15
             time_between_amps = 1
 
             run_length = start_up_time + (self.conf["args"]["number_of_events"] * \
@@ -236,7 +236,7 @@ class SignalGen2LAB4Dv2(radiant_test.SigGenTest):
 
                 dt_break = 2 / self.conf["args"]["sg_trigger_rate"]
 
-                if np.sum(t_diff > dt_break) != len(amps_SG):
+                if np.sum(t_diff > dt_break) != len(amps_SG) - 1:
                     self.logger.error(f"Found to few/many large delta T {np.sum(t_diff > dt_break)}")
                     print(np.arange(len(t_diff))[t_diff > dt_break])
                     print(t_diff[t_diff > dt_break])
@@ -294,6 +294,7 @@ class SignalGen2LAB4Dv2(radiant_test.SigGenTest):
                     vpps, vrms, snrs = self.get_vpp(
                         wfs, ch_radiant, ch_radiant_clock, amp_pp, key_str)
 
+                ch_dic[key_str]['n_events'] = len(wfs)
                 ch_dic[key_str]['vpp_mean'] = vpp_mean
                 ch_dic[key_str]['vpp_err'] = vpp_err
                 ch_dic[key_str]['vrms_mean'] = vrms_mean

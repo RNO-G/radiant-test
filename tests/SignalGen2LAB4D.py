@@ -200,12 +200,16 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                     self.conf['args']['waveform'], sg_ch, sg_ch_clock, amp_pp,
                     self.conf['args']['clock_amplitude'])
 
+                start_up_time = 15
+                run_length = (self.conf["args"]["number_of_events"] * \
+                              (1 / self.conf["args"]["sg_trigger_rate"])) + start_up_time
+
                 run = self.initialize_config(ch_radiant_clock, self.conf['args']['threshold'],
-                                             readout_channel=ch_radiant,
+                                             readout_channel=ch_radiant, run_length=run_length,
                                              comment="Signal Gen 2 LAB4D Amplitude Test")
 
                 self.logger.info('Start run ....')
-                daq_run = self.start_run(run.run_conf, start_up_time=10)
+                daq_run = self.start_run(run.run_conf, start_up_time=start_up_time)
 
                 self.logger.info('Send triggers ....')
                 self.awg.send_n_software_triggers(
