@@ -94,8 +94,8 @@ class SigGenTest(RADIANTChannelTest):
         run.run_conf.radiant_load_thresholds_from_file(False)
         run.run_conf.radiant_servo_enable(False)
 
-        if readout_channel is not None:
-            run.run_conf.radiant_readout_mask([int(readout_channel)])
+        #if readout_channel is not None:
+        #    run.run_conf.radiant_readout_mask([int(readout_channel)])
 
         run.run_conf.radiant_trigger_rf0_mask([int(channel_trigger)])
         run.run_conf.radiant_trigger_rf0_num_coincidences(1)
