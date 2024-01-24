@@ -106,8 +106,9 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
         snr_err = np.std(snrs)
         snr_pure_noise_mean = np.mean(snr_pure_noise)
 
-        print(f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: '
-              f'{vpp_mean:.2f} +- {vpp_err:.2f}')
+        self.logger.info(
+            f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: '
+            f'{vpp_mean:.2f} +- {vpp_err:.2f}')
 
         return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, vpps, vrms, snrs, n_events
 
@@ -198,13 +199,12 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                 ch_dic[key_str] = defaultdict(None)
                 ch_dic[key_str]['amp'] = float(amp_pp)
 
-                t0 = time.time()
                 self.awg.set_arb_waveform_amplitude_couple(
                     self.conf['args']['waveform'], sg_ch, sg_ch_clock, amp_pp,
                     self.conf['args']['clock_amplitude'])
-                print(time.time() - t0)
 
                 run = self.initialize_config(ch_radiant_clock, self.conf['args']['threshold'],
+                                             readout_channel=ch_radiant,
                                              comment="Signal Gen 2 LAB4D Amplitude Test")
 
                 self.logger.info('Start run ....')

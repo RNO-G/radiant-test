@@ -85,7 +85,7 @@ class SigGenTest(RADIANTChannelTest):
 
         return data_dir
 
-    def initialize_config(self, channel_trigger, threshold, run_length=None, comment=""):
+    def initialize_config(self, channel_trigger, threshold, run_length=None, comment="", readout_channel=None):
         self.logger.info(f'trigger set on channel {channel_trigger}')
         run = stationrc.remote_control.Run(self.device)
         for ch in range(24):
@@ -93,6 +93,9 @@ class SigGenTest(RADIANTChannelTest):
 
         run.run_conf.radiant_load_thresholds_from_file(False)
         run.run_conf.radiant_servo_enable(False)
+
+        if readout_channel is not None:
+            run.run_conf.radiant_readout_mask([int(readout_channel)])
 
         run.run_conf.radiant_trigger_rf0_mask([int(channel_trigger)])
         run.run_conf.radiant_trigger_rf0_num_coincidences(1)
