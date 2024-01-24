@@ -84,22 +84,23 @@ class Switch24(radiant_test.SigGenTest):
 
     def _check_fit(self, data):
         window_label=['lower_buffer', 'higher_buffer']
+        exp_v = self.conf["expected_values"]
         for wl in window_label:
-            if (
-                data[f"fit_amplitude_{wl}"] < self.conf["expected_values"]["amplitude_min"]
-                or data[f"fit_amplitude_{wl}"] > self.conf["expected_values"]["amplitude_max"]
-            ):
+            if not (exp_v["amplitude_min"] < data[f"fit_amplitude_{wl}"] < exp_v["amplitude_max"]):
                 return False
+
             frequency_deviation = (
-                np.abs(data[f"fit_frequency_{wl}"] - self.conf["args"]["frequency"])
-                / self.conf["args"]["frequency"]
-            )
-            if frequency_deviation > self.conf["expected_values"]["frequency_deviation"]:
+                np.abs(data[f"fit_frequency_{wl}"] - self.conf["args"]["frequency"]) / self.conf["args"]["frequency"])
+
+            if frequency_deviation > exp_v["frequency_deviation"]:
                 return False
-            if np.abs(data[f"fit_offset_{wl}"]) > self.conf["expected_values"]["offset_max"]:
+
+            if np.abs(data[f"fit_offset_{wl}"]) > exp_v["offset_max"]:
                 return False
-            if data[f"fit_avg_residual_{wl}"] > self.conf["expected_values"]["avg_residual_max"]:
+
+            if data[f"fit_avg_residual_{wl}"] > exp_v["avg_residual_max"]:
                 return False
+
         return True
 
     def _fit_waveforms(self, wvfs):
@@ -145,7 +146,7 @@ class Switch24(radiant_test.SigGenTest):
             data[f"fit_offset_{window_label[iwvf]}"] = popt[3]
             data[f"fit_avg_residual_{window_label[iwvf]}"] = avg_residual
 
-        return
+        return data
 
     def plot_channel(self, ax, data, ch, window_label):
         data_ch = data["run"]["measurements"][f"{ch}"]["measured_value"]
