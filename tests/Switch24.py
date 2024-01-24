@@ -5,15 +5,9 @@ import radiant_test
 import matplotlib.pyplot as plt
 from radiant_test.radiant_helper import uid_to_name
 
-class Switch24(radiant_test.RADIANTChannelTest):
+class Switch24(radiant_test.SigGenTest):
     def __init__(self):
         super(Switch24, self).__init__()
-        self.awg = radiant_test.Keysight81160A(self.site_conf['signal_gen_ip_address'])
-        try:
-            self.arduino = radiant_test.ArduinoNano()
-        except:
-            print("WARNING: Arduino not connected")
-            self.arduino = None
 
     def run(self):
         super(Switch24, self).run()
