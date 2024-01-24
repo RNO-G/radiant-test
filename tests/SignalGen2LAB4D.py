@@ -4,15 +4,12 @@ import matplotlib.pyplot as plt
 import uproot
 import os
 from scipy.optimize import curve_fit
-import json
 
 import radiant_test
 import stationrc
-import pathlib
 import radiant_test.radiant_helper as rh
 from radiant_test.util import make_serializable, check_param, confirm_or_abort
 import time
-import sys
 from collections import defaultdict
 
 
@@ -75,6 +72,7 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
             vrms.append(vrm)
             snrs.append(max_vpp / (2 * vrm))
             snr_pure_noise.append(max_vpp_noise / (2 * vrm))
+
             if plot:
                 if i == 5:
                     fig, ax = plt.subplots()
@@ -89,9 +87,8 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                     # plt.xlim(1400, 1900)
                     # plt.ylim(-400, 400)
                     ax.legend()
-                    dir = (f'/home/rnog/radiant-test/scripts/plots/'
-                        f'{rh.uid_to_name(self.result_dict["dut_uid"])}_'
-                        f'{self.name}_{self.result_dict["initialize"]["timestamp"]}')
+                    dir = (f'{str(self.data_dir)}/{rh.uid_to_name(self.result_dict["dut_uid"])}_'
+                           f'{self.name}_{self.result_dict["initialize"]["timestamp"]}')
 
                     if not os.path.exists(dir):
                         os.makedirs(dir)
@@ -217,15 +214,16 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                 self.data_dir = self.finish_run(daq_run, delete_src=True)
                 self.logger.info(f'Stored run at {self.data_dir}')
 
+                ch_dic[key_str]['run'] = str(self.data_dir)
+                ch_dic[key_str]["snr_mean"] = None
+                ch_dic[key_str]["snr_err"] = None
+
                 wfs_file = self.data_dir / "waveforms/000000.wf.dat.gz"
                 if os.path.exists(wfs_file):
 
                     if os.path.getsize(wfs_file) / 1024 < 5:  # kB
-                        logging.warning('File too small, probably no trigger')
+                        self.logger.warning('File too small, probably no trigger')
 
-                        ch_dic[key_str]['run'] = str(self.data_dir)
-                        ch_dic[key_str]["snr_mean"] = None
-                        ch_dic[key_str]["snr_err"] = None
                     else:
 
                         vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, \
@@ -243,6 +241,9 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                         ch_dic[key_str]['vrms'] = vrms
                         ch_dic[key_str]['n_events'] = n_events
                         ch_dic[key_str]['run'] = str(self.data_dir)
+
+                else:
+                    self.logger.error(f"File {wfs_file} could not be found!")
 
             dic_out = self.fit_vpp_SG2LAB4D(amps_SG, ch_dic)
             passed = self.eval_fit_result(ch_radiant, dic_out)
