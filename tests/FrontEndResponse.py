@@ -33,7 +33,7 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
         root_dirs = []
         amps = []
         for key in vals['raw_data']:
-            root_dir = vals['raw_data'][key]['run']
+            root_dir = vals['raw_data'][key]['run'] + "/combined.root"
             amp = vals['raw_data'][key]['amp']
             root_dirs.append(root_dir)
             amps.append(amp)
