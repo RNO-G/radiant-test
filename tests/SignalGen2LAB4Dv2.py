@@ -165,19 +165,9 @@ class SignalGen2LAB4Dv2(radiant_test.SigGenTest):
         for i_ch, ch_radiant in enumerate(self.conf["args"]["channels"]):
             logging.info(f"Testing channel {ch_radiant}")
 
-            if self.conf["args"]["channel_setting_manual"]:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=False)
-
-                self.logger.info(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
-                confirm_or_abort()
-                self.logger.info("Confirmed! Signal channel connected.")
-
-                self.logger.info(f'Clock: SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
-                confirm_or_abort()
-                self.logger.info("Confirmed! Clock channel connected.")
-
-            else:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=True)
+            sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
+                ch_radiant, use_arduino=~self.conf["args"]["channel_setting_manual"],
+                channel_setting_manual=self.conf["args"]["channel_setting_manual"])
 
             amps_SG = self.conf['args']['amplitudes']
             start_up_time = 10

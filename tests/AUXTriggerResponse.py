@@ -9,7 +9,6 @@ import os
 import re
 import json
 from radiant_test.radiant_helper import uid_to_name
-from radiant_test.util import confirm_or_abort
 
 def hill_eq(x, x0, p):
     return 1 / (1 + (x0 / x)**p)
@@ -227,20 +226,9 @@ class AUXTriggerResponse(radiant_test.SigGenTest):
         for ch_radiant in self.conf["args"]["channels"]:
             logging.info(f"Testing channel {ch_radiant}")
 
-            if self.conf["args"]["channel_setting_manual"]:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=False)
-
-                print(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
-                confirm_or_abort()
-                print("Confirmed! Signal channel connected.")
-
-                print(f'Clock: SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
-                confirm_or_abort()
-
-                print("Confirmed! Clock channel connected.")
-
-            else:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=True)
+            sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
+                ch_radiant, use_arduino=~self.conf["args"]["channel_setting_manual"],
+                channel_setting_manual=self.conf["args"]["channel_setting_manual"])
 
             thresh = self.conf['args']['threshold']
             # sg_current_amp = self.conf['args']['sg_start_amp']

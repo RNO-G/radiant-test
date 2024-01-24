@@ -21,19 +21,10 @@ class Switch24(radiant_test.SigGenTest):
         # loop over all channels
         for ch_radiant in self.conf["args"]["channels"]:
             self.logger.info(f"Testing channel {ch_radiant}")
-            if self.conf["args"]["channel_setting_manual"]:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
-                    ch_radiant, use_arduino=self.conf['args']['use_arduino'])
 
-                print(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
-                confirm_or_abort()
-
-                print(f'Clock: SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
-                confirm_or_abort()
-
-            else:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
-                    ch_radiant, use_arduino=self.conf['args']['use_arduino'])
+            sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
+                ch_radiant, use_arduino=self.conf['args']['use_arduino'],
+                channel_setting_manual=self.conf["args"]["channel_setting_manual"])
 
             self.run_channel(ch_radiant)
 

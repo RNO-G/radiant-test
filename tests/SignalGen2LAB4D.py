@@ -8,7 +8,7 @@ from scipy.optimize import curve_fit
 import radiant_test
 import stationrc
 import radiant_test.radiant_helper as rh
-from radiant_test.util import make_serializable, check_param, confirm_or_abort
+from radiant_test.util import make_serializable, check_param
 import time
 from collections import defaultdict
 
@@ -106,8 +106,7 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
         snr_pure_noise_mean = np.mean(snr_pure_noise)
 
         self.logger.info(
-            f'getting Vpp for ch {ch} from clock trigger on ch {ch_clock}, Vpp is: '
-            f'{vpp_mean:.2f} +- {vpp_err:.2f}')
+            f'Channel {ch} (trigger on ch {ch_clock}): Vpp = {vpp_mean:.2f} +- {vpp_err:.2f} ADC (input Vpp: {amp} mV)')
 
         return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, vpps, vrms, snrs, n_events
 
@@ -169,7 +168,11 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
         data['fit_parameter']['res_slope'] = slope_passed
         data['fit_parameter']['res_intercept'] = intercept_passed
         data['fit_parameter']['res_max_residual'] = max_residual_passed
-        self.logger.info(f'Test passed: {passed}')
+
+        if passed:
+            self.logger.info(f' ----> Channel {channel} passed!')
+        else:
+            self.logger.warning()(f' ----> Channel {channel} failed!')
 
         return passed
 
@@ -181,19 +184,9 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
         for i_ch, ch_radiant in enumerate(self.conf["args"]["channels"]):
             logging.info(f"Testing channel {ch_radiant}")
 
-            if self.conf["args"]["channel_setting_manual"]:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=False)
-
-                self.logger.info(f'SigGen channel {sg_ch} --> radiant channel {ch_radiant}')
-                confirm_or_abort()
-                self.logger.info("Confirmed! Signal channel connected.")
-
-                self.logger.info(f'Clock: SigGen channel {sg_ch_clock} --> radiant channel {ch_radiant_clock}')
-                confirm_or_abort()
-                self.logger.info("Confirmed! Clock channel connected.")
-
-            else:
-                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(ch_radiant, use_arduino=True)
+            sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
+                ch_radiant, use_arduino=~self.conf["args"]["channel_setting_manual"],
+                channel_setting_manual=self.conf["args"]["channel_setting_manual"])
 
             amps_SG = self.conf['args']['amplitudes']
             ch_dic = {}

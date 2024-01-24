@@ -9,6 +9,8 @@ import logging
 import time
 import pathlib
 
+from radiant_test.util import confirm_or_abort
+
 
 class SigGenTest(RADIANTChannelTest):
     def __init__(self, device=None, **kwargs):
@@ -40,7 +42,8 @@ class SigGenTest(RADIANTChannelTest):
 
     #         n += 1
 
-    def get_channel_settings(self, radiant_ch, use_arduino=True):
+
+    def get_channel_settings(self, radiant_ch, use_arduino=True, channel_setting_manual=False):
         """
         connect signale generator channel 1 directly to radiant
         and SG channel 2 to the bridge
@@ -61,6 +64,15 @@ class SigGenTest(RADIANTChannelTest):
                 self.arduino.route_signal_to_channel(radiant_ch_clock)
         else:
             raise ValueError("Invalid channel number")
+
+        if channel_setting_manual:
+            self.logger.info(f'SigGen channel {sg_ch} --> radiant channel {radiant_ch}')
+            confirm_or_abort()
+            self.logger.info("Confirmed! Signal channel connected.")
+
+            self.logger.info(f'Clock: SigGen channel {sg_ch_clock} --> radiant channel {radiant_ch_clock}')
+            confirm_or_abort()
+            self.logger.info("Confirmed! Clock channel connected.")
 
         return sg_ch, sg_ch_clock, radiant_ch_clock
 
