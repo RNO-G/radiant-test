@@ -62,9 +62,9 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
         vrms = []
         snrs = []
         snr_pure_noise = []
-        for i, wf in enumerate(wfs[:, 0, 0]):
-            all_pps, indices = calc_sliding_vpp(wfs[i, ch, :], start_index=1400, end_index=1900)
-            all_pps_noise, indices_noise = calc_sliding_vpp(wfs[i, ch, :], start_index=50, end_index=800)
+        for i, wf in enumerate(wfs):
+            all_pps, indices = calc_sliding_vpp(wf[ch], start_index=1400, end_index=1900)
+            all_pps_noise, indices_noise = calc_sliding_vpp(wf[ch], start_index=50, end_index=800)
             max_vpp = np.max(all_pps)
             max_vpp_noise = np.max(all_pps_noise)
             vpps.append(float(max_vpp))
@@ -76,16 +76,18 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
             if plot:
                 if i == 5:
                     fig, ax = plt.subplots()
+
                     ax.plot(indices_noise, indices_noise, marker='*',
                             label=f'Vpp: {np.max(indices_noise):.2f} mV')
-                    ax.plot(wfs[i, ch, :], marker='+',
+
+                    ax.plot(wf[ch], marker='+',
                             label=f'Vrms: {vrm:.2f} mV')
-                    # plt.vlines(sample_index, -max_vpp*0.5, max_vpp*0.5, color='r', label=f'index: {sample_index}')
+
                     ax.plot(indices, all_pps, marker='*',
                             label=f'Vpp: {np.max(all_pps):.2f} mV')
+
                     ax.set_title(f'input amp @SG {amp:.0f} mVpp')
-                    # plt.xlim(1400, 1900)
-                    # plt.ylim(-400, 400)
+
                     ax.legend()
                     dir = (f'{str(self.data_dir)}/{rh.uid_to_name(self.result_dict["dut_uid"])}_'
                            f'{self.name}_{self.result_dict["initialize"]["timestamp"]}')
@@ -121,12 +123,12 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
         try:
             popt, pcov = curve_fit(
                 lin_func, amps_SG, snr_mean, sigma=snr_err, p0=[0.1, 5], absolute_sigma=True)
-            print('popt', popt)
             pcov = pcov.tolist()
-            print('pcov', pcov)
             residuals = snr_mean - lin_func(amps_SG, *popt)
             max_residual = np.max(np.abs(residuals))
-            print('max_residual', max_residual)
+            self.logger.info(
+                f"Fit results: Parameter: {popt}. Covarianz: {pcov}. max. Residual: {max_residual}")
+
         except RuntimeError:
             popt = [None, None]
             pcov = None
@@ -150,12 +152,17 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
 
         exp_v = self.conf['expected_values']
 
-        slope_passed = check_param(data['fit_parameter']['slope'],
-                                   exp_v['slope_min'], exp_v['slope_max'])
-        intercept_passed = check_param(data['fit_parameter']['intercept'],
-                                   exp_v['intercept_min'], exp_v['intercept_max'])
-        max_residual_passed = check_param(data['fit_parameter']['max_residual'],
-                                   exp_v['max_residual_min'], exp_v['max_residual_max'])
+        slope_passed = check_param(
+            data['fit_parameter']['slope'],
+            exp_v['slope_min'], exp_v['slope_max'])
+
+        intercept_passed = check_param(
+            data['fit_parameter']['intercept'],
+            exp_v['intercept_min'], exp_v['intercept_max'])
+
+        max_residual_passed = check_param(
+            data['fit_parameter']['max_residual'],
+            exp_v['max_residual_min'], exp_v['max_residual_max'])
 
         passed = slope_passed and intercept_passed and max_residual_passed
 
