@@ -123,7 +123,6 @@ def plot_channel(fig, ax, data, ch):
                 ax.plot(amps, np.array(snrs), 'x', alpha=0.3, color='#2d5d7b', label=label)
                 ax.errorbar(float(amp), snr_mean, yerr=snr_err, fmt='x', color='k')
             label = ""
-        # fig.text(0.01, 0.5, 'SNR', ha='center', va='center', rotation='vertical')
         fig.supylabel("SNR")
     else:
         for key in vals['raw_data']:
@@ -141,12 +140,12 @@ def plot_channel(fig, ax, data, ch):
     if None not in popt:
         ax.plot(x_arr, lin_func(x_arr, *popt), color='#6D8495')
     res = data['run']['measurements'][f"{ch}"]['result']
-    # ax.set_title(f'channel: {ch}')
     ax.legend(fontsize=5)
-    # fig.text(0.5, 0.01, 'Vpp at signal generator [mV]', ha='center', va='center')
     fig.supxlabel("Vpp at signal generator [mV]")
 
     get_axis_color(ax, res)
+
+
 
 
 if __name__ == "__main__":
@@ -167,4 +166,8 @@ if __name__ == "__main__":
     else:
         plot_single(data, args.channel)
         print_results(data, args.channel)
-    plt.show()
+
+    fname = args.input.replace(".json", ".png")
+    if args.channel is not None:
+        fname = fname.replace(".png", f"_{args.channel}.png")
+    plt.savefig(fname, transparent=False)
