@@ -33,35 +33,17 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
     def __init__(self, *args, **kwargs):
         super(SignalGen2LAB4D, self).__init__(*args, **kwargs)
 
-    def get_vpp(self, ch, ch_clock, amp, tag="", plot=False):
+    def get_vpp(self, wfs, ch, ch_clock, amp, ch_dic, key_str, plot=False):
         """ Calculate vpp/snr from measured data """
 
-        if self.conf['args']['rootify']:
-            stationrc.common.rootify(
-                self.data_dir, self.device.station_conf["daq"]["mattak_directory"])
-
-            root_file = self.data_dir / "combined.root"
-
-            f = uproot.open(root_file)
-            data = f["combined"]
-
-            # events, channels, samples
-            wfs = np.array(data['waveforms/radiant_data[24][2048]'])
-
-        else:
-            wfs_file = self.data_dir / "waveforms/000000.wf.dat.gz"
-            data = stationrc.common.dump_binary(
-                wfs_file=str(wfs_file),
-                read_header=False, read_pedestal=False)
-            wfs = np.array([ele['radiant_waveforms'] for ele in data['WAVEFORM']])
-
-        self.dic_run = {}
         n_events = len(wfs)
         self.logger.info(f"Found {n_events} events")
+
         vpps = []
         vrms = []
         snrs = []
         snr_pure_noise = []
+
         for i, wf in enumerate(wfs):
             all_pps, indices = calc_sliding_vpp(wf[ch], start_index=1400, end_index=1900)
             all_pps_noise, indices_noise = calc_sliding_vpp(wf[ch], start_index=50, end_index=800)
@@ -95,7 +77,7 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
                     if not os.path.exists(dir):
                         os.makedirs(dir)
 
-                    fig.savefig(f'{dir}/SignalGen2LAB4D_{amp}_{tag}_{i}.png')
+                    fig.savefig(f'{dir}/SignalGen2LAB4D_{amp}_{key_str}_{i}.png')
                     plt.close('all')
 
         vpp_mean = np.mean(vpps)
@@ -108,8 +90,17 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
         self.logger.info(
             f'Channel {ch} (trigger on ch {ch_clock}): Vpp = {vpp_mean:.2f} +- {vpp_err:.2f} ADC (input Vpp: {amp} mV)')
 
-        return vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, vpps, vrms, snrs, n_events
-
+        ch_dic[key_str]['vpp_mean'] = vpp_mean
+        ch_dic[key_str]['vpp_err'] = vpp_err
+        ch_dic[key_str]['vrms_mean'] = vrms_mean
+        ch_dic[key_str]['snr_mean'] = snr_mean
+        ch_dic[key_str]['snr_err'] = snr_err
+        ch_dic[key_str]['snr_pure_noise_mean'] = snr_pure_noise_mean
+        ch_dic[key_str]['snrs'] = snrs
+        ch_dic[key_str]['vpps'] = vpps
+        ch_dic[key_str]['vrms'] = vrms
+        ch_dic[key_str]['n_events'] = n_events
+        ch_dic[key_str]['run'] = str(self.data_dir)
 
     def fit_vpp_SG2LAB4D(self, amps_SG, dic):
         amps_SG = np.array(amps_SG)
@@ -230,21 +221,26 @@ class SignalGen2LAB4D(radiant_test.SigGenTest):
 
                     else:
 
-                        vpp_mean, vpp_err, vrms_mean, snr_mean, snr_err, snr_pure_noise_mean, \
-                            vpps, vrms, snrs, n_events = self.get_vpp(
-                                ch_radiant, ch_radiant_clock, amp_pp, key_str)
+                        if self.conf['args']['rootify']:
+                            stationrc.common.rootify(
+                                self.data_dir, self.device.station_conf["daq"]["mattak_directory"])
 
-                        ch_dic[key_str]['vpp_mean'] = vpp_mean
-                        ch_dic[key_str]['vpp_err'] = vpp_err
-                        ch_dic[key_str]['vrms_mean'] = vrms_mean
-                        ch_dic[key_str]['snr_mean'] = snr_mean
-                        ch_dic[key_str]['snr_err'] = snr_err
-                        ch_dic[key_str]['snr_pure_noise_mean'] = snr_pure_noise_mean
-                        ch_dic[key_str]['snrs'] = snrs
-                        ch_dic[key_str]['vpps'] = vpps
-                        ch_dic[key_str]['vrms'] = vrms
-                        ch_dic[key_str]['n_events'] = n_events
-                        ch_dic[key_str]['run'] = str(self.data_dir)
+                            root_file = self.data_dir / "combined.root"
+
+                            f = uproot.open(root_file)
+                            data = f["combined"]
+
+                            # events, channels, samples
+                            wfs = np.array(data['waveforms/radiant_data[24][2048]'])
+
+                        else:
+                            wfs_file = self.data_dir / "waveforms/000000.wf.dat.gz"
+                            data = stationrc.common.dump_binary(
+                                wfs_file=str(wfs_file),
+                                read_header=False, read_pedestal=False)
+                            wfs = np.array([ele['radiant_waveforms'] for ele in data['WAVEFORM']])
+
+                        self.get_vpp(wfs, ch_radiant, ch_radiant_clock, amp_pp, ch_dic, key_str)
 
                 else:
                     self.logger.error(f"File {wfs_file} could not be found!")

@@ -1,0 +1,23 @@
+{   "expected_values": {
+        "slope_min": 0.015,
+        "slope_max": 0.025,
+        "intercept_min": 1,
+        "intercept_max": 2,
+        "max_residual_min": 0,
+        "max_residual_max": 0.2
+},
+    "args": {
+        "waveform": "examples/template2_wo_hardwareResponse.json",
+        "clock_amplitude": 700,
+        "amplitudes": [200, 300, 500, 900],
+        "threshold": 0.9,
+        "sg_trigger_rate": 10,
+        "number_of_events": 100,
+        "channel_setting_manual": false,
+        "radiant_clock_channel": 1,
+        "radiant_clock_channel_alternative": 3,
+        "sg_ch_direct_to_radiant": 1,
+        "sg_ch_to_bridge": 2,
+        "rootify": true
+        }
+}
