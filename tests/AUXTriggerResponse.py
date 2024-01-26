@@ -25,6 +25,7 @@ def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
         vpp = np.max(window) - np.min(window)
         indices.append(i)
         vpps.append(vpp)
+
     return vpps, indices
 
 class AUXTriggerResponse(radiant_test.SigGenTest):
@@ -226,62 +227,68 @@ class AUXTriggerResponse(radiant_test.SigGenTest):
         for ch_radiant in self.conf["args"]["channels"]:
             logging.info(f"Testing channel {ch_radiant}")
 
-            sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
-                ch_radiant, use_arduino=~self.conf["args"]["channel_setting_manual"],
-                channel_setting_manual=self.conf["args"]["channel_setting_manual"])
+            try:
 
-            thresh = self.conf['args']['threshold']
-            # sg_current_amp = self.conf['args']['sg_start_amp']
+                sg_ch, sg_ch_clock, ch_radiant_clock = self.get_channel_settings(
+                    ch_radiant, use_arduino=~self.conf["args"]["channel_setting_manual"],
+                    channel_setting_manual=self.conf["args"]["channel_setting_manual"])
 
-            amplitude_conversion = self.load_amplitude_conversion(ch_radiant)
+                thresh = self.conf['args']['threshold']
+                # sg_current_amp = self.conf['args']['sg_start_amp']
 
-            self.dic_curve = {}
+                amplitude_conversion = self.load_amplitude_conversion(ch_radiant)
 
-            if ch_radiant == self.conf['args']['radiant_clock_channel']:
-                sig_gen_amplitudes = self.conf['args']['amplitudes_clock']
-            else:
-                sig_gen_amplitudes = self.conf['args']['amplitudes']
+                self.dic_curve = {}
 
-            for sg_current_amp in sig_gen_amplitudes:
-                print(f'Running with {sg_current_amp} mVpp at Signal Generator')
-                self.awg.set_arb_waveform_amplitude_couple(
-                    self.conf['args']['waveform'], sg_ch, sg_ch_clock, sg_current_amp,
-                    self.conf['args']['clock_amplitude'])
+                if ch_radiant == self.conf['args']['radiant_clock_channel']:
+                    sig_gen_amplitudes = self.conf['args']['amplitudes_clock']
+                else:
+                    sig_gen_amplitudes = self.conf['args']['amplitudes']
 
-                vpp = amplitude_conversion(sg_current_amp)
-                vpp_str = f"{vpp:.2f}"
-                self.dic_curve[vpp_str] = {}
+                for sg_current_amp in sig_gen_amplitudes:
+                    print(f'Running with {sg_current_amp} mVpp at Signal Generator')
+                    self.awg.set_arb_waveform_amplitude_couple(
+                        self.conf['args']['waveform'], sg_ch, sg_ch_clock, sg_current_amp,
+                        self.conf['args']['clock_amplitude'])
 
-                run_length = self.conf["args"]["number_of_events"] * \
-                    1 / self.conf["args"]["sg_trigger_rate"] + 20 # 2 buffer seconds
+                    vpp = amplitude_conversion(sg_current_amp)
+                    vpp_str = f"{vpp:.2f}"
+                    self.dic_curve[vpp_str] = {}
 
-                run = self.initialize_config(ch_radiant, thresh,
-                                             run_length=run_length,
-                                             comment="AUX Trigger Response Test")
+                    run_length = self.conf["args"]["number_of_events"] * \
+                        1 / self.conf["args"]["sg_trigger_rate"] + 20 # 2 buffer seconds
 
-                self.logger.info('Start run ....')
-                daq_run = self.start_run(run.run_conf, start_up_time=15)
+                    run = self.initialize_config(ch_radiant, thresh,
+                                                run_length=run_length,
+                                                comment="AUX Trigger Response Test")
 
-                self.logger.info('Send triggers ....')
-                self.awg.send_n_software_triggers(
-                    n_trigger=self.conf["args"]["number_of_events"], trigger_rate=self.conf["args"]["sg_trigger_rate"])
+                    self.logger.info('Start run ....')
+                    daq_run = self.start_run(run.run_conf, start_up_time=15)
 
-                self.data_dir = self.finish_run(daq_run, delete_src=True)
-                self.logger.info(f'Stored run at {self.data_dir}')
+                    self.logger.info('Send triggers ....')
+                    self.awg.send_n_software_triggers(
+                        n_trigger=self.conf["args"]["number_of_events"], trigger_rate=self.conf["args"]["sg_trigger_rate"])
 
-                stationrc.common.rootify(
-                    self.data_dir, self.device.station_conf["daq"]["mattak_directory"])
+                    self.data_dir = self.finish_run(daq_run, delete_src=True)
+                    self.logger.info(f'Stored run at {self.data_dir}')
 
-                root_file_channel_trigger = self.data_dir / "combined.root"
-                trig_eff_point, trig_eff_err = self.calc_trigger_eff_points(
-                    root_file_channel_trigger, ch_radiant, ch_radiant_clock)
+                    stationrc.common.rootify(
+                        self.data_dir, self.device.station_conf["daq"]["mattak_directory"])
 
-                self.dic_curve[vpp_str]['trig_eff'] = round(trig_eff_point, 2)
-                self.dic_curve[vpp_str]['trig_eff_err'] = round(trig_eff_err, 2)
-                self.dic_curve[vpp_str]['sg_amp'] = sg_current_amp
+                    root_file_channel_trigger = self.data_dir / "combined.root"
+                    trig_eff_point, trig_eff_err = self.calc_trigger_eff_points(
+                        root_file_channel_trigger, ch_radiant, ch_radiant_clock)
 
-            dic_out = self.fit_trigger_curve(self.dic_curve)
-            passed = self.eval_curve_results(dic_out)
+                    self.dic_curve[vpp_str]['trig_eff'] = round(trig_eff_point, 2)
+                    self.dic_curve[vpp_str]['trig_eff_err'] = round(trig_eff_err, 2)
+                    self.dic_curve[vpp_str]['sg_amp'] = sg_current_amp
+
+                dic_out = self.fit_trigger_curve(self.dic_curve)
+                passed = self.eval_curve_results(dic_out)
+            except:
+                passed = False
+                dic_out = {}
+
             self.add_measurement(f"{ch_radiant}", dic_out, passed)
 
             # with open('/scratch/rno-g/radiant_data/AUXTrigger_Response_buffer.json', 'w') as f:
