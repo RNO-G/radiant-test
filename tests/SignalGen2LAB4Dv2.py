@@ -96,7 +96,7 @@ class SignalGen2LAB4Dv2(SignalGen2LAB4D):
         return wfs_per_amp
 
     def run(self):
-        super(SignalGen2LAB4Dv2, self).run()
+        super(SignalGen2LAB4D, self).run()
         # turn on the surface amp
         self.device.surface_amps_power_on()
 

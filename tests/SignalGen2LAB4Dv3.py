@@ -9,6 +9,7 @@ import time
 from collections import defaultdict
 import glob
 
+from .SignalGen2LAB4D import SignalGen2LAB4D
 from .SignalGen2LAB4Dv2 import SignalGen2LAB4Dv2
 
 
@@ -17,7 +18,7 @@ class SignalGen2LAB4Dv3(SignalGen2LAB4Dv2):
         super(SignalGen2LAB4Dv3, self).__init__(*args, **kwargs)
 
     def run(self):
-        super(SignalGen2LAB4Dv3, self).run()
+        super(SignalGen2LAB4D, self).run()
         # turn on the surface amp
         self.device.surface_amps_power_on()
 

@@ -74,7 +74,7 @@ except ImportError as e:
     print(f"SignalGen2LAB4D not available. {e}")
 
 try:
-    from .SignalGen2LAB4Dv3 import SignalGen2LAB4Dv2
+    from .SignalGen2LAB4Dv2 import SignalGen2LAB4Dv2
 except ImportError as e:
     print(f"SignalGen2LAB4Dv2 not available. {e}")
 
