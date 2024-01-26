@@ -144,25 +144,31 @@ class SignalGen2LAB4Dv2(SignalGen2LAB4D):
             self.data_dir = self.finish_run(daq_run, delete_src=True)
             self.logger.info(f'Stored run at {self.data_dir}')
 
-            wfs_per_amp = self.get_sort_waveforms(amps_SG)
+            try:
+                wfs_per_amp = self.get_sort_waveforms(amps_SG)
 
-            ch_dic = {}
-            for n, (wfs, amp_pp) in enumerate(zip(wfs_per_amp, amps_SG)):
-                wfs = np.array(wfs)
-                self.logger.info(f"Found {len(wfs)} events for amplitude {amp_pp} mVpp")
+                ch_dic = {}
+                for n, (wfs, amp_pp) in enumerate(zip(wfs_per_amp, amps_SG)):
+                    wfs = np.array(wfs)
+                    self.logger.info(f"Found {len(wfs)} events for amplitude {amp_pp} mVpp")
 
-                key_str = f'{n}'
-                ch_dic[key_str] = defaultdict(None)
-                ch_dic[key_str]['amp'] = float(amp_pp)
+                    key_str = f'{n}'
+                    ch_dic[key_str] = defaultdict(None)
+                    ch_dic[key_str]['amp'] = float(amp_pp)
 
-                self.get_vpp(wfs, ch_radiant, ch_radiant_clock, amp_pp, ch_dic, key_str)
+                    self.get_vpp(wfs, ch_radiant, ch_radiant_clock, amp_pp, ch_dic, key_str)
 
-            dic_out = self.fit_vpp_SG2LAB4D(
-                amps_SG, ch_dic)
+                dic_out = self.fit_vpp_SG2LAB4D(
+                    amps_SG, ch_dic)
 
-            passed = self.eval_fit_result(ch_radiant, dic_out)
-            data_buffer = make_serializable(dic_out)
+                passed = self.eval_fit_result(ch_radiant, dic_out)
+                data_buffer = make_serializable(dic_out)
+            except FileNotFoundError:  # In case now data is copied.
+                passed = False
+                data_buffer = {}
+
             self.add_measurement(f"{ch_radiant}", data_buffer, passed=passed)
+
 
         # turn off the surface amp
         self.device.surface_amps_power_off()
