@@ -4,6 +4,62 @@ import colorama
 import matplotlib.cm as cm
 from scipy.optimize import curve_fit
 
+def binomial_proportion(nsel, ntot, coverage=0.68):
+    """
+    Copied from pyik.mumpyext (original author HD)
+
+    Calculate a binomial proportion (e.g. efficiency of a selection) and its confidence interval.
+
+    Parameters
+    ----------
+    nsel: array-like
+      Number of selected events.
+    ntot: array-like
+      Total number of events.
+    coverage: float (optional)
+      Requested fractional coverage of interval (default: 0.68).
+
+    Returns
+    -------
+    p: array of dtype float
+      Binomial fraction.
+    dpl: array of dtype float
+      Lower uncertainty delta (p - pLow).
+    dpu: array of dtype float
+      Upper uncertainty delta (pUp - p).
+
+    Examples
+    --------
+    >>> p,dpl,dpu = binomial_proportion(50,100,0.68)
+    >>> print "%.4f %.4f %.4f" % (p,dpl,dpu)
+    0.5000 0.0495 0.0495
+    >>> abs(np.sqrt(0.5*(1.0-0.5)/100.0)-0.5*(dpl+dpu)) < 1e-3
+    True
+
+    Notes
+    -----
+    The confidence interval is approximate and uses the score method
+    of Wilson. It is based on the log-likelihood profile and can
+    undercover the true interval, but the coverage is on average
+    closer to the nominal coverage than the exact Clopper-Pearson
+    interval. It is impossible to achieve perfect nominal coverage
+    as a consequence of the discreteness of the data.
+    """
+
+    from scipy.stats import norm
+
+    z = norm().ppf(0.5 + 0.5 * coverage)
+    z2 = z * z
+    p = np.asarray(nsel, dtype=float) / ntot
+    div = 1.0 + z2 / ntot
+    pm = (p + z2 / (2 * ntot))
+    dp = z * np.sqrt(p * (1.0 - p) / ntot + z2 / (4 * ntot * ntot))
+    pl = (pm - dp) / div
+    pu = (pm + dp) / div
+
+    return p, p - pl, pu - p
+
+
 def get_rows_cols(n=24):
     if n <= 9:
         nrows = int(np.ceil(n / 3))
@@ -80,7 +136,6 @@ def get_max_spread(channels):
         halfways.append(fit_params['halfway'])
     return np.max(halfways) - np.min(halfways)
 
-
 def print_results(data, channel=None):
     if channel is None:
         for ch in get_channels(data):
@@ -89,12 +144,13 @@ def print_results(data, channel=None):
         print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):
+
     n_channels = len(data['run']['measurements'])
     nrows, ncols = get_rows_cols(n_channels)
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12, 6), sharex=True, sharey=True)
-    ch_idx = 0
-    print(data['run']['measurements'].keys())
-    for ch in get_channels(data):
+
+
+    for ch_idx, ch in enumerate(get_channels(data)):
         if f'{ch}' not in data['run']['measurements']:
             continue
 
@@ -109,7 +165,6 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
     fig.supylabel("trigger efficiency")
 
     fig.tight_layout()
-
     if args_web:
         return fig
 
@@ -122,12 +177,16 @@ def plot_channel(fig, ax, data, ch):
 
     res = data['run']['measurements'][f"{ch}"]['result']
     popt = [fit_params['halfway'], fit_params['steepness']]
-    ax.plot(np.asarray(amps), trig_eff, marker='x', ls='', color='#2d5d7b', label=f'channel: {ch}')
+    print()
+    _, low, up = binomial_proportion(np.array(trig_eff) * 100, 100)
+    ax.errorbar(np.asarray(amps), trig_eff, low, up, marker='x', ls='',
+            color='#2d5d7b', label=f'channel: {ch}', elinewidth=1)
     ax.grid()
+
     if popt[0] is None or popt[1] is None:
         pass
     else:
-        x_arr = np.linspace(np.min(amps)-0.1*np.min(amps), np.max(amps)+0.1*np.max(amps), 100)
+        x_arr = np.linspace(np.min(amps) - 0.1 * np.min(amps), np.max(amps) + 0.1 * np.max(amps), 100)
         ax.plot(x_arr, tanh_func(np.asarray(x_arr), *popt), color='#6D8495')
 
     ax.set_ylim(-0.05,1.05)
