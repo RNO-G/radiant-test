@@ -70,10 +70,14 @@ class LAB4DGlitch(radiant_test.RADIANTChannelTest):
         save_data['voltage_differences_control'] = list(distribution_widths[0][0])
         save_data['voltage_differences_glitch'] = list(distribution_widths[1][0])
 
-        # calculate the difference
-        save_data['differences'] = list(np.asarray(save_data['voltage_differences_glitch']) - np.asarray(save_data['voltage_differences_control']))
+        # calculate the standard deviation of the glitch and control voltage differneces
+        glitch_std = np.std(save_data['voltage_differences_glitch'])
+        control_std = np.std(save_data['voltage_differences_glitch'])
 
-        values_above_threshold = [d for d in save_data['differences'] if d > self.conf['expected_values']['min_difference']]
+        # calculate the difference relative to the standard deviations
+        save_data['differences'] = list((np.asarray(save_data['voltage_differences_glitch']) - np.asarray(save_data['voltage_differences_control'])) / np.sqrt(glitch_std**2 + control_std**2))
+
+        values_above_threshold = [d for d in save_data['differences'] if d > self.conf['expected_values']['min_relative_difference']]
 
         save_data['points_above_threshold'] = len(values_above_threshold)
 
