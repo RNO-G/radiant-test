@@ -73,7 +73,11 @@ def print_results(data, channel=None):
     offset_max = exp_v["offset_max"]
     avg_res = exp_v["average_residual_max"]
     ampl = exp_v["maximal_25MHz_amplitude"]
-    print(f'{"ch":<5} | {f"{slope_min:.2f} < slope < {slope_max:.2f}":<22} | {f"{offset_min:.2f} < offset < {offset_max:.2f}":<22} | {f"avg. residual < {avg_res:.2f}":<20} | {f"max. amplitude @ 25MHz < {ampl:.2f}":<30}')
+
+    print(f'{"ch":<5} | {f"{slope_min:.2f} < slope < {slope_max:.2f}":<22} | '
+          f'{f"{offset_min:.2f} < offset < {offset_max:.2f}":<22} | '
+          f'{f"avg. residual < {avg_res:.2f}":<20} | {f"max. amplitude @ 25MHz < {ampl:.2f}":<30}')
+
     if channel is None:
         for ch in get_channels(data):
             print(f'{f"{ch:2d}":<5} | {get_fit_results_str(data, ch, with_color=True)}')
