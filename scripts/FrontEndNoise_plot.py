@@ -27,14 +27,16 @@ def get_fit_results_str(data, ch, with_color=False):
             color_start = colorama.Fore.GREEN
 
         color_end = colorama.Style.RESET_ALL
-
+    fit_slope = data_ch["fit_slope"]
+    fit_offset = data_ch["fit_offset"]
+    fit_average_residual = data_ch["fit_average_residual"]
+    maximal_25MHz_amplitude = data_ch["maximal_25MHz_amplitude"]
     return (
         color_start
-        + f"slope: {data_ch['fit_slope']:6.1f} - "
-        + f"offset: {data_ch['fit_offset']:6.1f} - "
-        + f"average residual: {data_ch['fit_average_residual']:.2f} - "
-        + f"max amplitude 25MHz: {data_ch['maximal_25MHz_amplitude']:.2f} - "
-        + f"result: {result}" + color_end
+        + f"{f'{fit_slope:6.1f}':^22} |"
+        + f"{f'{fit_offset:6.1f}':^22}  |"
+        + f"{f'{fit_average_residual:.2f}':^20}  |"
+        + f"{f'{maximal_25MHz_amplitude:.2f}':^30}" + color_end
     )
 
 
@@ -64,9 +66,17 @@ def get_measured_values(data):
 
 
 def print_results(data, channel=None):
+    exp_v = data["config"]["expected_values"]
+    slope_min = exp_v["slope_min"]
+    slope_max = exp_v["slope_max"]
+    offset_min = exp_v["offset_min"]
+    offset_max = exp_v["offset_max"]
+    avg_res = exp_v["average_residual_max"]
+    ampl = exp_v["maximal_25MHz_amplitude"]
+    print(f'{"ch":<5} | {f"{slope_min:.2f} < slope < {slope_max:.2f}":<22} | {f"{offset_min:.2f} < offset < {offset_max:.2f}":<22} | {f"avg. residual < {avg_res:.2f}":<20} | {f"max. amplitude @ 25MHz < {ampl:.2f}":<30}')
     if channel is None:
         for ch in get_channels(data):
-            print(f"ch. {ch:2d} - {get_fit_results_str(data, ch, with_color=True)}")
+            print(f'{f"{ch:2d}":<5} | {get_fit_results_str(data, ch, with_color=True)}')
     else:
         print(f"ch. {channel:2d} - {get_fit_results_str(data, channel, with_color=True)}")
 
