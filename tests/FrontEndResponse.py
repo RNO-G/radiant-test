@@ -123,9 +123,16 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
                     passed_single = True
                 else:
                     passed_single = False
+                val_std = data[key]['xcorr_std']
+                if val_std >= self.conf["expected_values"][f"xcorr_std_max"]:
+                    passed_std = False
+                else:
+                    passed_std = True
 
                 all_passed.append(passed_single)
+                all_passed.append(passed_std)
                 data[key]['res_xcorr'] = passed_single
+                data[key]['res_xcorr_std'] = passed_std
 
         passed = np.all(all_passed)
         return passed

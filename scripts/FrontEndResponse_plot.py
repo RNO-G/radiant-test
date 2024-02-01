@@ -32,14 +32,24 @@ def get_axis_color(ax, passed):
     ax.spines['left'].set_color(color)   # y-axis
     ax.spines['right'].set_color(color)
 
+def save_fig(args_input, tag, args_channel=None):
+    fname = args_input.replace(".json", f"{tag}.pdf")
+    if args_channel is not None:
+        fname = fname.replace(".pdf", f"_{args.channel}{tag}.pdf")
+    plt.savefig(fname, transparent=False)
+
 def get_results_str(data, ch, with_color=False):
     result = data["run"]["measurements"][str(ch)]["result"]
     color_end = colorama.Style.RESET_ALL
     str_xcorr = ''
     for amp_str in get_key_amps(data, ch):
         xcorr = data["run"]["measurements"][str(ch)]["measured_value"][amp_str]["xcorr"]
+        xcorr_std = data["run"]["measurements"][str(ch)]["measured_value"][amp_str]["xcorr_std"]
         res_amp = data["run"]["measurements"][str(ch)]["measured_value"][amp_str]["res_xcorr"]
-        str_xcorr += f'{get_color(res_amp)} | {amp_str} mVpp: {xcorr:.2f} {color_end}'
+        res_amp_std = data["run"]["measurements"][str(ch)]["measured_value"][amp_str]["res_xcorr_std"]
+        str_xcorr += f'| {amp_str} mVpp: {get_color(res_amp)}{xcorr:.2f}{color_end}'
+        str_xcorr += f'{get_color(res_amp_std)} +/- {xcorr_std:.2f} {color_end}'
+
     out = f"{get_color(result == 'PASS')} {result} {color_end} {str_xcorr}"
     return out
 
@@ -72,53 +82,87 @@ def print_results(data, channel=None):
     else:
         print(f"ch. {channel:2d} - {get_results_str(data, channel, with_color=True)}")
 
-def plot_all(data, args_input="", args_channel=None, args_web=False):
+def plot_single(data, figure_type, ch):
+    fig = plt.figure()
+    ax = fig.subplots()
+    if figure_type == 'xcorr':
+        plot_channel_xcorr(fig, ax, data, ch)
+    if figure_type == 'wf':
+        plot_channel_wf(fig, ax, data, ch)
+
+def plot_all(data, figure_type, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols()
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12, 6), sharex=True, sharey=True)
-
     for ch in get_channels(data):
         if nrows == 1:
             ax = axs[ch % ncols]
         else:
             ax = axs[ch // ncols][ch % ncols]
-        plot_channel(fig, ax, data, ch, args_web=True)
+        if figure_type == 'xcorr':
+            plot_channel_xcorr(fig, ax, data, ch, args_web=True)
+        if figure_type == 'wf':
+            plot_channel_wf(fig, ax, data, ch, args_web=True)
     fig.tight_layout()
-
     if args_web:
         return fig
 
-def plot_single(data, ch):
-    fig = plt.figure()
-    ax = fig.subplots()
-    plot_channel(fig, ax, data, ch)
-
-def plot_channel(fig, ax, data, ch, args_web=False):
+def plot_channel_xcorr(fig, ax, data, ch, args_web=False):
     vals = data['run']['measurements'][f"{ch}"]['measured_value']
     truth_wf = np.array(vals['truth_waveform'])
 
     key_amps = get_key_amps(data, ch)
-    colors = viridis(np.linspace(0, 1, len(key_amps)))
-    for i, amp_str in enumerate(key_amps):
+    colors = ['#1c3144', '#D00000', '#5F599A', '#FFBA08']
+    for i, amp_str in enumerate(key_amps[::-1]):
         xcorr = vals[amp_str]['xcorr']
         measured_wf = np.array(vals[amp_str]['measured_waveform'])
-        i_max = np.argmax(measured_wf)
-        wf = (measured_wf[i_max-200:i_max+300]/np.max(measured_wf))
+        samples = np.arange(len(measured_wf))
+        start_index = 1200
+        end_index = len(measured_wf)
+        wf = (measured_wf[start_index:end_index]/np.max(measured_wf))
         label = f"ch{ch}"
+
         if ch == 0:
-            ax.plot(wf, alpha=0.5, linewidth=1, color=colors[i], label=f'ch{ch}: {amp_str} mVpp')
+            ax.plot(samples[start_index:end_index], wf, alpha=0.5, linewidth=0.5, color=colors[i], label=f'ch{ch}: {amp_str} mVpp')
             if not args_web:
                 ax.legend(loc='lower right')
         else:
-            ax.plot(wf, alpha=0.5, color=colors[i], label=label, lw=1)
+            ax.plot(samples[start_index:end_index], wf, alpha=0.5, color=colors[i], label=label, linewidth=0.5)
 
     # ax.legend(loc='lower right')
-    ax.plot(truth_wf, color='red', ls=':')
+    samples_true = np.arange(len(truth_wf)) + start_index
+    ax.plot(samples_true, truth_wf, color='k', alpha=0.5, linewidth=0.5, label='truth')
     res = data['run']['measurements'][f"{ch}"]['result']
     # ax.set_title(f'channel: {ch}')
     fig.text(0.5, 0.01, 'samples', ha='center', va='center')
     fig.text(0.01, 0.5, 'normalized amplitude [a.u.]', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)
     ax.set_ylim(-1.2, 1.2)
+
+def plot_channel_wf(fig, ax, data, ch, args_web=False):
+    vals = data['run']['measurements'][f"{ch}"]['measured_value']
+    truth_wf = np.array(vals['truth_waveform'])
+
+    key_amps = get_key_amps(data, ch)
+    colors = ['#1c3144', '#D00000', '#5F599A', '#FFBA08']
+    for i, amp_str in enumerate(key_amps[::-1]):
+        xcorr = vals[amp_str]['xcorr']
+        measured_wf = np.array(vals[amp_str]['measured_waveform'])
+        
+        label = f"ch{ch}"
+        if ch == 0:
+            ax.plot(measured_wf, alpha=0.5, linewidth=0.5, color=colors[i], label=f'ch{ch}: {amp_str} mVpp')
+            if not args_web:
+                ax.legend(loc='lower right')
+        else:
+            ax.plot(measured_wf, alpha=0.5, lw=0.5, color=colors[i], label=label)
+    # ax.legend(loc='lower right')
+    ax.plot(truth_wf*150, color='k', alpha=0.5, lw=0.5, label='truth')
+    res = data['run']['measurements'][f"{ch}"]['result']
+    # ax.set_title(f'channel: {ch}')
+    fig.text(0.5, 0.01, 'samples', ha='center', va='center')
+    fig.text(0.01, 0.5, 'amplitude [adc counts]', ha='center', va='center', rotation='vertical')
+    get_axis_color(ax, res)
+    ax.set_ylim(-200, 200)
 
 if __name__ == "__main__":
     import argparse
@@ -134,17 +178,30 @@ if __name__ == "__main__":
     with open(args.input, "r") as f:
         data = json.load(f)
     if args.channel == None:
-        plot_all(data, args_input=args.input, args_channel=args.channel, args_web=args.web)
+        plot_all(data, figure_type='xcorr', args_input=args.input, args_channel=args.channel, args_web=args.web)
+        if args.show:
+            plt.show()
+        else:
+            save_fig(args.input, "_xcorr", args_channel=args.channel)
+        
+        plot_all(data, figure_type='wf',  args_input=args.input, args_channel=args.channel, args_web=args.web)
+        if args.show:
+            plt.show()
+        else:
+            save_fig(args.input, "_wf", args_channel=args.channel)
         print_results(data)
     else:
-        plot_single(data, args.channel)
+        plot_single(data=data, figure_type='xcorr', ch=args.channel)
+        if args.show:
+            plt.show()
+        else:
+            save_fig(args.input, "_xcorr", args_channel=args.channel)
+
+        plot_single(data=data, figure_type='wf', ch=args.channel)
+        if args.show:
+            plt.show()
+        else:
+            save_fig(args.input, "_wf", args_channel=args.channel)
         print_results(data, args.channel)
 
 
-    if args.show:
-        plt.show()
-    else:
-        fname = args.input.replace(".json", ".png")
-        if args.channel is not None:
-            fname = fname.replace(".png", f"_{args.channel}.png")
-        plt.savefig(fname, transparent=False)

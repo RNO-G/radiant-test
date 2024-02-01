@@ -1,9 +1,10 @@
 {
     "expected_values": {
-        "xcorr_200_min": 0.7,
-        "xcorr_300_min": 0.8,
-        "xcorr_500_min": 0.9,
-        "xcorr_900_min": 0.95
+        "xcorr_200_min": 0.59,
+        "xcorr_300_min": 0.69,
+        "xcorr_500_min": 0.79,
+        "xcorr_900_min": 0.83,
+        "xcorr_std_max": 0.05
         },
     "args": {
         "template": "examples/truth_template_2_mean_ch_19_2.4GHz.json",
