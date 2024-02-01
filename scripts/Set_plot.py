@@ -1,5 +1,3 @@
-import json
-import matplotlib.pyplot as plt
 import argparse
 import os
 import glob
@@ -21,6 +19,7 @@ if __name__ == "__main__":
     test_files = glob.glob(f"{args.input}/*json")
     scripts = glob.glob(f"{os.path.dirname(__file__)}/*_plot.py")
 
+    test_files.sort()  # To have a defined order
     print(f"Found the following tests: {test_files}")
     for fn in test_files:
 

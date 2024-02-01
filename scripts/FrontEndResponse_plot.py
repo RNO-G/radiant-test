@@ -18,10 +18,10 @@ def get_rows_cols(n=24):
 
 def get_color(passed):
     if passed:
-        return colorama.Fore.GREEN 
+        return colorama.Fore.GREEN
     else:
         return colorama.Fore.RED
-    
+
 def get_axis_color(ax, passed):
     if passed == 'PASS':
         color = '#6da34d'
@@ -40,7 +40,7 @@ def get_results_str(data, ch, with_color=False):
         xcorr = data["run"]["measurements"][str(ch)]["measured_value"][amp_str]["xcorr"]
         res_amp = data["run"]["measurements"][str(ch)]["measured_value"][amp_str]["res_xcorr"]
         str_xcorr += f'{get_color(res_amp)} | {amp_str} mVpp: {xcorr:.2f} {color_end}'
-    out = f"{get_color(result == 'PASS')} {result} {color_end} {str_xcorr}"    
+    out = f"{get_color(result == 'PASS')} {result} {color_end} {str_xcorr}"
     return out
 
 def get_channels(data):
@@ -51,7 +51,7 @@ def get_key_amps(data, ch):
     for amp in data["run"]["measurements"][str(ch)]["measured_value"].keys():
         if amp.isnumeric():
             amps.append(amp)
-    return amps        
+    return amps
 
 def get_measured_values(data):
     measured_val_dict = {'channel': [], 'result': []}
@@ -62,20 +62,20 @@ def get_measured_values(data):
         measured_val_dict['result'].append(data['run']['measurements'][f"{ch}"]['result'])
         for amp in get_key_amps(data, ch):
             measured_val_dict[f'xcorr {amp}'].append(data['run']['measurements'][f"{ch}"]['measured_value'][f'{amp}']['xcorr'])
-    
+
     return measured_val_dict
 
 def print_results(data, channel=None):
     if channel is None:
         for ch in get_channels(data):
-            print(f"ch. {ch:2d} - {get_results_str(data, ch, with_color=True)}")                
+            print(f"ch. {ch:2d} - {get_results_str(data, ch, with_color=True)}")
     else:
         print(f"ch. {channel:2d} - {get_results_str(data, channel, with_color=True)}")
 
 def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols()
-    fig = plt.figure(figsize=(12,6))
-    axs = fig.subplots(nrows=nrows, ncols=ncols)
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12, 6), sharex=True, sharey=True)
+
     for ch in get_channels(data):
         if nrows == 1:
             ax = axs[ch % ncols]
@@ -83,6 +83,7 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
             ax = axs[ch // ncols][ch % ncols]
         plot_channel(fig, ax, data, ch, args_web=True)
     fig.tight_layout()
+
     if args_web:
         return fig
 
@@ -102,18 +103,22 @@ def plot_channel(fig, ax, data, ch, args_web=False):
         measured_wf = np.array(vals[amp_str]['measured_waveform'])
         i_max = np.argmax(measured_wf)
         wf = (measured_wf[i_max-200:i_max+300]/np.max(measured_wf))
+        label = f"ch{ch}"
         if ch == 0:
-            ax.plot(wf, alpha=0.5, linewidth=1, color=colors[i], label=f'{amp_str} mVpp')
+            ax.plot(wf, alpha=0.5, linewidth=1, color=colors[i], label=f'ch{ch}: {amp_str} mVpp')
             if not args_web:
                 ax.legend(loc='lower right')
         else:
-            ax.plot(wf, alpha=0.5, color=colors[i])
+            ax.plot(wf, alpha=0.5, color=colors[i], label=label, lw=1)
+
+    # ax.legend(loc='lower right')
     ax.plot(truth_wf, color='red', ls=':')
     res = data['run']['measurements'][f"{ch}"]['result']
-    ax.set_title(f'channel: {ch}')
+    # ax.set_title(f'channel: {ch}')
     fig.text(0.5, 0.01, 'samples', ha='center', va='center')
     fig.text(0.01, 0.5, 'normalized amplitude [a.u.]', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)
+    ax.set_ylim(-1.2, 1.2)
 
 if __name__ == "__main__":
     import argparse
@@ -123,6 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("input", help="input JSON file")
     parser.add_argument("-c", "--channel", type=int, help="only plot single channel")
     parser.add_argument("-w", "--web", action="store_true", help="Return figures to be displayed in web")
+    parser.add_argument("-s", "--show", action="store_true", help="")
     args = parser.parse_args()
 
     with open(args.input, "r") as f:
@@ -133,4 +139,12 @@ if __name__ == "__main__":
     else:
         plot_single(data, args.channel)
         print_results(data, args.channel)
-    plt.show()
+
+
+    if args.show:
+        plt.show()
+    else:
+        fname = args.input.replace(".json", ".png")
+        if args.channel is not None:
+            fname = fname.replace(".png", f"_{args.channel}.png")
+        plt.savefig(fname, transparent=False)

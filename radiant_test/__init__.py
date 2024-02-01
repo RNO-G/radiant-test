@@ -13,10 +13,15 @@ from .radiant_helper import (
 
 try:
     from .Keysight81160A import Keysight81160A
-except:
+except ImportError:
     print("Could not import signal generator class Keysight81160A")
 
 try:
     from .ArduinoNano import ArduinoNano
-except:
+except ImportError:
     print("Could not import ArduinoNano (maybe you installed serial instead of pyserial?)")
+
+try:
+    from .SigGenTest import SigGenTest
+except ImportError:
+    print("Could not import SigGenTest (maybe you installed serial instead of pyserial?)")

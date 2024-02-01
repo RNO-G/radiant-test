@@ -1,6 +1,6 @@
 import argparse
 import logging
-
+import time
 import radiant_test
 
 module = __import__("tests")
@@ -20,7 +20,9 @@ else:
 
 for test in args.tests:
     test_class = getattr(module, test)
+    t0 = time.time()
     test_obj = radiant_test.run(test_class, {"comment": args.comment})
+    logging.info(f"Test {test} finished in {time.time() - t0:.2f} s")
     if args.plot:
         scripts = __import__("scripts")
         try:

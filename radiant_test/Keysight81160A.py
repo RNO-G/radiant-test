@@ -33,7 +33,7 @@ class Keysight81160A(AbstractSignalGenerator):
         self.instrument = vxi11.Instrument(ip_address)
         print(f"Search for instrument with ip address {ip_address}.")
         id = self.get_id()
-        if id in ["Agilent Technologies,81160A,MY51400292,1.0.3.0-2.6", 
+        if id in ["Agilent Technologies,81160A,MY51400292,1.0.3.0-2.6",
         "Agilent Technologies,81160A,MY60410533,2.0.0.0-2.6"]:
             print("Connected to", self.get_id(), 'at ip address', ip_address)
         else:
@@ -50,7 +50,7 @@ class Keysight81160A(AbstractSignalGenerator):
 
     def query(self,cmd):
         return self.instrument.ask(cmd)
-    
+
     @validate_channel
     def output_off(self, channel):
         self.instrument.write(f"OUTP{channel} OFF")
@@ -58,7 +58,7 @@ class Keysight81160A(AbstractSignalGenerator):
     @validate_channel
     def output_on(self, channel):
         self.instrument.write(f"OUTP{channel} ON")
-   
+
     @validate_channel
     def set_amplitude_mVpp(self, channel, amplitude):
         AMPLITUDE_MIN = 50
@@ -69,7 +69,7 @@ class Keysight81160A(AbstractSignalGenerator):
                 f"Only accepting values of {AMPLITUDE_MIN} <= amplitude <= {AMPLITUDE_MAX}."
             )
         self.instrument.write(f"VOLT{channel}:AMPL {amplitude*1e-3} VPP")
-    
+
     @validate_channel
     def set_amplitude_mV(self, channel, amplitude):
         vpp = amplitude*2
@@ -129,7 +129,7 @@ class Keysight81160A(AbstractSignalGenerator):
             out += str(i) + ','
         self.instrument.write(f"FUNC{channel} USER")
         self.instrument.write(f":DATA{channel}:DAC VOLATILE, {out[:-1]}")
-        self.set_frequency_MHz(channel, freq) 
+        self.set_frequency_MHz(channel, freq)
 
     def get_system_state(self):
         self.instrument.write("SYST:SET?")
@@ -140,10 +140,10 @@ class Keysight81160A(AbstractSignalGenerator):
     def software_trigger(self):
         #self.instrument.write("TRIG")
         self.instrument.write("*TRG")
-    
+
     def send_n_software_triggers(self, n_trigger, trigger_rate):
         self.instrument.write(f"ARM:SOUR MAN")
-        delay_between_triggers=1/trigger_rate
+        delay_between_triggers = 1 / trigger_rate
         for _ in range(n_trigger):
             # Send software trigger command
             self.instrument.write("*TRG")
@@ -162,13 +162,14 @@ class Keysight81160A(AbstractSignalGenerator):
         self.set_waveform(channel, waveform)
         self.set_amplitude_mVpp(channel, 600)
         self.output_on(channel)
-    
+
     def set_arb_waveform_amplitude_couple(self, waveform, ch_signal, ch_clock, amp_sig, amp_clock):
         for ch in [ch_signal, ch_clock]:
             self.output_off(ch)
+
         self.instrument.write(f"FUNC{ch_signal} USER")
         self.set_waveform(ch_signal, waveform)
-        self.set_waveform(ch_clock, waveform)  
+        self.set_waveform(ch_clock, waveform)
         self.couple_to_channel_on(ch_signal)
         self.set_amplitude_mVpp(ch_signal, amp_sig)
         self.set_amplitude_mVpp(ch_clock, amp_clock)

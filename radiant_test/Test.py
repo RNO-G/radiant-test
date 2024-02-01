@@ -30,7 +30,7 @@ class Test(object):
             self.conf = json.load(f)
         self.logger.debug(f"Config for test {self.name}: {self.conf}")
 
-        with open(pathlib.Path.cwd() / "setconfig" / f"SiteSet.json", "r") as f:
+        with open(pathlib.Path.cwd() / "setconfig" / "SiteSet.json", "r") as f:
             self.site_conf = json.load(f)
         self.logger.debug(f"Test site from: {self.site_conf}")
 

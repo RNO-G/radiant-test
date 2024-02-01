@@ -13,11 +13,12 @@
         "threshold": 0.9,
         "sg_trigger_rate": 10,
         "number_of_events": 100,
-        "channel_setting_manual": false,
+        "channel_setting_manual": true,
         "radiant_clock_channel": 1,
         "radiant_clock_channel_alternative": 3,
-        "sg_ch_direct_to_radiant": 1,
-        "sg_ch_to_bridge": 2,
-        "rootify": true
+        "sg_ch_direct_to_radiant": 2,
+        "sg_ch_to_bridge": 1,
+        "rootify": true,
+        "channels": [0]
         }
 }

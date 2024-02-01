@@ -71,14 +71,17 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
-    fig = plt.figure(figsize=(15, 15))
-    axs = fig.subplots(nrows=nrows, ncols=ncols)
+    fig, axs = plt.subplots(figsize=(15, 10), nrows=nrows, ncols=ncols, sharex=True, sharey=True)
+
     for ch in get_channels(data):
         if nrows == 1:
             ax = axs[ch % ncols]
         else:
             ax = axs[ch // ncols][ch % ncols]
         plot_channel(ax, data, ch)
+
+    fig.supylabel('$\delta$U [a.u.]')
+    fig.supxlabel('N block')
     fig.tight_layout()
 
     if args_web:
@@ -92,7 +95,7 @@ def plot_all_diff(data, args_input="", args_channel=None, args_web=False):
     nrows, ncols = get_rows_cols(len(data["config"]["args"]["channels"]))
     # Plot to screen
 
-    fig = plt.figure(figsize=(15,15))
+    fig, axs = plt.subplots(figsize=(15, 10), nrows=nrows, ncols=ncols, sharex=True, sharey=True)
     axs = fig.subplots(nrows=nrows, ncols=ncols)
     for ch in get_channels(data):
         if nrows == 1:
@@ -107,19 +110,18 @@ def plot_all_diff(data, args_input="", args_channel=None, args_web=False):
 def plot_channel_difference(ax, data, ch):
     ax.plot(data["run"]["measurements"][f"{ch}"]["measured_value"]['differences'])
     ax.set_title(f'channel: {ch}')
-    ax.set_xlabel('N block')
+    # ax.set_xlabel('N block')
 
 
 def plot_channel(ax, data, ch):
     data_ch_control = data["run"]["measurements"][f"{ch}"]["measured_value"]['voltage_differences_control']
     data_ch_glitch = data["run"]["measurements"][f"{ch}"]["measured_value"]['voltage_differences_glitch']
-    ax.plot(data_ch_control, label=f"control")
-    ax.plot(data_ch_glitch, label=f"glitch")
-    ax.set_title(f'channel: {ch}')
-    ax.set_ylabel('$\delta$U [a.u.]')
-    ax.set_xlabel('N block')
+    ax.plot(data_ch_control, label="control")
+    ax.plot(data_ch_glitch, label="glitch")
+    # ax.set_ylabel('$\delta$U [a.u.]')
+    # ax.set_xlabel('N block')
 
-    ax.legend(loc="upper right")
+    ax.legend(loc="upper right", title=f'channel: {ch}')
 
 
 def plot_single(data, ch):

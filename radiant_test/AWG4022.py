@@ -30,7 +30,7 @@ def validate_channel(func):
 class AWG4022(AbstractSignalGenerator):
     def __init__(self, ip_address, reset=False):
         rm = visa.ResourceManager("@py")
-        self.pg=rm.open_resource("TCPIP::{}::INSTR".format(ip_address))
+        self.pg = rm.open_resource("TCPIP::{}::INSTR".format(ip_address))
         self.pgID = self.query("*IDN?").strip()
         if (self.pgID != "ACTIVE TECHNOLOGIES,AT-AFG-RIDER-4022,255B0051,SCPI:99.0,SV:1.0.0.0"):
             logging.debug("Wrong device",self.pgID)
@@ -58,13 +58,13 @@ class AWG4022(AbstractSignalGenerator):
         self.pg.close()
         time.sleep(.3)
         return 1
-    
+
     def query(self,cmd,delay=0):
         return self.pg.query(cmd,delay=delay)
 
     def write(self,cmd):
         return self.pg.write(cmd)
-    
+
     def get_id(self):
         return self.ask("*IDN?")
 
@@ -75,7 +75,7 @@ class AWG4022(AbstractSignalGenerator):
     @validate_channel
     def output_on(self, channel):
         self.write(f"OUTP{channel} ON")
-        
+
     def run_instrument(self):
         self.write("AFGControl:START")
 
@@ -153,11 +153,11 @@ class AWG4022(AbstractSignalGenerator):
             self.write(f"ARM:SOUR{channel} INT2")
         else:
             raise ValueError(f"Unsupported trigger source: {source}.")
-    
+
     @validate_channel
     def set_offset(self, channel, offset):
         self.write(f"SOUR{channel}:VOLT:OFFS {offset} mV")
-    
+
     @validate_channel
     def set_delay(self, channel, delay):
         self.write(f"SOUR{channel}:BURS:TDEL {delay} ms")
@@ -175,7 +175,7 @@ class AWG4022(AbstractSignalGenerator):
         self.write("SOUR2:BURS:MODE TRIG")
         self.write(f"TRIG:TIM {trig:.2}")
         self.write("SOUR1:BURS:NCYC 1")
-        self.write("SOUR2:BURS:NCYC 1")   
+        self.write("SOUR2:BURS:NCYC 1")
         self.run_instrument()
 
     def setup_sine_waves(self, frequency, amplitude):
@@ -195,7 +195,7 @@ class AWG4022(AbstractSignalGenerator):
             # turn the channel on
             self.output_on(sig_gen_cha)
         self.run_instrument()
-        
+
     @validate_channel
     def set_waveform_old(self, channel, waveform_dic, amplitude_pp):
 
@@ -211,13 +211,13 @@ class AWG4022(AbstractSignalGenerator):
         range_bit = 2**14 # given by signal generator
         range_input = np.abs(np.max(waveform)) - (np.min(waveform))
         range_volt = amplitude_pp
-        scale_input_to_bit = range_bit / range_input 
+        scale_input_to_bit = range_bit / range_input
         waveform_bit = (np.array(waveform) * scale_input_to_bit)
 
         scale_bit_to_volt = range_volt / range_bit
         waveform_volt = (np.array(waveform_bit) * scale_bit_to_volt)
 
-        Vpp = np.max(waveform_volt) - np.min(waveform_volt)    
+        Vpp = np.max(waveform_volt) - np.min(waveform_volt)
         Vmean = np.mean(waveform_volt[0:20])
         offset_volt = (Vpp/2) - Vmean
         data = []

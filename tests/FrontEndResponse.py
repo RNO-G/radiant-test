@@ -12,16 +12,22 @@ import re
 
 
 class FrontEndResponse(radiant_test.RADIANTChannelTest):
-    def __init__(self):
-        super(FrontEndResponse, self).__init__()
+    def __init__(self, **kwargs):
+        super(FrontEndResponse, self).__init__(**kwargs)
 
     def get_root_files(self, search_dir, channel):
-        # ulb_id = 'ULB-005'
 
+        # Get all json files for the particular board and test
         ulb_id = uid_to_name(self.result_dict['dut_uid'])
-        files = [os.path.join(search_dir, file) for file in os.listdir(search_dir) if re.search('SignalGen2LAB4D', file) and file.endswith('.json') and re.search(ulb_id, file)]
+        search_str = 'SignalGen2LAB4D'
+        if self.conf['args']['v2']:
+            search_str += "v2"
+
+        files = [os.path.join(search_dir, file) for file in os.listdir(search_dir)
+                 if re.search(search_str, file) and file.endswith('.json') and re.search(ulb_id, file)]
+
+        # Get the last readable file
         sorted_files = sorted(files, key=os.path.getmtime, reverse=True)
-        print(sorted_files)
         for file in sorted_files:
             if os.path.isfile(file):
                 with open(file, 'r') as f:
@@ -29,28 +35,37 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
                 break
 
         vals = data['run']['measurements'][str(channel)]['measured_value']
-        logging.warning(f"evaluate FrontEndResponse for channel {channel} based on {file}")
-        root_dirs = []
+        self.logger.info(f"Evaluate FrontEndResponse for channel {channel} based on {file}")
+
+        root_files = []
         amps = []
         for key in vals['raw_data']:
-            root_dir = vals['raw_data'][key]['run']
+            root_file = vals['raw_data'][key]['run'] + "/combined.root"
             amp = vals['raw_data'][key]['amp']
-            root_dirs.append(root_dir)
+            root_files.append(root_file)
             amps.append(amp)
-        return root_dirs, amps
+
+        return root_files, amps
 
     def get_truth_waveform(self, template):
         with open(template, "r") as f:
             data = json.load(f)
+
         return np.array(data['waveform'])
 
-    def get_measured_waveforms(self, root_file, ch):
+    def get_measured_waveforms(self, root_file, ch, return_time=False):
         f = uproot.open(root_file)
         data = f["combined"]
         waveforms = np.array(data['waveforms/radiant_data[24][2048]'])  #events, channels, samples
-        return waveforms[:,ch,:]
+        if not return_time:
+            return waveforms[:, ch]
+        else:
+            t = np.array(data['header/readout_time'])
+            return waveforms[:, ch], t
 
-    def calc_xcorr(self, dataTrace, templateTrace, window_size=200*1e-9, sampling_rate=3.2*1e9, return_time_difference=False):
+
+    def calc_xcorr(self, dataTrace, templateTrace, window_size=200 * 1e-9, sampling_rate=3.2 * 1e9,
+                   return_time_difference=False):
         # preparing the traces
         dataTrace = np.float32(dataTrace)
         templateTrace = np.float32(templateTrace)
@@ -87,8 +102,8 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
         max_corr_i = np.where(abs(np.asarray(correlation)) == max_correlation)[0][0]
 
         if return_time_difference:
-            # calculate the time difference between the beginning of the template and data trace for the largest correlation value
-            # time difference is given in ns
+            # calculate the time difference between the beginning of the template and
+            # data trace for the largest correlation value time difference is given in ns
             time_diff = (max_corr_i + (lower_bound_data - len(templateTrace))) / sampling_rate
         if return_time_difference:
             return max_correlation, time_diff
@@ -98,8 +113,8 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
     def eval_results(self, data, channel):
         passed = False
         all_passed = []
+
         for key in data:
-            print(key)
             if key in ['truth_waveform']:
                 continue
             else:
@@ -108,36 +123,112 @@ class FrontEndResponse(radiant_test.RADIANTChannelTest):
                     passed_single = True
                 else:
                     passed_single = False
+
                 all_passed.append(passed_single)
                 data[key]['res_xcorr'] = passed_single
-        if False in all_passed:
-            passed = False
-        else:
-            passed = True
-        self.add_measurement(f"{channel}", data, passed)
+
+        passed = np.all(all_passed)
+        return passed
+
+    def sort_waveforms(self, wfs, t, amps, trigger_rate=10):
+        self.logger.info(f"Read in {len(wfs)} waveforms")
+        sort = np.argsort(t)
+        wfs_all_amps = wfs[sort]
+        t = t[sort]
+        t_diff = np.diff(t)
+
+        dt_break = 2 / trigger_rate
+
+        if np.sum(t_diff > dt_break) != len(amps) - 1:
+            self.logger.error(f"Found to few/many large delta T {np.sum(t_diff > dt_break)}")
+            print(np.arange(len(t_diff))[t_diff > dt_break])
+            print(t_diff[t_diff > dt_break])
+
+        wfs_per_amp = [[] for _ in range(len(amps))]
+
+        # Some time the first events seems to have triggered much before the others
+        if t_diff[0] > dt_break:
+            self.logger.warn(f"Drop the first waveform. t_diff = {t_diff[0]:.2f}s")
+            wfs_all_amps = wfs_all_amps[1:]
+            t = t[1:]
+            t_diff = t_diff[1:]
+
+        wfs_per_amp[0].append(wfs_all_amps[0])
+
+        idx = 0
+        for wf, dt in zip(wfs_all_amps[1:], t_diff):
+            if dt > dt_break:
+                idx += 1
+                if idx >= len(amps):
+                    continue
+
+            elif dt < 1 / 2 / trigger_rate:
+                self.logger.warning("dt pretty small")
+
+            if idx < len(amps):
+                wfs_per_amp[idx].append(wf)
+
+        self.logger.info(f"Split wavforms into {[len(ele) for ele in wfs_per_amp]} chuncks")
+        return wfs_per_amp
 
     def run(self):
         super(FrontEndResponse, self).run()
+
         for ch in self.conf['args']['channels']:
             data = {}
+
             wf_truth = self.get_truth_waveform(self.conf['args']['template'])
             data['truth_waveform'] = wf_truth.tolist()
+
             root_files, amps = self.get_root_files(self.conf['args']['search_dir'], ch)
-            for (root_file, amp) in zip(root_files, amps):
-                key = f'{amp:.0f}'
-                data[key] = {}
-                data[key]['root_files'] = root_file
-                wfs_measured = self.get_measured_waveforms(root_file, ch)
-                ccs = []
-                for i in range(len(wfs_measured[1:-1,0])): #loop over events
-                    if i == 0:
-                        data[key]['measured_waveform'] = wfs_measured[i,:].tolist()
-                    wf_measured = wfs_measured[i,:]
-                    cc = self.calc_xcorr(wf_measured, wf_truth, sampling_rate=self.result_dict["radiant_sample_rate"] * 1e6)
-                    ccs.append(cc)
-                cc_per_amp = np.mean(ccs)
-                data[key]['xcorr'] = cc_per_amp
-            self.eval_results(data, ch)
+
+            if self.conf['args']['v2']:
+                if not all(x == root_files[0] for x in root_files):
+                    self.logger.error(f"All root files should be the same but: {root_files}")
+
+                wfs_measured_unsorted, t = self.get_measured_waveforms(root_files[0], ch, True)
+                wfs_measured_per_amp = self.sort_waveforms(wfs_measured_unsorted, t, amps)
+                for wfs_measured, amp in zip(wfs_measured_per_amp, amps):
+                    key = f'{amp:.0f}'
+                    data[key] = {}
+                    data[key]['root_files'] = root_files[0]
+                    ccs = []
+                    for idx, wf_measured in enumerate(wfs_measured):
+                        if idx == 0:
+                            data[key]['measured_waveform'] = wf_measured.tolist()
+
+                        cc = self.calc_xcorr(
+                            wf_measured, wf_truth, sampling_rate=self.result_dict["radiant_sample_rate"] * 1e6)
+
+                        ccs.append(cc)
+
+                    cc_per_amp = np.mean(ccs)
+                    data[key]['xcorr'] = cc_per_amp
+                    data[key]['xcorr_std'] = np.std(ccs)
+            else:
+                for root_file, amp in zip(root_files, amps):
+                    key = f'{amp:.0f}'
+                    data[key] = {}
+                    data[key]['root_files'] = root_file
+                    wfs_measured = self.get_measured_waveforms(root_file, ch)
+
+                    ccs = []
+                    for idx, wf_measured in enumerate(wfs_measured):
+                        if idx == 0:
+                            data[key]['measured_waveform'] = wf_measured.tolist()
+
+                        cc = self.calc_xcorr(
+                            wf_measured, wf_truth, sampling_rate=self.result_dict["radiant_sample_rate"] * 1e6)
+
+                        ccs.append(cc)
+
+                    cc_per_amp = np.mean(ccs)
+                    data[key]['xcorr'] = cc_per_amp
+                    data[key]['xcorr_std'] = np.std(ccs)
+
+            passed = self.eval_results(data, ch)
+            self.add_measurement(f"{ch}", data, passed)
+
 
 if __name__ == "__main__":
     radiant_test.run(FrontEndResponse)
