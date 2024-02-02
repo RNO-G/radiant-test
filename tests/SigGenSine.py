@@ -73,7 +73,8 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
 
         try:
             popt, avg_residual = fit_sine(wvf)
-        except ValueError:
+        except Exception as e:
+            print(e)
             popt = [0, 0, 0, 0]
             avg_residual = 0
 

@@ -127,12 +127,11 @@ def plot_channel_xcorr(fig, ax, data, ch, args_web=False):
                 ax.legend(loc='lower right')
         else:
             ax.plot(samples[start_index:end_index], wf, alpha=0.5, color=colors[i], label=label, linewidth=0.5)
-
     # ax.legend(loc='lower right')
     samples_true = np.arange(len(truth_wf)) + start_index
     ax.plot(samples_true, truth_wf, color='k', alpha=0.5, linewidth=0.5, label='truth')
     res = data['run']['measurements'][f"{ch}"]['result']
-    # ax.set_title(f'channel: {ch}')
+    ax.set_title(f'channel: {ch}')
     fig.text(0.5, 0.01, 'samples', ha='center', va='center')
     fig.text(0.01, 0.5, 'normalized amplitude [a.u.]', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)
@@ -158,7 +157,7 @@ def plot_channel_wf(fig, ax, data, ch, args_web=False):
     # ax.legend(loc='lower right')
     ax.plot(truth_wf*150, color='k', alpha=0.5, lw=0.5, label='truth')
     res = data['run']['measurements'][f"{ch}"]['result']
-    # ax.set_title(f'channel: {ch}')
+    ax.set_title(f'channel: {ch}')
     fig.text(0.5, 0.01, 'samples', ha='center', va='center')
     fig.text(0.01, 0.5, 'amplitude [adc counts]', ha='center', va='center', rotation='vertical')
     get_axis_color(ax, res)

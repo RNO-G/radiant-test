@@ -9,6 +9,7 @@ import os
 import re
 import json
 from radiant_test.radiant_helper import uid_to_name
+from radiant_test.util import make_serializable, check_param
 
 def hill_eq(x, x0, p):
     return 1 / (1 + (x0 / x)**p)
@@ -27,6 +28,13 @@ def calc_sliding_vpp(data, window_size=30, start_index=1400, end_index=1900):
         vpps.append(vpp)
 
     return vpps, indices
+
+def monotonic(x):
+    dx = np.diff(x)
+    print('dx', dx)
+    res = np.all(dx >= 0)
+    print('res', res)
+    return res
 
 class AUXTriggerResponse(radiant_test.SigGenTest):
     def __init__(self, **kwargs):
@@ -215,7 +223,10 @@ class AUXTriggerResponse(radiant_test.SigGenTest):
         data['fit_parameter']['res_halfway'] = hor_passed
         data['fit_parameter']['res_steepness'] = steep_passed
 
-        return hor_passed and steep_passed
+        monotonic_passed = monotonic(data['trigger_effs'])
+        data['fit_parameter']['res_monotonic'] = bool(monotonic_passed)
+
+        return hor_passed and steep_passed and monotonic_passed
 
     def run(self, use_arduino=True):
         super(AUXTriggerResponse, self).run()
@@ -282,6 +293,7 @@ class AUXTriggerResponse(radiant_test.SigGenTest):
                     self.dic_curve[vpp_str]['trig_eff'] = round(trig_eff_point, 2)
                     self.dic_curve[vpp_str]['trig_eff_err'] = round(trig_eff_err, 2)
                     self.dic_curve[vpp_str]['sg_amp'] = sg_current_amp
+                    self.dic_curve[vpp_str]['run'] = str(self.data_dir)
 
                 dic_out = self.fit_trigger_curve(self.dic_curve)
                 passed = self.eval_curve_results(dic_out)
@@ -289,6 +301,7 @@ class AUXTriggerResponse(radiant_test.SigGenTest):
                 passed = False
                 dic_out = {}
 
+            dic_out = make_serializable(dic_out)
             self.add_measurement(f"{ch_radiant}", dic_out, passed)
 
             # with open('/scratch/rno-g/radiant_data/AUXTrigger_Response_buffer.json', 'w') as f:

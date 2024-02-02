@@ -99,8 +99,12 @@ def get_fit_results_str(data, ch, with_color=False):
         str_steepness = get_color(data_ch["res_steepness"]) + f'steepness: no fit result {color_end}'
     else:
         str_steepness = get_color(data_ch["res_steepness"]) + f'steepness: {data_ch["steepness"]:.2f}{color_end}'
+    if data_ch["res_monotonic"] is not None:
+        str_monotonic = f'| {get_color(data_ch["res_monotonic"])} monotonic: {data_ch["res_monotonic"]}{color_end}'
+    else:
+        str_monotonic = ''
 
-    out =  f" {get_color(result == 'PASS')} {result} {color_end} | {str_halfway} | {str_steepness}"
+    out =  f" {get_color(result == 'PASS')} {result} {color_end} | {str_halfway} | {str_steepness} {str_monotonic}"
     return out
 
 def hill_eq(x, x0, p):

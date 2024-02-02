@@ -25,13 +25,8 @@ def plot_channel(ax, data, ch, window_label):
     ax.legend(loc="upper right")
 
 def plot_all(data):
-    # Plot to PDF
-    ulb_id = uid_to_name(data['dut_uid'])
-    fname = f'{ulb_id}_Switch24_{data["config"]["args"]["frequency"]}MHz.pdf'
-
     nrows = 4
     ncols = 6
-
     # Plot to screen
     fig2, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, figsize=(6 * ncols, 5 * nrows))
     idx = 0
@@ -45,7 +40,6 @@ def plot_all(data):
             ax[-1].set_xlabel("time / ns")
 
     fig2.tight_layout()
-    plt.savefig(fname.replace(".pdf", "_all_channels.pdf"))
     return fig2
 
 if __name__ == "__main__":
@@ -59,3 +53,6 @@ if __name__ == "__main__":
         data = json.load(f)
 
     plot_all(data)
+    fname = args.input.replace(".json", f'_{data["config"]["args"]["frequency"]}MHz.pdf')
+
+    plt.savefig(fname, transparent=False)
