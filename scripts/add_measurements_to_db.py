@@ -4,8 +4,12 @@ import json
 import os
 
 # opens the connection to the database
-mongo_client = MongoClient(os.environ.get('db_mongo_connection_string'))
+con_str = os.environ.get('db_mongo_connection_string')
 
+if con_str == "":
+    raise ValueError("Looks like the connection string is not set as env variable.")
+
+mongo_client = MongoClient(con_str)
 db = mongo_client.RNOG_live
 
 parser = argparse.ArgumentParser(description='Function to add the radiant test measurements to the live database')
@@ -20,8 +24,8 @@ def add_single_measurement(file, set_folder=None):
     # check if file is already in db
     existing_files_in_db = db['radiant_test_measurements'].distinct('filename')
     if file in existing_files_in_db:
-        print(f'... is already in the database. Will be skipped')
-    else:    
+        print('... is already in the database. Will be skipped')
+    else:
         # load the measurement
         if set_folder is not None:
             result_dict = json.load(open(os.path.join(args.result_dir, set_folder, file)))
@@ -35,13 +39,15 @@ def add_single_measurement(file, set_folder=None):
         # add the measurement to the database
         db['radiant_test_measurements'].insert_one(input_mask)
         print('added to the database')
-    
+
 if args.filenames is not None:
     # go thorugh all measurements and add them to the database
     for file in args.filenames:
-        add_single_measurement(file)    
+        add_single_measurement(file)
 elif args.set_folder is not None:
     for file in os.listdir(os.path.join(args.result_dir, args.set_folder)):
+        if not file.endswith(".json"):
+            continue
         add_single_measurement(file, args.set_folder)
 else:
     raise ValueError('Either filenames or set_folder must be not None')
