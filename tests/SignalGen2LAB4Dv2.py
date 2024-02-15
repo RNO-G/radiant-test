@@ -9,8 +9,7 @@ from radiant_test.util import make_serializable
 
 from collections import defaultdict
 
-from .SignalGen2LAB4D import SignalGen2LAB4D
-
+from tests.SignalGen2LAB4D import SignalGen2LAB4D
 
 class SignalGen2LAB4Dv2(SignalGen2LAB4D):
     def __init__(self, *args, **kwargs):
@@ -99,7 +98,7 @@ class SignalGen2LAB4Dv2(SignalGen2LAB4D):
         super(SignalGen2LAB4D, self).run()
         # turn on the surface amp
         self.device.surface_amps_power_on()
-
+        print('channels to test', self.conf["args"]["channels"])
         for i_ch, ch_radiant in enumerate(self.conf["args"]["channels"]):
             logging.info(f"Testing channel {ch_radiant}")
 

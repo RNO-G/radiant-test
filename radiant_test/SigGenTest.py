@@ -97,11 +97,12 @@ class SigGenTest(RADIANTChannelTest):
 
         return data_dir
 
-    def initialize_config(self, channel_trigger, threshold, run_length=None, comment="", readout_channel=None):
+    def initialize_config(self, channel_trigger, threshold, diode_Vbias=1.25, run_length=None, comment="", readout_channel=None):
         self.logger.info(f'trigger set on channel {channel_trigger}')
         run = stationrc.remote_control.Run(self.device)
         for ch in range(24):
             run.run_conf.radiant_threshold_initial(ch, threshold)
+            run.run_conf.radiant_analog_diode_vbias(ch, diode_Vbias)
 
         run.run_conf.radiant_load_thresholds_from_file(False)
         run.run_conf.radiant_servo_enable(False)

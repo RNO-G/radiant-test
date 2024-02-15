@@ -1,0 +1,22 @@
+{
+    "args": {
+        "amplitude": 100,
+        "sine_freq": 150,
+        "sg_trig_freq": 20,
+        "number_of_events": 10,
+        "force_trigger": true,
+        "rf0_trigger": false,
+        "force_trigger_interval": 0.1,
+        "use_uart": false,
+        "channel_setting_manual": false,
+        "use_arduino": true,
+        "channels": [12, 13],
+        "sg_ch_direct_to_radiant": 1,
+        "sg_ch_to_bridge": 2,
+        "radiant_clock_channel": 1,
+        "radiant_clock_channel_alternative": 3,
+        "record_run": true,
+        "daq_record_data": false,
+        "waveform": "sine"
+    }
+}

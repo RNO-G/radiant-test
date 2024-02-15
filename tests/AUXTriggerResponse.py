@@ -47,10 +47,15 @@ class AUXTriggerResponse(radiant_test.SigGenTest):
         files = [os.path.join(result_path, file) for file in os.listdir(result_path)
                  if re.search('SignalGen2LAB4D', file) and file.endswith('.json') and re.search(ulb_id, file)]
         # Find the newest file based on modification time
-        newest_file = max(files, key=os.path.getmtime)
+        sorted_files = sorted(files, key=os.path.getmtime)
+        #newest_file = max(files, key=os.path.getmtime)
 
-        with open(newest_file) as f:
-            result_dict = json.load(f)
+        for file in sorted_files:
+            with open(file) as f:
+                result_dict = json.load(f)
+            if result_dict['config']['args']['waveform'] == self.conf['args']['waveform']:
+                print(f'use amplitude conversion from {file}')
+                break
 
         def amplitude_conversion(x):
             return x * result_dict['run']['measurements'][str(channel)]['measured_value']['fit_parameter']['slope'] + \

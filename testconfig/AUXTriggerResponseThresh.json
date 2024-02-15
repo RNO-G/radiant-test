@@ -1,0 +1,26 @@
+{   
+"expected_values": {
+    "halfway_min": 5,
+    "halfway_max": 10,
+    "steepness_min": 0.1,
+    "steepness_max": 2
+},
+"args": {
+    "channels": [12, 13, 14, 15, 16, 17, 18, 19, 20],
+    "waveform": "examples/template2_wo_hardwareResponse.json",
+    "amp_conversion_file": "results/ULB-014_SignalGen2LAB4Dv2_20240131T161239.json",
+    "clock_amplitude": 900,
+    "thresholds": [0.85, 0.9, 0.92, 0.94, 0.96, 0.98, 1.0, 1.05],
+    "diode_Vbias": 1,
+    "number_of_events": 100,
+    "sg_trigger_rate": 10,
+    "amplitude": 100,
+    "amplitude_clock": 100,
+    "channel_setting_manual": false,
+    "initial_guess_fit": [8, 1.2],
+    "radiant_clock_channel": 1,
+    "radiant_clock_channel_alternative": 3,
+    "sg_ch_direct_to_radiant": 1,
+    "sg_ch_to_bridge": 2
+}
+} 
