@@ -45,14 +45,21 @@ class RecordRun(radiant_test.SigGenTest):
         super(RecordRun, self).run()
         self.device.radiant_sig_gen_off() # make sure internal signal gen is off
         self.device.radiant_calselect(quad=None) #make sure calibration is off
-        self.device.surface_amps_power_on()
+        if self.conf['args']["surface_amps"]:
+            self.device.surface_amps_power_on()
+            print("Surface amps powered on")
+        else:
+            self.device.surface_amps_power_off()
+            print("Surface amps powered off")
 
         # set up the signal generator
         if self.conf['args']['waveform'] == 'sine':
             self.awg.setup_sine_waves(self.conf["args"]["sine_freq"], self.conf["args"]["amplitude"])
             print(f"Setting sine wave with frequency {self.conf['args']['sine_freq']} Hz and amplitude {self.conf['args']['amplitude']} V")
-
-        # loop over all channels
+        
+        elif self.conf['args']['waveform'] == None:
+            print("No waveform send")
+        
         for ch_radiant in self.conf["args"]["channels"]:
             self.logger.info(f"Testing channel {ch_radiant}")
 
@@ -72,12 +79,15 @@ class RecordRun(radiant_test.SigGenTest):
         # turn off the signal gen
         self.awg.output_off(1)
         self.awg.output_off(2)
-        self.device.surface_amps_power_off()
+        if self.conf['args']["surface_amps"]:
+            self.device.surface_amps_power_off()
+            print("Surface amps powered off")
 
 
     def run_channel(self, channel):
         data = {}
         if self.conf["args"]["daq_record_data"]:
+            print(f"daq_record_data not implemented yet.")
             data = self.device.daq_record_data(
                 num_events=self.conf['args']['number_of_events'],
                 force_trigger=True, force_trigger_interval=self.conf['args']['force_trigger_interval'],
