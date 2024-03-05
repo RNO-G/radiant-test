@@ -86,26 +86,29 @@ def get_axis_color(ax, passed):
     ax.spines['right'].set_color(color)
 
 def get_fit_results_str(data, ch, with_color=False):
-    data_ch = data["run"]["measurements"][str(ch)]["measured_value"]["fit_parameter"]
-    result = data["run"]["measurements"][str(ch)]["result"]
-
-    color_end = colorama.Style.RESET_ALL
-
-    if data_ch["halfway"] is None:
-        str_halfway = get_color(data_ch["res_halfway"]) + f'halfway: no fit result {color_end}'
+    if "fit_parameter" not in data["run"]["measurements"][str(ch)]["measured_value"].keys():
+        return f"{colorama.Fore.RED}  FAIL {colorama.Style.RESET_ALL} | {colorama.Fore.RED}no results{colorama.Style.RESET_ALL}"
     else:
-        str_halfway = get_color(data_ch["res_halfway"]) + f'halfway: {data_ch["halfway"]:.2f}{color_end}'
-    if data_ch["steepness"] is None:
-        str_steepness = get_color(data_ch["res_steepness"]) + f'steepness: no fit result {color_end}'
-    else:
-        str_steepness = get_color(data_ch["res_steepness"]) + f'steepness: {data_ch["steepness"]:.2f}{color_end}'
-    if data_ch["res_monotonic"] is not None:
-        str_monotonic = f'| {get_color(data_ch["res_monotonic"])} monotonic: {data_ch["res_monotonic"]}{color_end}'
-    else:
-        str_monotonic = ''
+        data_ch = data["run"]["measurements"][str(ch)]["measured_value"]["fit_parameter"]
+        result = data["run"]["measurements"][str(ch)]["result"]
 
-    out =  f" {get_color(result == 'PASS')} {result} {color_end} | {str_halfway} | {str_steepness} {str_monotonic}"
-    return out
+        color_end = colorama.Style.RESET_ALL
+
+        if data_ch["halfway"] is None:
+            str_halfway = get_color(data_ch["res_halfway"]) + f'halfway: no fit result {color_end}'
+        else:
+            str_halfway = get_color(data_ch["res_halfway"]) + f'halfway: {data_ch["halfway"]:.2f}{color_end}'
+        if data_ch["steepness"] is None:
+            str_steepness = get_color(data_ch["res_steepness"]) + f'steepness: no fit result {color_end}'
+        else:
+            str_steepness = get_color(data_ch["res_steepness"]) + f'steepness: {data_ch["steepness"]:.2f}{color_end}'
+        if data_ch["res_monotonic"] is not None:
+            str_monotonic = f'| {get_color(data_ch["res_monotonic"])} monotonic: {data_ch["res_monotonic"]}{color_end}'
+        else:
+            str_monotonic = ''
+
+        out =  f" {get_color(result == 'PASS')} {result} {color_end} | {str_halfway} | {str_steepness} {str_monotonic}"
+        return out
 
 def hill_eq(x, x0, p):
     return 1 / (1 + (x0 / x)**p)
@@ -174,29 +177,29 @@ def plot_all(data, args_input="", args_channel=None, args_web=False):
 
 def plot_channel(fig, ax, data, ch):
     ch_data = data['run']['measurements'][f"{ch}"]['measured_value']
+    if "Vpp" in ch_data.keys():
+        amps = ch_data["Vpp"]
+        trig_eff = ch_data['trigger_effs']
+        fit_params = ch_data['fit_parameter']
 
-    amps = ch_data["Vpp"]
-    trig_eff = ch_data['trigger_effs']
-    fit_params = ch_data['fit_parameter']
+        res = data['run']['measurements'][f"{ch}"]['result']
+        popt = [fit_params['halfway'], fit_params['steepness']]
+        print()
+        _, low, up = binomial_proportion(np.array(trig_eff) * 100, 100)
+        ax.errorbar(np.asarray(amps), trig_eff, low, up, marker='x', ls='',
+                color='#2d5d7b', label=f'channel: {ch}', elinewidth=1)
+        ax.grid()
 
-    res = data['run']['measurements'][f"{ch}"]['result']
-    popt = [fit_params['halfway'], fit_params['steepness']]
-    print()
-    _, low, up = binomial_proportion(np.array(trig_eff) * 100, 100)
-    ax.errorbar(np.asarray(amps), trig_eff, low, up, marker='x', ls='',
-            color='#2d5d7b', label=f'channel: {ch}', elinewidth=1)
-    ax.grid()
+        if popt[0] is None or popt[1] is None:
+            pass
+        else:
+            x_arr = np.linspace(np.min(amps) - 0.1 * np.min(amps), np.max(amps) + 0.1 * np.max(amps), 100)
+            ax.plot(x_arr, tanh_func(np.asarray(x_arr), *popt), color='#6D8495')
 
-    if popt[0] is None or popt[1] is None:
-        pass
-    else:
-        x_arr = np.linspace(np.min(amps) - 0.1 * np.min(amps), np.max(amps) + 0.1 * np.max(amps), 100)
-        ax.plot(x_arr, tanh_func(np.asarray(x_arr), *popt), color='#6D8495')
+        ax.set_ylim(-0.05,1.05)
+        ax.legend(fontsize=5)
 
-    ax.set_ylim(-0.05,1.05)
-    ax.legend(fontsize=5)
-
-    get_axis_color(ax, res)
+        get_axis_color(ax, res)
 
 def plot_single(data, ch):
     fig = plt.figure()

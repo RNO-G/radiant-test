@@ -92,3 +92,8 @@ try:
     from .FrontEndResponse import FrontEndResponse
 except ImportError as e:
     print(f"FrontEndResponse not available. {e}")
+
+try:
+    from .RecordRun import RecordRun
+except ImportError as e:
+    print(f"RecordRun not available. {e}")
