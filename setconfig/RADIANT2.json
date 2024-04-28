@@ -1,0 +1,57 @@
+{
+    "name": "RADIANT2",
+
+    "default_args": {
+        "args": {
+            "use_uart": true
+        }
+    },
+
+    "tests": {
+        "LAB4DTune": {},
+        "SigGenSine_90MHz": {
+            "base": "SigGenSine",
+            "args": {
+                "band": 0,
+                "frequency": 90
+            }
+        },
+
+        "SigGenSine_240MHz": {
+            "base": "SigGenSine",
+            "args": {
+                "band": 1,
+                "frequency": 240
+            }
+        },
+
+        "SigGenSine_510MHz": {
+            "base": "SigGenSine",
+            "args": {
+                "band": 2,
+                "frequency": 510
+            }
+        },
+        "HarmonicDistortion_90MHz": {
+            "base": "HarmonicDistortion",
+            "args": {
+                "band": 0,
+                "frequency": 90
+            }
+        },
+        "HarmonicDistortion_240MHz": {
+            "base": "HarmonicDistortion",
+            "args": {
+                "band": 1,
+                "frequency": 240
+            }
+        },
+        "HarmonicDistortion_510MHz": {
+            "base": "HarmonicDistortion",
+            "args": {
+                "band": 2,
+                "frequency": 510
+            }
+        }
+    }
+}
