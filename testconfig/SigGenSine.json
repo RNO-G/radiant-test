@@ -10,7 +10,7 @@
         "band": 0,
         "frequency": 90,
         "use_uart": true,
-        "read_header": false,
+        "read_header": true,
         "external_signal": false
     }
 }
