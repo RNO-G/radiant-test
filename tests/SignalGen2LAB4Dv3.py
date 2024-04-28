@@ -34,7 +34,7 @@ class SignalGen2LAB4Dv3(SignalGen2LAB4Dv2):
             for n, amp_pp in enumerate(amps_SG):
 
                 self.awg.set_trigger_frequency_Hz(
-                    sg_ch, trigger_rate=self.conf["args"]["sg_trigger_rate"])
+                    sg_ch, frequency=self.conf["args"]["sg_trigger_rate"])
 
                 t0 = time.time()
                 self.awg.set_arb_waveform_amplitude_couple(
@@ -48,7 +48,7 @@ class SignalGen2LAB4Dv3(SignalGen2LAB4Dv2):
                     trigger_channels=[sg_ch_clock], trigger_threshold=self.conf['args']['threshold'],
                     read_header=True)
 
-                wfs = np.array([ev["radiant_waveforms"][ch_radiant] for ev in data["data"]["WAVEFORM"]])
+                wfs = np.array([ev["radiant_waveforms"] for ev in data["data"]["WAVEFORM"]])
 
                 self.logger.info(f"Found {len(wfs)} events for amplitude {amp_pp} mVpp")
 
@@ -57,9 +57,6 @@ class SignalGen2LAB4Dv3(SignalGen2LAB4Dv2):
                 ch_dic[key_str]['amp'] = float(amp_pp)
 
                 self.get_vpp(wfs, ch_radiant, ch_radiant_clock, amp_pp, ch_dic, key_str)
-
-                self.get_vpp(wfs, ch_radiant, ch_radiant_clock, amp_pp, ch_dic, key_str)
-
 
             dic_out = self.fit_vpp_SG2LAB4D(
                 amps_SG, ch_dic)
