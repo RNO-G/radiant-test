@@ -111,13 +111,13 @@ class SigGenSine(radiant_test.RADIANTChannelTest):
                 continue
 
             if ch in self.conf["args"]["channels"]:
-                data = self._fit_waveform(event["radiant_waveforms"][ch])
+                ch_data = self._fit_waveform(event["radiant_waveforms"][ch])
                 if self.conf["args"]["read_header"]:
                     starting_windows = np.array(
                         [ele['radiant_start_windows'][ch] for ele in data["data"]["HEADER"]])[:, 0]
-                    data["starting_windows"] = starting_windows.tolist()
+                    ch_data["starting_windows"] = starting_windows.tolist()
 
-                self.add_measurement(f"{ch}", data, passed=self._check_fit(data))
+                self.add_measurement(f"{ch}", ch_data, passed=self._check_fit(ch_data))
 
 
 if __name__ == "__main__":
