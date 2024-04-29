@@ -1,12 +1,12 @@
 import stationrc.remote_control
-import logging
+from collections import defaultdict
 
 
 RADIANT_NUM_CHANNELS = 24
 RADIANT_NUM_QUADS = 3
 RADIANT_SAMPLING_RATE = 3.2  # GHz
 
-RADIANT = None
+RADIANTs = defaultdict(None)
 
 uid_to_name_dict = {
     "e7e318ffb2ad88e35055334a3b82ba18": "ULB-002",
@@ -47,12 +47,13 @@ def quad_for_channel(channel_id):
         raise ValueError("Invalid channel id!")
 
 
-def get_radiant():
-    global RADIANT
+def get_radiant(host=None):
+    global RADIANTs
 
-    if RADIANT == None:
-        RADIANT = stationrc.remote_control.VirtualStation()
-    return RADIANT
+    if RADIANTs[host] is None:
+        RADIANTs[host] = stationrc.remote_control.VirtualStation(host)
+
+    return RADIANTs[host]
 
 
 def uid_to_name(uid):

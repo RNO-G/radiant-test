@@ -9,6 +9,8 @@ tests = [t for t in module.__dir__() if not t.startswith("__")]
 parser = argparse.ArgumentParser()
 parser.add_argument("tests", type=str, nargs="+", choices=tests, help="Test to execute")
 parser.add_argument("--comment", type=str, default=None, help="add a comment to the result dict of every test")
+parser.add_argument("--host", type=str, default=None,
+                    help="Specify ip address of host. If `None`, use ip from config in stationrc.")
 parser.add_argument("--debug", action="store_true", help="Set logger setting to DEBUG")
 parser.add_argument("--plot", action="store_true", help="Run the plotting script (if available)")
 args = parser.parse_args()
@@ -21,7 +23,7 @@ else:
 for test in args.tests:
     test_class = getattr(module, test)
     t0 = time.time()
-    test_obj = radiant_test.run(test_class, {"comment": args.comment})
+    test_obj = radiant_test.run(test_class, {"comment": args.comment}, host=args.host)
     logging.info(f"Test {test} finished in {time.time() - t0:.2f} s")
     if args.plot:
         scripts = __import__("scripts")
