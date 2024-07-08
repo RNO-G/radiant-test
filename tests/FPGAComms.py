@@ -3,8 +3,8 @@ import stationrc.radiant
 
 
 class FPGAComms(radiant_test.RADIANTTest):
-    def __init__(self):
-        super(FPGAComms, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(FPGAComms, self).__init__(*args, **kwargs)
 
     def run(self):
         super(FPGAComms, self).run()

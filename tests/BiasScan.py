@@ -12,6 +12,7 @@ class BiasScan(radiant_test.RADIANTTest):
         super(BiasScan, self).run()
 
         self.device.reset_radiant_board()  # initalizes RADIANT object on bbb new. Also loads calib.
+        self.device.radiant_low_level_interface.calibration_load()
 
         # Just to be sure
         self.device.radiant_sig_gen_off()
